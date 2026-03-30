@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>MTB Skills Pro</title>
+<meta name="theme-color" content="#090b0f"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="MTB Skills"/>
+<link rel="manifest" id="manifestLink"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<style>
+:root{
+  --bg:#090b0f;--panel:#13161e;--card:#1c2030;
+  --text:#f0f4ff;--muted:#8892a4;
+  --accent:#4cc9f0;--accent2:#7c5cff;
+  --good:#32d74b;--warn:#fbbf24;--danger:#ff453a;
+  --line:rgba(255,255,255,.07);
+  --shadow:0 20px 50px rgba(0,0,0,.4);
+  --fd:'Bebas Neue',sans-serif;
+  --fb:'Syne',sans-serif;
+  --fm:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hidden;
+  background-image:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(76,201,240,.07) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 80% 5%,rgba(124,92,255,.09) 0%,transparent 60%);}
+#particles{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:16px 14px 100px;}
+
+/* LOADING */
+#loadingScreen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .5s;}
+#loadingScreen.hidden{opacity:0;pointer-events:none;}
+.load-inner{text-align:center;}
+.load-logo{font-size:56px;margin-bottom:20px;animation:float 2s ease-in-out infinite alternate;}
+@keyframes float{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+.load-bar{width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:999px;margin:0 auto 14px;overflow:hidden;}
+.load-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;animation:loadFill 2s ease forwards;}
+@keyframes loadFill{to{width:100%;}}
+.load-text{color:var(--muted);font-size:13px;font-family:var(--fm);}
+
+/* AUTH */
+#authScreen,#nickScreen{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;background:var(--bg);overflow-y:auto;}
+.auth-shapes{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
+.sh{position:absolute;border-radius:50%;animation:shDrift 8s ease-in-out infinite alternate;}
+.sh1{width:400px;height:400px;top:-100px;left:-100px;background:radial-gradient(circle,rgba(76,201,240,.14),transparent 70%);}
+.sh2{width:300px;height:300px;top:30%;right:-80px;background:radial-gradient(circle,rgba(124,92,255,.11),transparent 70%);animation-delay:-3s;}
+.sh3{width:250px;height:250px;bottom:0;left:30%;background:radial-gradient(circle,rgba(76,201,240,.08),transparent 70%);animation-delay:-5s;}
+@keyframes shDrift{from{transform:translate(0,0) scale(1)}to{transform:translate(20px,15px) scale(1.1)}}
+.auth-box{position:relative;z-index:1;width:100%;max-width:440px;background:rgba(19,22,30,.97);border:1px solid var(--line);border-radius:28px;padding:32px 28px;backdrop-filter:blur(20px);animation:authIn .5s cubic-bezier(.34,1.56,.64,1);margin:auto;}
+@keyframes authIn{from{transform:scale(.88) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.auth-logo{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+.auth-emoji{font-size:48px;line-height:1;}
+.auth-title{font-family:var(--fd);font-size:28px;letter-spacing:3px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.auth-sub{color:var(--muted);font-size:13px;margin-top:2px;}
+.google-btn{width:100%;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--text);cursor:pointer;font-weight:700;font-size:15px;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;}
+.google-btn:hover{background:rgba(255,255,255,.1);}
+.google-btn:disabled{opacity:.5;cursor:not-allowed;}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:12px;}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--line);}
+.auth-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.auth-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-weight:700;font-size:14px;transition:.2s;font-family:var(--fb);}
+.auth-tab.active{background:rgba(76,201,240,.12);border-color:rgba(76,201,240,.35);color:var(--accent);}
+.auth-msg{border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;font-family:var(--fm);line-height:1.5;display:none;}
+.auth-msg.err{background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.3);color:#ff8a85;display:block;}
+.auth-msg.ok{background:rgba(50,215,75,.1);border:1px solid rgba(50,215,75,.3);color:#5fe87a;display:block;}
+
+/* FIELDS */
+.field{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;color:var(--text);padding:13px 16px;margin-bottom:10px;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;font-family:var(--fb);}
+.field:focus{border-color:rgba(76,201,240,.45);box-shadow:0 0 0 3px rgba(76,201,240,.09);}
+.field::placeholder{color:var(--muted);}
+select.field{cursor:pointer;}
+.field-label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block;font-weight:700;}
+
+/* BUTTONS */
+.btn{border:0;border-radius:14px;padding:11px 16px;cursor:pointer;font-weight:800;font-size:14px;color:var(--text);transition:transform .12s,opacity .2s;font-family:var(--fb);}
+.btn:active{transform:scale(.96);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;}
+.btn-full{width:100%;padding:14px;font-size:15px;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));}
+.btn-danger{background:rgba(255,69,58,.15);color:#ff6b6b;border:1px solid rgba(255,69,58,.3);}
+.btn-ghost{background:rgba(255,255,255,.07);border:1px solid var(--line);}
+.btn-success{background:linear-gradient(135deg,var(--good),#28a745);}
+.btn-warn{background:linear-gradient(135deg,var(--warn),#e6a817);color:#000;}
+
+/* SPINNER */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOPBAR */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-badge{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:24px;box-shadow:0 8px 24px rgba(76,201,240,.25);transition:transform .4s cubic-bezier(.34,1.56,.64,1);cursor:default;flex-shrink:0;}
+.brand-badge:hover{transform:rotate(20deg) scale(1.1);}
+.brand-name{font-family:var(--fd);font-size:22px;letter-spacing:2px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.brand-sub{color:var(--muted);font-size:12px;margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.user-info{display:flex;align-items:center;gap:8px;}
+.user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid rgba(76,201,240,.4);object-fit:cover;}
+.user-name{font-size:13px;font-weight:700;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rank-chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 14px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:13px;font-weight:700;}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--warn);transition:background .3s;}
+.sync-dot.synced{background:var(--good);}
+.sync-dot.error{background:var(--danger);}
+
+/* TABS */
+.tabs{display:flex;gap:6px;margin:0 0 16px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab-btn{flex-shrink:0;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:5px;font-family:var(--fb);}
+.tab-btn span{white-space:nowrap;}
+.tab-btn.active{background:linear-gradient(135deg,rgba(76,201,240,.16),rgba(124,92,255,.16));border-color:rgba(76,201,240,.35);color:var(--text);}
+.tab{display:none;animation:fadeUp .22s ease both;}
+.tab.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sub-tabs{display:flex;gap:8px;margin-bottom:12px;}
+.sub-tab{flex:1;padding:11px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer;font-weight:700;font-size:13px;transition:.2s;font-family:var(--fb);}
+.sub-tab.active{background:linear-gradient(135deg,rgba(76,201,240,.15),rgba(124,92,255,.15));border-color:rgba(76,201,240,.35);color:var(--text);}
+
+/* PANELS */
+.panel{background:rgba(19,22,30,.95);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px;}
+.panel-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;gap:10px;flex-wrap:wrap;}
+.panel-head h3{font-size:20px;font-weight:900;}
+.panel-head p{color:var(--muted);font-size:13px;margin-top:4px;}
+.form-card{background:rgba(28,32,48,.8);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;}
+.sec-label{color:var(--muted);font-size:13px;font-weight:700;margin-bottom:8px;display:block;}
+
+/* HELMET */
+.helmet-banner{background:linear-gradient(135deg,rgba(255,69,58,.10),rgba(251,191,36,.07));border:1.5px solid rgba(255,69,58,.35);border-radius:18px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.helmet-banner p{font-size:13px;line-height:1.5;margin:0;}
+.helmet-banner strong{color:#ff7b7b;}
+
+/* STREAK */
+.streak-banner{background:linear-gradient(135deg,rgba(251,191,36,.10),rgba(255,69,58,.07));border:1px solid rgba(251,191,36,.28);border-radius:18px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.streak-fire{font-size:32px;animation:fireFlicker 1.5s ease-in-out infinite alternate;}
+@keyframes fireFlicker{from{transform:scale(1) rotate(-3deg)}to{transform:scale(1.1) rotate(3deg)}}
+.streak-banner h4{font-size:17px;font-weight:900;margin-bottom:2px;}
+.streak-banner p{font-size:12px;color:var(--muted);margin:0;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.stat-card{background:linear-gradient(160deg,rgba(35,42,58,.95),rgba(20,24,36,.95));border:1px solid var(--line);border-radius:18px;padding:14px;transition:transform .2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-label{color:var(--muted);font-size:11px;margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.stat-val{font-size:26px;font-weight:900;font-family:var(--fm);}
+.stat-val.pop{animation:statPop .35s cubic-bezier(.34,1.56,.64,1);}
+@keyframes statPop{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+/* ACH */
+.ach-row{display:flex;flex-wrap:wrap;gap:8px;}
+.ach{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);}
+.ach.unlocked{border-color:rgba(251,191,36,.45);background:linear-gradient(135deg,rgba(251,191,36,.10),rgba(255,69,58,.07));color:var(--warn);}
+
+/* SKILLS */
+.skills-list{display:grid;gap:12px;}
+.skill-card{display:grid;grid-template-columns:82px 1fr;gap:14px;align-items:center;background:linear-gradient(160deg,rgba(32,38,56,.97),rgba(18,22,34,.97));border:1px solid var(--line);border-radius:22px;padding:12px;transition:transform .2s;animation:cardIn .4s ease both;}
+.skill-card:hover{transform:translateY(-2px);}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.skill-visual{width:82px;height:82px;border-radius:18px;overflow:hidden;flex-shrink:0;border:1px solid var(--line);}
+.skill-visual img{width:100%;height:100%;object-fit:cover;transition:transform .35s;}
+.skill-card:hover .skill-visual img{transform:scale(1.08);}
+.skill-body{min-width:0;}
+.skill-title{font-size:18px;font-weight:900;margin-bottom:6px;}
+.pill{display:inline-block;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);padding:4px 9px;border-radius:999px;font-size:11px;margin-right:5px;margin-bottom:5px;white-space:nowrap;}
+.prog{height:8px;border-radius:999px;background:rgba(255,255,255,.07);margin:8px 0;overflow:hidden;}
+.prog>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s;border-radius:999px;}
+
+/* RECORDS */
+.rec-entry{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px;}
+.rec-best{font-size:28px;font-weight:900;color:var(--accent);font-family:var(--fm);margin:6px 0;}
+.rec-chart{display:flex;align-items:flex-end;gap:4px;height:72px;margin:12px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px;}
+.rec-bar{flex:1;min-width:8px;max-width:24px;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:4px 4px 0 0;transition:height .4s;position:relative;}
+.rec-bar:hover::after{content:attr(data-val);position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text);white-space:nowrap;background:var(--card);padding:2px 6px;border-radius:6px;}
+.rec-inp-row{display:flex;gap:8px;align-items:center;margin-top:10px;}
+.rec-inp-row .field{margin:0;flex:1;}
+
+/* ═══════════════════════════════
+   УМНЫЕ ЧЕЛЛЕНДЖИ
+═══════════════════════════════ */
+.ch-timer{font-family:var(--fm);font-size:12px;color:var(--muted);}
+
+/* Карточка челленджа */
+.ch-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden;transition:border-color .3s;}
+
+/* Зелёный фоновый прогресс */
+.ch-card .ch-progress-bg{
+  position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(50,215,75,.12),rgba(50,215,75,.04));
+  border-radius:20px;
+  width:0%;transition:width .8s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.ch-card.done{border-color:rgba(50,215,75,.4);}
+.ch-card.done .ch-progress-bg{width:100%;background:linear-gradient(90deg,rgba(50,215,75,.15),rgba(50,215,75,.05));}
+.ch-card.trust{border-color:rgba(124,92,255,.3);}/* trust = на доверии */
+
+.ch-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;position:relative;}
+.ch-xp{color:var(--accent);font-weight:900;font-size:14px;font-family:var(--fm);}
+.ch-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;}
+.bd-d{background:rgba(76,201,240,.12);color:var(--accent);border:1px solid rgba(76,201,240,.3);}
+.bd-w{background:rgba(124,92,255,.12);color:var(--accent2);border:1px solid rgba(124,92,255,.3);}
+.bd-t{background:rgba(251,191,36,.12);color:var(--warn);border:1px solid rgba(251,191,36,.3);}/* trust badge */
+
+.ch-desc{font-size:15px;font-weight:600;margin:0 0 10px;position:relative;}
+.ch-progress-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.08);margin:8px 0;overflow:hidden;position:relative;}
+.ch-progress-bar>div{height:100%;background:linear-gradient(90deg,var(--good),#28a745);border-radius:999px;transition:width .5s;}
+.ch-progress-label{font-size:11px;color:var(--muted);font-family:var(--fm);margin-bottom:8px;position:relative;}
+.ch-complete-btn{width:100%;padding:10px;border-radius:12px;font-size:14px;font-weight:800;font-family:var(--fb);border:0;cursor:pointer;transition:.2s;position:relative;}
+.ch-complete-btn:disabled{opacity:.4;cursor:not-allowed;}
+.ch-complete-btn.ready{background:linear-gradient(135deg,var(--good),#28a745);color:white;}
+.ch-complete-btn.not-ready{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--line);}
+.ch-complete-btn.trust-btn{background:linear-gradient(135deg,var(--accent2),#5a3dbf);color:white;}
+
+/* BIKES */
+.bikes-grid{display:grid;gap:14px;}
+.bike-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:22px;padding:14px;display:grid;grid-template-columns:100px 1fr;gap:14px;align-items:start;animation:cardIn .3s ease both;}
+.bike-thumb{width:100px;height:100px;border-radius:16px;object-fit:cover;border:1px solid var(--line);background:rgba(255,255,255,.03);}
+.bike-ph{width:100px;height:100px;border-radius:16px;border:1px solid var(--line);display:grid;place-items:center;font-size:36px;background:rgba(255,255,255,.03);}
+.bike-name{font-size:15px;font-weight:900;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bike-meta{font-size:11px;color:var(--muted);margin-bottom:8px;}
+.like-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;font-size:13px;font-weight:700;transition:.2s;font-family:var(--fb);}
+.like-btn:hover{background:rgba(76,201,240,.1);border-color:rgba(76,201,240,.3);}
+.like-btn.liked{background:rgba(76,201,240,.15);border-color:rgba(76,201,240,.4);color:var(--accent);}
+.like-btn:disabled{opacity:.5;cursor:not-allowed;}
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.fi,.fs{background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:8px 12px;font-size:13px;outline:none;font-family:var(--fb);}
+.fi{flex:1;min-width:120px;}.fs{cursor:pointer;}
+
+/* Загрузка фото байка */
+.photo-upload-area{border:2px dashed var(--line);border-radius:14px;padding:24px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:10px;}
+.photo-upload-area:hover{border-color:rgba(76,201,240,.4);background:rgba(76,201,240,.04);}
+.photo-preview{width:100%;height:180px;border-radius:14px;object-fit:cover;margin-bottom:10px;display:none;}
+.upload-progress{height:4px;border-radius:999px;background:rgba(255,255,255,.08);margin:8px 0;overflow:hidden;display:none;}
+.upload-progress>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .3s;}
+
+/* PROOFS */
+.proof-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:22px;padding:14px;margin-bottom:12px;animation:cardIn .3s ease both;}
+.proof-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.proof-vid{width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin-bottom:10px;}
+.proof-vid iframe{width:100%;height:100%;border:0;}
+.proof-reacts{display:flex;gap:8px;flex-wrap:wrap;}
+.pr-btn{padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);cursor:pointer;font-size:13px;transition:.2s;color:var(--text);font-family:var(--fb);}
+.pr-btn:hover{background:rgba(255,255,255,.09);}
+.pr-btn.active{border-color:rgba(76,201,240,.45);background:rgba(76,201,240,.10);}
+
+/* LEADERBOARD */
+.lb-row{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:14px;margin-bottom:8px;}
+.lb-place{font-size:20px;width:34px;text-align:center;flex-shrink:0;}
+.lb-info{flex:1;min-width:0;}
+.lb-info h4{font-size:15px;margin-bottom:2px;}
+.lb-info span{font-size:12px;color:var(--muted);}
+.lb-pts{font-size:20px;font-weight:900;color:var(--accent);font-family:var(--fm);}
+
+/* DUELS */
+.duel-card{background:linear-gradient(135deg,rgba(124,92,255,.09),rgba(255,69,58,.07));border:1.5px solid rgba(124,92,255,.25);border-radius:22px;padding:16px;margin-bottom:12px;}
+.duel-vs{display:flex;align-items:center;gap:12px;margin:10px 0;}
+.duel-vs .player{flex:1;text-align:center;font-weight:700;}
+.vs-badge{font-size:20px;font-weight:900;color:var(--danger);font-family:var(--fm);}
+
+/* WHY */
+.why-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.why-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:20px;padding:18px;transition:transform .2s;}
+.why-card:hover{transform:translateY(-2px);}
+.why-card .wi{font-size:30px;margin-bottom:10px;}
+.why-card h4{font-size:15px;font-weight:900;margin-bottom:6px;}
+.why-card p{font-size:13px;color:var(--muted);line-height:1.6;margin:0;}
+
+/* NOTIF */
+.notif-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:20px;padding:18px;}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:14px;font-weight:700;}
+.time-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.time-row label{color:var(--muted);font-size:13px;}
+.time-row input[type="time"]{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:9px 14px;font-size:16px;outline:none;font-family:var(--fm);}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-sl{position:absolute;inset:0;background:rgba(255,255,255,.12);border-radius:999px;cursor:pointer;transition:.3s;}
+.toggle-sl::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:white;border-radius:50%;transition:.3s;}
+.toggle input:checked+.toggle-sl{background:var(--accent);}
+.toggle input:checked+.toggle-sl::before{transform:translateX(20px);}
+
+/* SUPPORT */
+.sup-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ct-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:22px;padding:20px;text-align:center;transition:transform .2s;}
+.ct-card:hover{transform:translateY(-2px);}
+.ct-card .ci{font-size:36px;margin-bottom:10px;}
+.ct-card h4{font-size:15px;font-weight:900;margin-bottom:6px;}
+.ct-card a{color:var(--accent);text-decoration:none;font-size:13px;font-weight:700;word-break:break-all;}
+
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);padding:14px;align-items:center;justify-content:center;z-index:1000;}
+.modal.show{display:flex;animation:mfIn .25s ease;}
+@keyframes mfIn{from{opacity:0}to{opacity:1}}
+.modal-card{width:100%;max-width:600px;max-height:90vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:18px;animation:mcIn .3s cubic-bezier(.34,1.56,.64,1);}
+@keyframes mcIn{from{transform:scale(.88) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.modal-head h2{font-size:24px;font-family:var(--fd);letter-spacing:2px;}
+.vid-box{width:100%;aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden;margin-bottom:14px;}
+.vid-box iframe{width:100%;height:100%;border:0;}
+.timer-wrap{background:linear-gradient(135deg,rgba(76,201,240,.07),rgba(124,92,255,.07));border:1px solid rgba(76,201,240,.18);border-radius:18px;padding:16px;margin-bottom:14px;text-align:center;}
+.timer-disp{font-size:50px;font-weight:900;font-family:var(--fm);color:var(--accent);line-height:1;margin-bottom:12px;}
+.timer-disp.running{color:var(--good);}
+.timer-disp.stopped{color:var(--warn);}
+.timer-btns{display:flex;gap:8px;justify-content:center;}
+.goal-box{background:rgba(255,255,255,.04);padding:12px;border-radius:14px;margin-bottom:14px;}
+.goal-lbl{color:var(--accent);font-size:12px;display:block;margin-bottom:4px;font-family:var(--fm);}
+.step-item{display:grid;grid-template-columns:78px 1fr;gap:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px;align-items:center;}
+.step-item img{width:78px;height:78px;border-radius:12px;object-fit:cover;}
+.step-item h4{font-size:13px;font-weight:900;margin-bottom:4px;}
+.step-item p{font-size:12px;color:var(--muted);line-height:1.45;margin:0;}
+
+/* LEVEL UP */
+#lvlUp{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .3s;}
+#lvlUp.show{opacity:1;}
+#lvlBox{background:linear-gradient(135deg,rgba(76,201,240,.18),rgba(124,92,255,.18));border:1px solid rgba(76,201,240,.45);backdrop-filter:blur(20px);border-radius:28px;padding:36px 52px;text-align:center;animation:lvlPop .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes lvlPop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+#lvlBox .lve{font-size:60px;display:block;margin-bottom:12px;}
+#lvlBox h2{font-family:var(--fd);font-size:36px;letter-spacing:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+#lvlBox p{margin:8px 0 0;color:var(--muted);font-size:15px;}
+.cf{position:fixed;top:-10px;border-radius:3px;pointer-events:none;z-index:2500;animation:cfFall linear forwards;}
+@keyframes cfFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;background:var(--text);color:var(--bg);padding:11px 22px;border-radius:999px;font-weight:800;font-size:14px;transition:.3s;pointer-events:none;z-index:2000;box-shadow:0 10px 30px rgba(255,255,255,.15);font-family:var(--fb);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.conf-ov{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.85);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px;animation:mfIn .2s ease;}
+.conf-box{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:28px;max-width:380px;width:100%;text-align:center;animation:mcIn .3s cubic-bezier(.34,1.56,.64,1);}
+.conf-box h3{font-size:20px;margin-bottom:8px;}
+.conf-box p{margin-bottom:20px;color:var(--muted);font-size:14px;}
+.conf-acts{display:flex;gap:10px;justify-content:center;}
+
+@media(max-width:760px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .why-grid,.sup-grid{grid-template-columns:1fr;}
+  .skill-card{grid-template-columns:70px 1fr;}
+  .skill-visual{width:70px;height:70px;}
+  .bike-card{grid-template-columns:80px 1fr;}
+  .bike-thumb,.bike-ph{width:80px;height:80px;}
+}
+@media(max-width:480px){
+  .auth-box{padding:22px 18px;}
+  .panel{padding:14px;}
+  .stat-val{font-size:22px;}
+}
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+  <div class="load-inner">
+    <div class="load-logo">🚵‍♂️</div>
+    <div class="load-bar"><div class="load-fill"></div></div>
+    <p class="load-text" id="loadText">Подключение...</p>
+  </div>
+</div>
+
+<div id="authScreen">
+  <div class="auth-shapes"><div class="sh sh1"></div><div class="sh sh2"></div><div class="sh sh3"></div></div>
+  <div class="auth-box">
+    <div class="auth-logo">
+      <span class="auth-emoji">🚵‍♂️</span>
+      <div><div class="auth-title">MTB SKILLS PRO</div><div class="auth-sub">Твой карманный тренер</div></div>
+    </div>
+    <button class="google-btn" id="googleBtn" onclick="signInWithGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Войти через Google
+    </button>
+    <div class="auth-divider"><span>или Email</span></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Войти</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
+    </div>
+    <div id="authMsg" class="auth-msg"></div>
+    <input id="authEmail" class="field" type="email" placeholder="Email" autocomplete="email"/>
+    <input id="authPass" class="field" type="password" placeholder="Пароль (мин. 6 символов)" autocomplete="current-password"/>
+    <div id="authNickWrap" style="display:none;">
+      <input id="authNick" class="field" placeholder="Никнейм для лидерборда" maxlength="24"/>
+    </div>
+    <button id="authSubmitBtn" class="btn btn-primary btn-full" onclick="handleEmailAuth()">Войти</button>
+    <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:13px;" onclick="handleForgotPassword()">Забыл пароль?</button>
+  </div>
+</div>
+
+<div id="nickScreen">
+  <div class="auth-box">
+    <div style="text-align:center;margin-bottom:24px;">
+      <span style="font-size:64px;display:block;margin-bottom:12px;">🤙</span>
+      <h2 style="font-family:var(--fd);font-size:36px;letter-spacing:2px;">КАК ТЕБЯ ЗОВУТ?</h2>
+      <p style="margin:8px 0 0;color:var(--muted);font-size:14px;">Имя увидят друзья в лидерборде</p>
+    </div>
+    <input id="nickInput" class="field" placeholder="Твой никнейм..." style="text-align:center;font-size:18px;font-weight:700;margin-bottom:16px;" maxlength="24"/>
+    <button class="btn btn-primary btn-full" onclick="setNickname()">Поехали! 🔥</button>
+  </div>
+</div>
+
+<canvas id="particles"></canvas>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">🚵‍♂️</div>
+      <div><div class="brand-name">MTB SKILLS PRO</div><div id="welcomeText" class="brand-sub">Твой карманный тренер</div></div>
+    </div>
+    <div class="header-right">
+      <div id="userInfo" class="user-info" style="display:none;">
+        <img id="userAvatar" class="user-avatar" src="" alt="" style="display:none;"/>
+        <span id="userDN" class="user-name"></span>
+      </div>
+      <div class="rank-chip"><span id="syncDot" class="sync-dot"></span><span id="rankName">Старт</span></div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="skills">🎯<span>Навыки</span></button>
+    <button class="tab-btn" data-tab="records">📊<span>Рекорды</span></button>
+    <button class="tab-btn" data-tab="challenges">⚔️<span>Челленджи</span></button>
+    <button class="tab-btn" data-tab="bikes">🚲<span>Гараж</span></button>
+    <button class="tab-btn" data-tab="videos">🎬<span>Видео</span></button>
+    <button class="tab-btn" data-tab="friends">🏆<span>Топ</span></button>
+    <button class="tab-btn" data-tab="duel">⚡<span>Дуэли</span></button>
+    <button class="tab-btn" data-tab="support">🛠<span>Ещё</span></button>
+  </nav>
+
+  <!-- SKILLS -->
+  <section id="tab-skills" class="tab active">
+    <div class="helmet-banner"><span style="font-size:28px;flex-shrink:0;">⛑️</span><p><strong>Катайся только в шлеме!</strong> Без шлема — никаких трюков. Это не просьба, это правило.</p></div>
+    <div class="panel">
+      <div class="panel-head"><div><h3>Прогресс</h3><p>Добивай до 100% для перехода на новый этап</p></div></div>
+      <div id="streakBanner" class="streak-banner" style="display:none"><div class="streak-fire">🔥</div><div><h4 id="streakText">0 дней</h4><p id="streakSub"></p></div></div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">XP</div><div class="stat-val" id="totalPoints">0</div></div>
+        <div class="stat-card"><div class="stat-label">Тренировок</div><div class="stat-val" id="totalTrainings">0</div></div>
+        <div class="stat-card"><div class="stat-label">Уровней</div><div class="stat-val" id="openLevels">0</div></div>
+        <div class="stat-card"><div class="stat-label">Средний %</div><div class="stat-val" id="avgProgress">0%</div></div>
+      </div>
+      <div style="margin-bottom:16px;"><span class="sec-label">🏅 Ачивки</span><div id="achList" class="ach-row"></div></div>
+      <div id="skillsList" class="skills-list"></div>
+    </div>
+  </section>
+
+  <!-- RECORDS -->
+  <section id="tab-records" class="tab">
+    <div class="panel"><div class="panel-head"><div><h3>📊 Рекорды</h3><p>Записывай — следи за ростом</p></div></div><div id="recordsList"></div></div>
+  </section>
+
+  <!-- CHALLENGES -->
+  <section id="tab-challenges" class="tab">
+    <div class="panel">
+      <div class="panel-head">
+        <div><h3>⚔️ Челленджи</h3><p>Задания обновляются автоматически</p></div>
+        <div id="chTimer" class="ch-timer"></div>
+      </div>
+      <!-- Легенда -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <span class="ch-badge bd-d">Дневной</span>
+        <span class="ch-badge bd-w">Недельный</span>
+        <span class="ch-badge bd-t">На доверии</span>
+        <span style="font-size:11px;color:var(--muted);align-self:center;">— зелёный фон = прогресс по навыкам</span>
+      </div>
+      <div id="challengesList"></div>
+    </div>
+  </section>
+
+  <!-- BIKES -->
+  <section id="tab-bikes" class="tab">
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-subtab="feed" onclick="switchBikeTab('feed')">🌐 Лента байков</button>
+      <button class="sub-tab" data-subtab="add" onclick="switchBikeTab('add')">➕ Мой байк</button>
+    </div>
+    <div id="bikes-feed" class="panel">
+      <div class="panel-head"><div><h3>🌐 Лента байков</h3><p>Байки всех райдеров</p></div></div>
+      <div class="filter-bar">
+        <input type="text" id="bikeFilter" class="fi" placeholder="🔍 Поиск..."/>
+        <select id="bikeTypeF" class="fs"><option value="">Все типы</option><option>Горный (Hardtail)</option><option>Двухподвес (Full-suspension)</option><option>Шоссейник</option><option>Downhill</option><option>Enduro / Trail</option><option>Dirt / Street</option><option>BMX</option><option>Другой</option></select>
+        <select id="bikeSortF" class="fs"><option value="newest">Новые</option><option value="rating">По лайкам</option><option value="name">По имени</option></select>
+      </div>
+      <div id="globalBikeFeed" class="bikes-grid"></div>
+    </div>
+    <div id="bikes-add" class="panel" style="display:none;">
+      <div class="panel-head"><div><h3>➕ Добавить байк</h3></div></div>
+      <div style="max-width:480px;">
+        <input id="bikeName" class="field" placeholder="Модель (напр. Trek Slash 9)"/>
+        <select id="bikeType" class="field" style="cursor:pointer;"><option>Горный (Hardtail)</option><option>Двухподвес (Full-suspension)</option><option>Шоссейник</option><option>Downhill</option><option>Enduro / Trail</option><option>Dirt / Street</option><option>BMX</option><option>Другой</option></select>
+
+        <!-- Загрузка фото из галереи -->
+        <span class="sec-label">📸 Фото байка <span style="color:var(--danger);">*обязательно</span></span>
+        <img id="bikePreview" class="photo-preview" src="" alt="Превью"/>
+        <div class="photo-upload-area" onclick="document.getElementById('bikeFileInput').click()">
+          <div style="font-size:32px;margin-bottom:8px;">📷</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Нажми чтобы выбрать фото</div>
+          <div style="font-size:12px;color:var(--muted);">Из галереи или камеры</div>
+        </div>
+        <input type="file" id="bikeFileInput" accept="image/*" style="display:none;" onchange="handleBikePhoto(this)"/>
+        <div class="upload-progress" id="uploadProgress"><div id="uploadProgressBar" style="width:0%"></div></div>
+        <p style="font-size:11px;color:var(--muted);margin:0 0 14px;">Или вставь ссылку:</p>
+        <input id="bikePhotoUrl" class="field" type="url" placeholder="https://example.com/bike.jpg (необязательно если выбрал фото)"/>
+        <button class="btn btn-primary btn-full" id="bikeSubmitBtn" onclick="addBike()">Добавить в гараж 🚲</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIDEOS -->
+  <section id="tab-videos" class="tab">
+    <div class="panel">
+      <div class="panel-head"><div><h3>🎬 Видео-доказательства</h3></div></div>
+      <div class="form-card" style="margin-bottom:14px;">
+        <input id="proofTitle" class="field" placeholder="Название (напр. Вилли 50 метров!)"/>
+        <select id="proofSkill" class="field" style="cursor:pointer;"><option value="wh">Вилли</option><option value="mn">Мэнуал</option><option value="ts">Трекстенд</option><option value="bh">Банни-хоп</option><option value="st">Стоппи</option></select>
+        <input id="proofUrl" class="field" placeholder="Ссылка на YouTube видео"/>
+        <button class="btn btn-primary btn-full" onclick="addProof()">Загрузить 🎥</button>
+      </div>
+      <div id="proofFeed"></div>
+    </div>
+  </section>
+
+  <!-- FRIENDS -->
+  <section id="tab-friends" class="tab">
+    <div class="panel">
+      <div class="panel-head"><div><h3>🏆 Лидерборд</h3><p>Топ райдеров мира</p></div></div>
+      <div class="filter-bar">
+        <input type="text" id="friendFilter" class="fi" placeholder="🔍 Поиск..."/>
+        <select id="friendSort" class="fs"><option value="pts">По очкам</option><option value="name">По имени</option></select>
+      </div>
+      <div id="friendFeed"></div>
+    </div>
+  </section>
+
+  <!-- DUELS -->
+  <section id="tab-duel" class="tab">
+    <div class="panel">
+      <div class="panel-head"><div><h3>⚡ Дуэли</h3></div></div>
+      <div class="form-card" style="margin-bottom:14px;">
+        <select id="duelSkill" class="field" style="cursor:pointer;"><option value="wh">Вилли (метры)</option><option value="mn">Мэнуал (метры)</option><option value="ts">Трекстенд (секунды)</option><option value="bh">Банни-хоп (см)</option><option value="st">Стоппи (метры)</option></select>
+        <input id="duelTarget" class="field" placeholder="Цель — напр. 30 метров"/>
+        <input id="duelOpponent" class="field" placeholder="Никнейм соперника (необязательно)"/>
+        <input id="duelDeadline" class="field" type="date"/>
+        <button class="btn btn-primary btn-full" onclick="createDuel()">Бросить вызов! ⚡</button>
+      </div>
+      <div id="duelList"></div>
+    </div>
+  </section>
+
+  <!-- MORE -->
+  <section id="tab-support" class="tab">
+    <div class="panel">
+      <div class="panel-head"><div><h3>💡 Зачем трюки?</h3></div></div>
+      <div class="why-grid">
+        <div class="why-card"><div class="wi">🧠</div><h4>Контроль байка</h4><p>Реакция становится инстинктивной.</p></div>
+        <div class="why-card"><div class="wi">⚡</div><h4>Сила и баланс</h4><p>Взрывная сила и вестибулярный аппарат.</p></div>
+        <div class="why-card"><div class="wi">🔥</div><h4>Это круто</h4><p>Вилли 100м мимо людей — незабываемо.</p></div>
+        <div class="why-card"><div class="wi">🌍</div><h4>Сообщество</h4><p>Новые друзья, споты, jam-сессии.</p></div>
+      </div>
+    </div>
+
+    <!-- УВЕДОМЛЕНИЯ -->
+    <div class="panel">
+      <div class="panel-head"><div><h3>🔔 Напоминания о тренировке</h3></div></div>
+      <div class="notif-card">
+        <div class="toggle-row">
+          <span>Включить напоминания</span>
+          <label class="toggle"><input type="checkbox" id="notifToggle" onchange="toggleNotif()"><span class="toggle-sl"></span></label>
+        </div>
+        <div class="time-row"><label>Время:</label><input type="time" id="notifTime" value="17:00" onchange="saveNotifSettings()"/></div>
+        <p id="notifStatus" style="font-size:12px;color:var(--muted);margin:8px 0 14px;line-height:1.5;"></p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1;" onclick="requestNotifPermission()">🔔 Разрешить уведомления</button>
+          <button class="btn btn-ghost" style="flex:1;" onclick="testNotif()">Тест</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h3>🛠 Аккаунт</h3></div></div>
+      <div class="sup-grid">
+        <div class="ct-card"><div class="ci">💬</div><h4>Telegram</h4><a href="https://t.me/Pvp0101gg" target="_blank">@Pvp0101gg</a><br><br><a href="https://t.me/Pvp0101gg" target="_blank" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
+        <div class="ct-card"><div class="ci">📧</div><h4>Email</h4><a href="mailto:pvp0101gg@gmail.com">pvp0101gg@gmail.com</a><br><br><a href="mailto:pvp0101gg@gmail.com" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
+      </div>
+      <div class="form-card" style="margin-top:14px;text-align:center;">
+        <p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Вошёл: <strong id="userEmailDisp" style="color:var(--accent);"></strong><br>Ник: <strong id="myNickDisp" style="color:var(--accent);"></strong> <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;margin-left:6px;" onclick="changeNick()">Сменить</button></p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn btn-ghost" onclick="exportData()">📦 Экспорт</button>
+          <button class="btn btn-danger" onclick="confirmAction('Выйти?','Данные останутся в облаке.',doSignOut)">🚪 Выйти</button>
+          <button class="btn btn-danger" onclick="confirmAction('Сбросить всё?','Удалит весь прогресс. Нельзя отменить!',resetAll)">🗑 Сброс</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="lvlUp"><div id="lvlBox"><span class="lve" id="lvlEmoji">🔥</span><h2 id="lvlTitle">УРОВЕНЬ!</h2><p id="lvlSub"></p></div></div>
+
+<div id="modal" class="modal">
+  <div class="modal-card">
+    <div class="modal-head"><h2 id="modalTitle"></h2><button class="btn btn-ghost" style="padding:8px 12px;" onclick="closeModal()">✕</button></div>
+    <div class="vid-box"><iframe id="modalVideo" src="" allowfullscreen></iframe></div>
+    <div class="timer-wrap">
+      <div class="timer-disp" id="timerDisp">00:00.0</div>
+      <div class="timer-btns"><button class="btn btn-success" id="timerStartBtn" onclick="timerStart()">▶ Старт</button><button class="btn btn-warn" onclick="timerStop()">⏹ Стоп</button><button class="btn btn-ghost" onclick="timerReset()">↺ Сброс</button></div>
+    </div>
+    <div class="goal-box"><span class="goal-lbl">ТЕКУЩАЯ ЦЕЛЬ:</span><div id="modalGoal"></div></div>
+    <div id="modalSteps"></div>
+    <button id="modalTrainBtn" class="btn btn-primary btn-full" style="margin-top:12px;padding:16px;font-size:16px;" onclick="trainCurrent()">💪 ВЫПОЛНИТЬ ПОДХОД (+10%)</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div id="confirmCont"></div>
+
+<script>
+'use strict';
+
+const FB_CFG={
+  apiKey:"AIzaSyDPMX7QYJM2_WnTBDfXGw4W_fN3fFCVF6M",
+  authDomain:"mtb-skills-pro-38297.firebaseapp.com",
+  projectId:"mtb-skills-pro-38297",
+  storageBucket:"mtb-skills-pro-38297.firebasestorage.app",
+  messagingSenderId:"771638572867",
+  appId:"1:771638572867:web:524987af3a428dd553e1f6"
+};
+let db=null,auth=null,storage=null,currentUser=null,authMode='login',redirectHandled=false;
+
+/* ══ UTILS ══ */
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function setT(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
+function setLoadText(t){setT('loadText',t);}
+function showMsg(msg,type){const e=document.getElementById('authMsg');e.textContent=msg;e.className='auth-msg '+(type||'err');}
+function clearMsg(){const e=document.getElementById('authMsg');e.className='auth-msg';}
+
+/* ══ PARTICLES ══ */
+(function(){
+  const c=document.getElementById('particles'),ctx=c.getContext('2d');
+  let w,h,dots=[];
+  function resize(){w=c.width=innerWidth;h=c.height=innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  for(let i=0;i<50;i++)dots.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.3+.4,vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22,a:Math.random()*.45+.1,col:Math.random()>.5?'76,201,240':'124,92,255'});
+  function draw(){ctx.clearRect(0,0,w,h);dots.forEach(d=>{d.x+=d.vx;d.y+=d.vy;if(d.x<0)d.x=w;if(d.x>w)d.x=0;if(d.y<0)d.y=h;if(d.y>h)d.y=0;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=`rgba(${d.col},${d.a})`;ctx.fill();});for(let i=0;i<dots.length;i++)for(let j=i+1;j<dots.length;j++){const dx=dots[i].x-dots[j].x,dy=dots[i].y-dots[j].y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<90){ctx.beginPath();ctx.moveTo(dots[i].x,dots[i].y);ctx.lineTo(dots[j].x,dots[j].y);ctx.strokeStyle=`rgba(76,201,240,${.06*(1-dist/90)})`;ctx.lineWidth=.5;ctx.stroke();}}requestAnimationFrame(draw);}
+  draw();
+})();
+
+/* ══ AUDIO ══ */
+let AC=null;
+function gac(){if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(C)AC=new C();}if(AC&&AC.state==='suspended')AC.resume();return AC;}
+const sfx={
+  tick(){const ac=gac();if(!ac)return;const n=ac.currentTime,g=ac.createGain(),o=ac.createOscillator();o.connect(g);g.connect(ac.destination);o.type='sine';o.frequency.setValueAtTime(520,n);o.frequency.exponentialRampToValueAtTime(780,n+.07);g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(.12,n+.01);g.gain.linearRampToValueAtTime(0,n+.1);o.start(n);o.stop(n+.1);},
+  levelUp(){const ac=gac();if(!ac)return;[523.25,659.25,783.99,1046.5].forEach((f,i)=>{const t=ac.currentTime+i*.1,g=ac.createGain(),o=ac.createOscillator();o.connect(g);g.connect(ac.destination);o.type='triangle';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.13,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.4);o.start(t);o.stop(t+.4);});},
+  max(){const ac=gac();if(!ac)return;[659.25,783.99,1046.5,987.77,1046.5].forEach((f,i)=>{const t=ac.currentTime+i*.12,g=ac.createGain(),o=ac.createOscillator();o.connect(g);g.connect(ac.destination);o.type='square';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.08,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.35);o.start(t);o.stop(t+.35);});},
+  tab(){const ac=gac();if(!ac)return;const n=ac.currentTime,g=ac.createGain(),o=ac.createOscillator();o.connect(g);g.connect(ac.destination);o.type='sine';o.frequency.value=300;g.gain.setValueAtTime(.06,n);g.gain.exponentialRampToValueAtTime(.001,n+.06);o.start(n);o.stop(n+.06);},
+  save(){const ac=gac();if(!ac)return;[440,550].forEach((f,i)=>{const t=ac.currentTime+i*.1,g=ac.createGain(),o=ac.createOscillator();o.connect(g);g.connect(ac.destination);o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.1,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.25);o.start(t);o.stop(t+.25);});},
+  ach(){const ac=gac();if(!ac)return;[523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>{const t=ac.currentTime+i*.08,g=ac.createGain(),o=ac.createOscillator();o.connect(g);g.connect(ac.destination);o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.1,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.5);o.start(t);o.stop(t+.5);})}
+};
+
+function confetti(n=55){const cols=['#4cc9f0','#7c5cff','#32d74b','#fbbf24','#ff453a','#f0f4ff'];for(let i=0;i<n;i++){const el=document.createElement('div');el.className='cf';const sz=Math.random()*10+5;el.style.cssText=`left:${Math.random()*100}vw;width:${sz}px;height:${sz*.5}px;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${Math.random()*2+2}s;animation-delay:${Math.random()*.5}s;transform:rotate(${Math.random()*360}deg);`;document.body.appendChild(el);el.addEventListener('animationend',()=>el.remove());}}
+let lvlT=null;
+function showLvlUp(title,sub,emoji,isMax){const ov=document.getElementById('lvlUp');setT('lvlEmoji',emoji||'🔥');setT('lvlTitle',title);setT('lvlSub',sub||'');ov.classList.add('show');confetti(isMax?90:50);clearTimeout(lvlT);lvlT=setTimeout(()=>ov.classList.remove('show'),2200);}
+let confirmCb=null;
+function confirmAction(title,text,cb){confirmCb=cb;document.getElementById('confirmCont').innerHTML=`<div class="conf-ov" onclick="if(event.target===this)closeConf()"><div class="conf-box"><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="conf-acts"><button class="btn btn-ghost" style="flex:1;" onclick="closeConf()">Отмена</button><button class="btn btn-danger" style="flex:1;" onclick="execConf()">Да</button></div></div></div>`;}
+function closeConf(){document.getElementById('confirmCont').innerHTML='';confirmCb=null;}
+function execConf(){if(confirmCb)confirmCb();closeConf();}
+let toastT=null;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2500);}
+function popSt(id){const el=document.getElementById(id);if(!el)return;el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
+
+/* ══ STATIC DATA ══ */
+const LVL_GOALS={wh:['Подними переднее колесо хотя бы на 5 см','Удержи вилли на 10 метров','Вилли на 30 метров — контролируй тормозом','Вилли на 100 метров — уровень Red Bull'],mn:['Выброси вес назад без педалирования','Мэнуал на 10 метров, руки прямые','Мэнуал на 20 метров — баланс коленями','Мэнуал на 50 метров — про-стрит'],ts:['Простой неподвижно 5 секунд','Трекстенд 15 секунд','Трекстенд 30 секунд с закрытыми глазами','100 секунд — уровень триал-про'],bh:['Отработай фазу фронт-лифта','Скуп — оба колеса отрываются','Полноценный прыжок','Высокий чистый хоп'],st:['Наклон вперёд — заднее отрывается','Стоппи 45°','Стоппи 90°','Full Control — удержание на переднем']};
+const REC_SKILLS=[{id:'wh',name:'Вилли',unit:'метров',icon:'🚴'},{id:'mn',name:'Мэнуал',unit:'метров',icon:'🏄'},{id:'ts',name:'Трекстенд',unit:'секунд',icon:'⏱️'},{id:'bh',name:'Банни-хоп',unit:'см высота',icon:'🦘'},{id:'st',name:'Стоппи',unit:'метров',icon:'🎯'}];
+const SNAMES={wh:'Вилли',mn:'Мэнуал',ts:'Трекстенд',bh:'Банни-хоп',st:'Стоппи'};
+const SUNITS={wh:'метров',mn:'метров',ts:'секунд',bh:'см',st:'метров'};
+const ACHIEVEMENTS=[
+  {id:'first',name:'Первый подход',icon:'🌱',check:s=>s.skills.some(x=>x.tr>0)},
+  {id:'str3',name:'3 дня подряд',icon:'🔥',check:s=>s.streak>=3},
+  {id:'str7',name:'Неделя огня',icon:'🔥🔥',check:s=>s.streak>=7},
+  {id:'lv5',name:'5 уровней',icon:'⭐',check:s=>s.skills.reduce((a,x)=>a+x.lv,0)>=5},
+  {id:'lv10',name:'10 уровней',icon:'🌟',check:s=>s.skills.reduce((a,x)=>a+x.lv,0)>=10},
+  {id:'allmax',name:'Мастер трюков',icon:'🏆',check:s=>s.skills.every(x=>x.lv>=3&&x.pr>=100)},
+  {id:'xp500',name:'500 XP',icon:'💎',check:()=>calcXP()>=500},
+  {id:'xp1500',name:'1500 XP',icon:'💎💎',check:()=>calcXP()>=1500},
+  {id:'tr50',name:'50 тренировок',icon:'💪',check:s=>s.skills.reduce((a,x)=>a+x.tr,0)>=50},
+  {id:'tr100',name:'100 подходов',icon:'🤖',check:s=>s.skills.reduce((a,x)=>a+x.tr,0)>=100},
+  {id:'vid3',name:'Video Star',icon:'🎬',check:s=>(s.proofs||[]).length>=3},
+  {id:'duel1',name:'Дуэлянт',icon:'⚡',check:s=>(s.duelsWon||0)>=1},
+];
+
+/* ══ УМНЫЕ ЧЕЛЛЕНДЖИ ══
+   type: 'auto' — система сама засчитывает когда выполнено
+         'trust' — на доверии пользователя (комбо-трюки)
+   trackType: 'xp'|'approaches'|'record'|'video'|'streak' — что отслеживаем
+   trackSkill: id навыка
+   target: целевое значение
+*/
+const CH_TMPL=[
+  // AUTO — система отслеживает
+  {text:'Сделай 5 подходов на Банни-хоп',xp:35,type:'daily',auto:true,trackType:'approaches',trackSkill:'bh',target:5},
+  {text:'Сделай 5 подходов на Стоппи',xp:30,type:'daily',auto:true,trackType:'approaches',trackSkill:'st',target:5},
+  {text:'Сделай 3 подхода на Трекстенд',xp:25,type:'daily',auto:true,trackType:'approaches',trackSkill:'ts',target:3},
+  {text:'Сделай 5 подходов на Вилли',xp:30,type:'daily',auto:true,trackType:'approaches',trackSkill:'wh',target:5},
+  {text:'Сделай 5 подходов на Мэнуал',xp:30,type:'daily',auto:true,trackType:'approaches',trackSkill:'mn',target:5},
+  {text:'Набери 100 XP за неделю',xp:60,type:'weekly',auto:true,trackType:'xp',target:100},
+  {text:'Загрузи видео-доказательство',xp:50,type:'weekly',auto:true,trackType:'video',target:1},
+  {text:'3 дня тренировок подряд',xp:80,type:'weekly',auto:true,trackType:'streak',target:3},
+  // TRUST — на доверии (комбо-трюки которые нельзя отследить автоматически)
+  {text:'Вилли → сразу Стоппи (комбо!)',xp:55,type:'daily',auto:false,trackType:'trust'},
+  {text:'Мэнуал → Банни-хоп в конце (комбо!)',xp:50,type:'daily',auto:false,trackType:'trust'},
+  {text:'Трекстенд → сразу Вилли (комбо!)',xp:70,type:'weekly',auto:false,trackType:'trust'},
+  {text:'Побей любой свой рекорд',xp:50,type:'weekly',auto:false,trackType:'trust'},
+];
+
+const DEF_SKILLS=[
+  {id:'wh',name:'Вилли',image:'https://i.ibb.co/7xnbTSWB/1774284993874.png',levels:['Изи левл (подъем)','Уровень 2 (10 м)','Уровень 3 (30 м)','Босс Red Bull (100 м)'],video:'https://www.youtube.com/embed/xhYGbGGrNuU',steps:[{title:'Подъём',text:'Резко перенеси вес назад и нажми на педаль. Палец всегда на тормозе!',img:'https://i.ibb.co/Pz4P4gJT/Danny-Mac-Askil-Five-Ten-Do-A-Wheelie-Release-Group-Dave-Mackinson-scaled.jpg'},{title:'Баланс',text:'Если падаешь назад — жми задний тормоз. Если вперёд — подкручивай педали.',img:'https://i.ibb.co/PsLH4d0f/1774216418820.png'}]},
+  {id:'mn',name:'Мэнуал',image:'https://i.ibb.co/5W3Q4YxC/Screenshot-20260324-133559-Google.jpg',levels:['Изи левл (рывок)','Уровень 2 (10 м)','Уровень 3 (20 м)','Босс Red Bull (50 м)'],video:'https://www.youtube.com/embed/DyQMbjCRS3w',steps:[{title:'Взрыв',text:'Уйди грудью к рулю, затем резко выброси тело назад за седло.',img:'https://i.ibb.co/j9brGgGf/M3-TSH-e-copy.jpg'},{title:'Ноги',text:'Руки прямые! Баланс только сгибанием и разгибанием коленей.',img:'https://i.ibb.co/gLF33JcR/mbr262-skills-ab-skills-carpark-044.jpg'}]},
+  {id:'ts',name:'Трекстенд',image:'https://i.ibb.co/wHq5VYT/1774350649611.png',levels:['Изи левл (5 сек)','Уровень 2 (15 сек)','Уровень 3 (30 сек)','Босс Red Bull (100 сек)'],video:'https://www.youtube.com/embed/EXlVl-UW6R0',steps:[{title:'Стойка',text:'Шатуны параллельно земле. Руль 45° в сторону ведущей ноги.',img:'https://i.ibb.co/0yDfK5BC/jasontrack2.jpg'},{title:'Микро-движения',text:'Зажми тормоза. Играй весом вперёд-назад.',img:'https://i.ibb.co/G4c4YxZR/2022-bicycling-biketoplay-ep04-trackstand-ph-v01-thumb-copy-1656614860.jpg'}]},
+  {id:'bh',name:'Банни-хоп',image:'https://i.ibb.co/k6m7zhxc/1774351530331.png',levels:['Изи левл (переднее)','Уровень 2 (заднее)','Уровень 3 (прыжок)','Босс Red Bull (Идеальный хоп)'],video:'https://www.youtube.com/embed/QsZ39HI2GFg',steps:[{title:'Фронт',text:'Выдерни переднее колесо — как начало мэнуала.',img:'https://i.ibb.co/6ndK703b/maxresdefault.jpg'},{title:'Скуп',text:'Когда переднее в воздухе — выпрыгни и подтяни педали ногами.',img:'https://i.ibb.co/6ndK703b/maxresdefault.jpg'}]},
+  {id:'st',name:'Стоппи',image:'https://i.ibb.co/whXCZVMH/file-000000002a307246a16f2ea96db8a3b6.png',levels:['Изи левл (наклон)','Уровень 2 (45°)','Уровень 3 (90°)','Босс Red Bull (Full Control)'],video:'https://www.youtube.com/embed/Ea2K3TJGf6w',steps:[{title:'Загрузка',text:'Плавно нажми передний тормоз и подай плечи вперёд.',img:'https://i.ibb.co/kg6bTHBf/p5pb22546925.jpg'},{title:'Отрыв',text:'Модулируй тормоз — не зажимай намертво!',img:'https://i.ibb.co/kg6bTHBf/p5pb22546925.jpg'}]},
+];
+
+/* ══ STATE ══ */
+const SK='mtb_v16';
+function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00'},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0};}
+let state=loadLS();
+let activeSkillId=null;
+let bikePhotoFile=null;
+
+function loadLS(){
+  try{const s=JSON.parse(localStorage.getItem(SK));if(s&&s.skills){
+    ['records','challenges','completedChallenges','proofs','proofReactions','unlockedAchievements','duels'].forEach(k=>{if(!s[k])s[k]=k==='records'?{}:[];});
+    if(!s.challengeXP)s.challengeXP=0;if(!s.duelsWon)s.duelsWon=0;
+    if(!s.weeklyXpStart)s.weeklyXpStart=0;if(!s.weeklyXpStartTs)s.weeklyXpStartTs=0;
+    DEF_SKILLS.forEach(ds=>{
+      const sk=s.skills.find(x=>x.id===ds.id);
+      if(!sk)s.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0});
+      else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;}
+    });
+    return s;
+  }}catch(e){}return defState();
+}
+function saveLS(){localStorage.setItem(SK,JSON.stringify(state));}
+async function saveCloud(){
+  saveLS();
+  if(!db||!currentUser)return;
+  try{
+    await db.collection('users').doc(currentUser.uid).set(state,{merge:true});
+    await db.collection('leaderboard').doc(currentUser.uid).set({nickname:state.nickname,pts:calcXP(),uid:currentUser.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    setSyncDot('synced');
+  }catch(e){console.warn('saveCloud:',e);setSyncDot('error');saveLS();}
+}
+function calcXP(){return state.skills.reduce((s,u)=>s+(u.lv*100)+u.pr,0)+(state.challengeXP||0);}
+function setSyncDot(s){const e=document.getElementById('syncDot');if(e)e.className='sync-dot '+s;}
+
+/* ══ FIREBASE ══ */
+function initFB(){
+  if(typeof firebase==='undefined'){
+    console.error('Firebase SDK не загружен');
+    hideLoad();showAuthScr();return;
+  }
+  try{
+    firebase.initializeApp(FB_CFG);
+    db=firebase.firestore();
+    auth=firebase.auth();
+    storage=firebase.storage();
+
+    // Оффлайн-режим Firestore
+    db.enablePersistence({synchronizeTabs:true}).catch(e=>{
+      if(e.code==='failed-precondition')console.warn('Persistence: несколько вкладок');
+      else if(e.code==='unimplemented')console.warn('Persistence не поддерживается');
+    });
+
+    auth.onAuthStateChanged(async user=>{
+      if(user){
+        currentUser=user;setLoadText('Загружаю данные...');
+        try{
+          const doc=await db.collection('users').doc(user.uid).get();
+          if(doc.exists){
+            state={...defState(),...doc.data()};
+            DEF_SKILLS.forEach(ds=>{
+              const sk=state.skills.find(x=>x.id===ds.id);
+              if(!sk)state.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0});
+              else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;}
+            });
+            saveLS();setSyncDot('synced');
+          }else{await saveCloud();}
+        }catch(e){console.warn('Cloud:',e);setSyncDot('error');}
+        // Сбрасываем дневные счётчики при новом дне
+        resetDailyCountersIfNeeded();
+        hideLoad();
+        if(!state.nickname)showNickScr();else initApp();
+      }else{
+        currentUser=null;
+        if(!redirectHandled){
+          redirectHandled=true;
+          try{
+            setLoadText('Проверяю Google вход...');
+            const r=await auth.getRedirectResult();
+            if(r&&r.user)return; // onAuthStateChanged сам вызовется
+          }catch(e){console.warn('Redirect:',e.code);}
+        }
+        hideLoad();showAuthScr();
+      }
+    });
+  }catch(e){console.error('FB init:',e);hideLoad();showAuthScr();}
+}
+
+/* ══ AUTH ══ */
+function switchAuthTab(mode){
+  authMode=mode;clearMsg();
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0)===(mode==='login')));
+  document.getElementById('authNickWrap').style.display=mode==='register'?'block':'none';
+  document.getElementById('authSubmitBtn').textContent=mode==='login'?'Войти':'Создать аккаунт';
+}
+
+async function handleEmailAuth(){
+  clearMsg();
+  const email=document.getElementById('authEmail').value.trim();
+  const pass=document.getElementById('authPass').value;
+  if(!email||!pass){showMsg('Заполни все поля');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showMsg('Неверный формат email');return;}
+  if(pass.length<6){showMsg('Пароль минимум 6 символов');return;}
+  if(authMode==='register'){
+    const nick=document.getElementById('authNick').value.trim();
+    if(!nick||nick.length<2){showMsg('Введи никнейм (мин. 2 символа)');return;}
+  }
+  const btn=document.getElementById('authSubmitBtn');
+  btn.disabled=true;btn.innerHTML=`<span class="spinner"></span>${authMode==='login'?'Входим...':'Создаём...'}`;
+  try{
+    if(authMode==='login'){
+      await auth.signInWithEmailAndPassword(email,pass);
+    }else{
+      const nick=document.getElementById('authNick').value.trim();
+      const cred=await auth.createUserWithEmailAndPassword(email,pass);
+      // Отправляем письмо верификации
+      try{await cred.user.sendEmailVerification();}catch(e){}
+      state.nickname=nick;await saveCloud();
+    }
+  }catch(e){
+    const msgs={'auth/user-not-found':'Пользователь не найден','auth/wrong-password':'Неверный пароль','auth/email-already-in-use':'Email уже зарегистрирован','auth/invalid-email':'Неверный формат email','auth/weak-password':'Слишком слабый пароль','auth/invalid-credential':'Неверный email или пароль','auth/too-many-requests':'Слишком много попыток. Подожди.','auth/network-request-failed':'Ошибка сети.','auth/firebase-app-check-token-is-invalid':'Отключи App Check в Firebase Console → App Check.'};
+    showMsg(msgs[e.code]||e.message);
+    btn.disabled=false;btn.textContent=authMode==='login'?'Войти':'Создать аккаунт';
+  }
+}
+
+async function signInWithGoogle(){
+  if(!auth){showMsg('Firebase ещё загружается...');return;}
+  clearMsg();
+  const btn=document.getElementById('googleBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Перехожу на Google...';
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:'select_account'});
+    await auth.signInWithRedirect(provider);
+  }catch(e){
+    btn.disabled=false;btn.innerHTML='<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Войти через Google';
+    if(e.code==='auth/unauthorized-domain'){showMsg('Домен не авторизован. Firebase Console → Authentication → Settings → Authorized domains → Add domain');}
+    else{showMsg('Google Auth: '+e.message);}
+  }
+}
+
+async function handleForgotPassword(){
+  clearMsg();
+  const email=document.getElementById('authEmail').value.trim();
+  if(!email){document.getElementById('authEmail').focus();showMsg('⬆️ Введи email в поле выше, потом нажми «Забыл пароль?»');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showMsg('Неверный формат email');return;}
+  if(!auth){showMsg('Firebase ещё загружается...');return;}
+  const btn=document.querySelector('[onclick="handleForgotPassword()"]');
+  if(btn){btn.disabled=true;btn.textContent='Отправляю...';}
+  try{
+    await auth.sendPasswordResetEmail(email);
+    showMsg('✅ Письмо отправлено на '+email+'. Открой его и нажми ссылку для сброса пароля. Проверь папку «Спам».','ok');
+  }catch(e){
+    const msgs={'auth/user-not-found':'Аккаунт с таким email не найден','auth/invalid-email':'Неверный формат email','auth/too-many-requests':'Слишком много запросов.','auth/network-request-failed':'Ошибка сети.'};
+    showMsg(msgs[e.code]||e.message);
+  }finally{if(btn){btn.disabled=false;btn.textContent='Забыл пароль?';}}
+}
+
+async function doSignOut(){if(auth)await auth.signOut();location.reload();}
+function hideLoad(){const el=document.getElementById('loadingScreen');el.classList.add('hidden');setTimeout(()=>el.style.display='none',600);}
+function showAuthScr(){document.getElementById('authScreen').style.display='flex';document.getElementById('nickScreen').style.display='none';}
+function showNickScr(){document.getElementById('authScreen').style.display='none';document.getElementById('nickScreen').style.display='flex';}
+
+function updateUserUI(){
+  if(!currentUser)return;
+  const av=document.getElementById('userAvatar'),dn=document.getElementById('userDN'),info=document.getElementById('userInfo');
+  if(currentUser.photoURL){av.src=currentUser.photoURL;av.style.display='block';}
+  const name=currentUser.displayName||state.nickname||currentUser.email;
+  if(name){dn.textContent=name;info.style.display='flex';}
+}
+
+async function setNickname(){const v=document.getElementById('nickInput').value.trim();if(!v||v.length<2){toast('Мин. 2 символа!');return;}state.nickname=v;await saveCloud();sfx.save();document.getElementById('nickScreen').style.display='none';initApp();}
+function changeNick(){const n=prompt('Новый никнейм:',state.nickname);if(n&&n.trim().length>=2){state.nickname=n.trim();saveCloud();setT('myNickDisp',state.nickname);setT('welcomeText','Привет, '+state.nickname+' 👋');toast('Ник обновлён!');}}
+
+function initApp(){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('nickScreen').style.display='none';
+  setT('welcomeText','Привет, '+state.nickname+' 👋');
+  setT('myNickDisp',state.nickname);
+  if(currentUser){setT('userEmailDisp',currentUser.email||'');updateUserUI();}
+  setSyncDot('synced');
+  renderSkills();renderRecords();
+  initNotifUI();updateStreak();genChallengesIfNeeded();
+  setInterval(updateChTimer,60000);updateChTimer();
+  genPWA();
+}
+function genPWA(){const m={name:'MTB Skills Pro',short_name:'MTB Skills',start_url:'.',display:'standalone',background_color:'#090b0f',theme_color:'#090b0f',icons:[{src:'https://i.ibb.co/7xnbTSWB/1774284993874.png',sizes:'192x192',type:'image/png'}]};const blob=new Blob([JSON.stringify(m)],{type:'application/json'});document.getElementById('manifestLink').href=URL.createObjectURL(blob);}
+
+/* ══ TIMER ══ */
+let tInt=null,tRun=false,tStart=0,tEl=0;
+function timerStart(){if(tRun)return;tRun=true;tStart=Date.now()-tEl;tInt=setInterval(timerTick,50);const d=document.getElementById('timerDisp');if(d)d.className='timer-disp running';document.getElementById('timerStartBtn').disabled=true;sfx.tick();}
+function timerStop(){if(!tRun)return;tRun=false;clearInterval(tInt);tEl=Date.now()-tStart;const d=document.getElementById('timerDisp');if(d)d.className='timer-disp stopped';document.getElementById('timerStartBtn').disabled=false;sfx.save();}
+function timerReset(){timerStop();tEl=0;const d=document.getElementById('timerDisp');if(d){d.className='timer-disp';d.textContent='00:00.0';}}
+function timerTick(){const e=Date.now()-tStart,min=Math.floor(e/60000),sec=Math.floor((e%60000)/1000),dec=Math.floor((e%1000)/100);const d=document.getElementById('timerDisp');if(d)d.textContent=String(min).padStart(2,'0')+':'+String(sec).padStart(2,'0')+'.'+dec;}
+
+/* ══ STREAK & DAILY RESET ══ */
+function resetDailyCountersIfNeeded(){
+  const today=new Date().toDateString();
+  if(state.lastTrainDate!==today){
+    // Сбрасываем дневные счётчики тренировок
+    state.skills.forEach(s=>s.trToday=0);
+    saveLS();
+  }
+}
+function updateStreak(){const today=new Date().toDateString();const yest=new Date(Date.now()-86400000).toDateString();if(state.lastTrainDate&&state.lastTrainDate!==today&&state.lastTrainDate!==yest){state.streak=0;saveCloud();}renderStreak();}
+function recordTrainToday(){const today=new Date().toDateString();const yest=new Date(Date.now()-86400000).toDateString();if(state.lastTrainDate!==today){state.streak=(state.lastTrainDate===yest?(state.streak||0)+1:1);state.lastTrainDate=today;saveCloud();renderStreak();}}
+function renderStreak(){const b=document.getElementById('streakBanner');if(!b)return;if(state.streak>0){b.style.display='flex';const d=state.streak;setT('streakText',d+' '+(d===1?'день':d<5?'дня':'дней')+' подряд 🔥');setT('streakSub',d>=7?'В огне! 🏆':d>=3?'Хорошая серия!':'Начало положено!');}else b.style.display='none';}
+
+/* ══ TABS ══ */
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{sfx.tab();document.querySelectorAll('.tab,.tab-btn').forEach(el=>el.classList.remove('active'));btn.classList.add('active');const t=btn.dataset.tab;const el=document.getElementById('tab-'+t);if(el)el.classList.add('active');if(t==='skills')renderSkills();if(t==='records')renderRecords();if(t==='challenges'){genChallengesIfNeeded();renderChallenges();}if(t==='bikes'){switchBikeTab('feed');loadBikes();}if(t==='videos')renderProofs();if(t==='friends')renderFriends();if(t==='duel')renderDuels();});});
+function switchBikeTab(tab){document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));const b=document.querySelector(`[data-subtab="${tab}"]`);if(b)b.classList.add('active');document.getElementById('bikes-feed').style.display=tab==='feed'?'block':'none';document.getElementById('bikes-add').style.display=tab==='add'?'block':'none';if(tab==='feed')loadBikes();}
+
+/* ══ ACH ══ */
+function checkAch(){if(!state.unlockedAchievements)state.unlockedAchievements=[];let n=false;ACHIEVEMENTS.forEach(a=>{if(!state.unlockedAchievements.includes(a.id)&&a.check(state)){state.unlockedAchievements.push(a.id);n=true;setTimeout(()=>{sfx.ach();showLvlUp('АЧИВКА!',a.name,a.icon);},400);}});if(n)saveCloud();renderAch();}
+function renderAch(){const el=document.getElementById('achList');if(!el)return;el.innerHTML='';ACHIEVEMENTS.forEach(a=>{const u=state.unlockedAchievements&&state.unlockedAchievements.includes(a.id);const d=document.createElement('div');d.className='ach'+(u?' unlocked':'');d.textContent=a.icon+' '+a.name;el.appendChild(d);});}
+
+/* ══ SKILLS ══ */
+function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);body.append(tit,p1,p2,pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();}
+
+/* ══ MODAL ══ */
+function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);document.getElementById('modalVideo').src=base.video;const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});const btn=document.getElementById('modalTrainBtn');btn.textContent=isMax?'✅ МАКСИМУМ ДОСТИГНУТ':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';btn.disabled=isMax;document.getElementById('modal').classList.add('show');}
+function closeModal(){timerReset();document.getElementById('modal').classList.remove('show');document.getElementById('modalVideo').src='';}
+
+function trainCurrent(){
+  const user=state.skills.find(s=>s.id===activeSkillId);
+  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
+  if(!user||!base)return;
+  user.tr++;
+  user.trToday=(user.trToday||0)+1;
+  user.trSession=(user.trSession||0)+1;
+  user.pr+=10;
+  recordTrainToday();
+
+  if(user.pr>=100){
+    if(user.lv<base.levels.length-1){user.lv++;user.pr=0;sfx.levelUp();showLvlUp('НОВЫЙ УРОВЕНЬ!',base.levels[user.lv],'🔥');toast('🔥 Новый уровень!');}
+    else{user.pr=100;sfx.max();showLvlUp('ТРЮК ОСВОЕН!',base.name+' — ты мастер!','🏆',true);toast('🏆 Трюк освоен!');}
+  }else{sfx.tick();toast('+10% 💪');}
+
+  const isMax=user.lv>=base.levels.length-1&&user.pr>=100;
+  const goals=LVL_GOALS[base.id];const lvIdx=Math.min(user.lv,base.levels.length-1);
+  setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));
+  const btn=document.getElementById('modalTrainBtn');btn.textContent=isMax?'✅ МАКСИМУМ ДОСТИГНУТ':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';btn.disabled=isMax;
+  ['totalPoints','totalTrainings','openLevels','avgProgress'].forEach(popSt);
+
+  // Проверяем и автозасчитываем AUTO-челленджи
+  saveCloud();renderSkills();
+  checkAutoCompleteChallenge();
+}
+
+/* ══ RECORDS ══ */
+function addRecord(id){const inp=document.getElementById('ri-'+id);const val=parseFloat(inp.value);if(isNaN(val)||val<=0)return toast('Введи число!');if(!state.records[id])state.records[id]=[];state.records[id].push({val,date:new Date().toISOString()});inp.value='';const all=state.records[id].map(r=>r.val);sfx.save();saveCloud();renderRecords();if(val>=Math.max(...all)){toast('🏆 Новый рекорд: '+val+'!');confetti(30);checkAutoCompleteChallenge();}else toast('📊 Записано: '+val);checkAch();}
+function renderRecords(){const el=document.getElementById('recordsList');if(!el)return;el.innerHTML='';REC_SKILLS.forEach(rs=>{const data=state.records[rs.id]||[];const best=data.length?Math.max(...data.map(r=>r.val)):0;const last10=data.slice(-10);const mx=last10.length?Math.max(...last10.map(r=>r.val)):1;const entry=document.createElement('div');entry.className='rec-entry';const hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;';const h4=document.createElement('h4');h4.style.cssText='margin:0;font-size:16px;';h4.textContent=rs.icon+' '+rs.name;const cnt=document.createElement('span');cnt.style.cssText='font-size:11px;color:var(--muted);';cnt.textContent='Замеров: '+data.length;hdr.append(h4,cnt);const bestEl=document.createElement('div');bestEl.className='rec-best';bestEl.textContent=best||'—';if(best){const u=document.createElement('span');u.style.cssText='font-size:14px;color:var(--muted);';u.textContent=' '+rs.unit;bestEl.appendChild(u);}entry.append(hdr,bestEl);if(data.length>=2){const chart=document.createElement('div');chart.className='rec-chart';last10.forEach(r=>{const bh=Math.max(6,(r.val/mx)*64);const bar=document.createElement('div');bar.className='rec-bar';bar.style.height=bh+'px';bar.dataset.val=r.val+' '+rs.unit;chart.appendChild(bar);});const dir=document.createElement('div');dir.style.cssText='display:flex;justify-content:space-between;font-size:10px;color:var(--muted);';dir.innerHTML='<span>← старые</span><span>новые →</span>';entry.append(chart,dir);}const row=document.createElement('div');row.className='rec-inp-row';const inp=document.createElement('input');inp.id='ri-'+rs.id;inp.className='field';inp.type='number';inp.min='0';inp.step='0.1';inp.placeholder='Новый ('+rs.unit+')';inp.style.margin='0';inp.addEventListener('keydown',e=>{if(e.key==='Enter')addRecord(rs.id);});const ab=document.createElement('button');ab.className='btn btn-primary';ab.style.cssText='padding:10px 14px;white-space:nowrap;';ab.textContent='📏 Записать';ab.onclick=()=>addRecord(rs.id);row.append(inp,ab);entry.appendChild(row);el.appendChild(entry);});}
+
+/* ══════════════════════════════════════════
+   УМНЫЕ ЧЕЛЛЕНДЖИ — СИСТЕМА АВТО-ПРОВЕРКИ
+══════════════════════════════════════════ */
+function todayMidnight(){const d=new Date();d.setHours(0,0,0,0);return d.getTime();}
+function weekMonday(){const d=new Date();d.setHours(0,0,0,0);const day=d.getDay();d.setDate(d.getDate()+(day===0?-6:1-day));return d.getTime();}
+
+function genChallengesIfNeeded(){
+  const todayTs=todayMidnight();const weekTs=weekMonday();
+  const dTs=parseInt(localStorage.getItem('mtb_dts')||'0');
+  const wTs=parseInt(localStorage.getItem('mtb_wts')||'0');
+  const needD=dTs<todayTs;const needW=wTs<weekTs;
+  if(!needD&&!needW&&state.challenges&&state.challenges.length>0)return;
+
+  const keep=(state.challenges||[]).filter(c=>c.completed).slice(-10);
+  const sh=a=>[...a].sort(()=>Math.random()-.5);
+
+  if(needD||!state.challenges.some(c=>!c.completed&&c.type==='daily')){
+    // Сбрасываем дневные счётчики сессий для авто-челленджей
+    state.skills.forEach(s=>s.trSession=0);
+    sh(CH_TMPL.filter(t=>t.type==='daily')).slice(0,3).forEach(t=>{
+      keep.push({id:Date.now().toString()+Math.random(),text:t.text,xp:t.xp,type:t.type,auto:t.auto,trackType:t.trackType,trackSkill:t.trackSkill||null,target:t.target||0,completed:false,created:new Date().toISOString()});
+    });
+    localStorage.setItem('mtb_dts',todayTs.toString());
+    // Запоминаем стартовый XP для отслеживания недельного XP
+    if(needW){state.weeklyXpStart=calcXP();state.weeklyXpStartTs=weekTs;}
+  }else{(state.challenges||[]).filter(c=>!c.completed&&c.type==='daily').forEach(c=>keep.push(c));}
+
+  if(needW||!state.challenges.some(c=>!c.completed&&c.type==='weekly')){
+    if(!needD)state.weeklyXpStart=calcXP();
+    sh(CH_TMPL.filter(t=>t.type==='weekly')).slice(0,2).forEach(t=>{
+      keep.push({id:Date.now().toString()+Math.random(),text:t.text,xp:t.xp,type:t.type,auto:t.auto,trackType:t.trackType,trackSkill:t.trackSkill||null,target:t.target||0,completed:false,created:new Date().toISOString()});
+    });
+    localStorage.setItem('mtb_wts',weekTs.toString());
+  }else{(state.challenges||[]).filter(c=>!c.completed&&c.type==='weekly').forEach(c=>keep.push(c));}
+
+  state.challenges=keep;saveCloud();
+}
+
+/* Вычисляем текущий прогресс по челленджу */
+function getChallengeProgress(ch){
+  if(ch.completed)return{cur:ch.target||1,max:ch.target||1};
+  if(!ch.auto)return null; // Trust — нет прогресса
+  const max=ch.target||1;
+  let cur=0;
+  if(ch.trackType==='approaches'){
+    const sk=state.skills.find(s=>s.id===ch.trackSkill);
+    // trSession — количество подходов за эту сессию (с момента генерации задания)
+    cur=sk?(sk.trSession||0):0;
+  }else if(ch.trackType==='xp'){
+    cur=Math.max(0,calcXP()-(state.weeklyXpStart||0));
+  }else if(ch.trackType==='video'){
+    cur=(state.proofs||[]).length;
+  }else if(ch.trackType==='streak'){
+    cur=state.streak||0;
+  }
+  return{cur:Math.min(cur,max),max};
+}
+
+/* Автоматически засчитываем выполненные AUTO-челленджи */
+function checkAutoCompleteChallenge(){
+  let changed=false;
+  (state.challenges||[]).forEach(ch=>{
+    if(ch.completed||!ch.auto)return;
+    const prog=getChallengeProgress(ch);
+    if(prog&&prog.cur>=prog.max){
+      completeChallengeInternal(ch.id,true);
+      changed=true;
+    }
+  });
+  if(changed)renderChallenges();
+}
+
+function completeChallengeInternal(id,auto=false){
+  const ch=state.challenges.find(c=>c.id===id);
+  if(!ch||ch.completed)return;
+  ch.completed=true;
+  state.challengeXP=(state.challengeXP||0)+ch.xp;
+  if(!state.completedChallenges)state.completedChallenges=[];
+  state.completedChallenges.push(id);
+  sfx.levelUp();saveCloud();
+  toast((auto?'🤖 Авто: ':'')+'+'+ch.xp+' XP за «'+ch.text+'»!');
+  confetti(40);renderSkills();checkAch();
+}
+
+function completeChallenge(id){completeChallengeInternal(id,false);}
+
+function updateChTimer(){const el=document.getElementById('chTimer');if(!el)return;const now=Date.now();const fmt=ms=>{const h=Math.floor(ms/3600000);const m=Math.floor((ms%3600000)/60000);return`${h}ч ${m}м`;};el.textContent='🕐 Дневные: '+fmt(todayMidnight()+86400000-now)+' | Нед.: '+fmt(Math.max(0,weekMonday()+7*86400000-now));}
+
+function renderChallenges(){
+  const el=document.getElementById('challengesList');if(!el)return;el.innerHTML='';
+  const active=(state.challenges||[]).filter(c=>!c.completed);
+  const done=(state.challenges||[]).filter(c=>c.completed).slice(-5);
+
+  if(!active.length&&!done.length){
+    const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Задания загружаются...';el.appendChild(p);return;
+  }
+
+  if(active.length){const hdr=document.createElement('h4');hdr.className='sec-label';hdr.textContent='Активные';el.appendChild(hdr);}
+
+  active.forEach(ch=>{
+    const card=document.createElement('div');card.className='ch-card'+(ch.auto===false?' trust':'');
+    // Фоновый прогресс-индикатор
+    const bgProg=document.createElement('div');bgProg.className='ch-progress-bg';card.appendChild(bgProg);
+
+    const head=document.createElement('div');head.className='ch-head';
+    const badge=document.createElement('span');
+    badge.className='ch-badge '+(ch.type==='weekly'?'bd-w':ch.auto===false?'bd-t':'bd-d');
+    badge.textContent=ch.type==='weekly'?'Недельный':ch.auto===false?'На доверии':'Дневной';
+    const xp=document.createElement('span');xp.className='ch-xp';xp.textContent='+'+ch.xp+' XP';
+    head.append(badge,xp);
+
+    const desc=document.createElement('p');desc.className='ch-desc';desc.textContent=ch.text;
+
+    card.append(head,desc);
+
+    const prog=ch.auto?getChallengeProgress(ch):null;
+    const pct=prog?Math.round((prog.cur/prog.max)*100):0;
+
+    // Прогресс-бар для auto-челленджей
+    if(prog){
+      const pbar=document.createElement('div');pbar.className='ch-progress-bar';
+      const pfill=document.createElement('div');pfill.style.width=pct+'%';pbar.appendChild(pfill);
+      card.appendChild(pbar);
+      const plabel=document.createElement('div');plabel.className='ch-progress-label';
+      plabel.textContent=prog.cur+' / '+prog.max+(ch.trackType==='xp'?' XP':ch.trackType==='approaches'?' подходов':ch.trackType==='streak'?' дней':ch.trackType==='video'?' видео':'');
+      card.appendChild(plabel);
+      // Зелёный фоновый прогресс
+      bgProg.style.width=pct+'%';
+    }
+
+    // Кнопка
+    const btn=document.createElement('button');
+    btn.className='ch-complete-btn';
+    if(ch.auto){
+      // AUTO: кнопка активна только когда достигнут 100%
+      const ready=prog&&prog.cur>=prog.max;
+      btn.className+=' '+(ready?'ready':'not-ready');
+      btn.textContent=ready?'✅ Засчитать!':'⏳ Выполни задание...';
+      btn.disabled=!ready;
+      if(ready)btn.onclick=()=>completeChallenge(ch.id);
+    }else{
+      // TRUST: кнопка всегда активна, но помечена
+      btn.className+=' trust-btn';
+      btn.textContent='🤝 Выполнил (на доверии)';
+      btn.onclick=()=>completeChallenge(ch.id);
+    }
+    card.appendChild(btn);
+    el.appendChild(card);
+  });
+
+  if(done.length){
+    const hdr=document.createElement('h4');hdr.className='sec-label';hdr.style.marginTop='16px';hdr.textContent='Выполненные';el.appendChild(hdr);
+    done.forEach(ch=>{
+      const card=document.createElement('div');card.className='ch-card done';card.style.opacity='.6';
+      const bgProg=document.createElement('div');bgProg.className='ch-progress-bg';bgProg.style.width='100%';card.appendChild(bgProg);
+      const head=document.createElement('div');head.className='ch-head';
+      const dl=document.createElement('span');dl.style.cssText='color:var(--good);font-weight:700;';dl.textContent='✅ Выполнено';
+      const xp=document.createElement('span');xp.className='ch-xp';xp.textContent='+'+ch.xp+' XP';
+      head.append(dl,xp);
+      const p=document.createElement('p');p.className='ch-desc';p.style.textDecoration='line-through';p.textContent=ch.text;
+      card.append(head,p);el.appendChild(card);
+    });
+  }
+}
+
+/* ══════════════════════
+   BIKES — загрузка фото
+══════════════════════ */
+function handleBikePhoto(input){
+  const file=input.files[0];if(!file)return;
+  bikePhotoFile=file;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const preview=document.getElementById('bikePreview');
+    preview.src=e.target.result;preview.style.display='block';
+  };
+  reader.readAsDataURL(file);
+  toast('Фото выбрано! ✅');
+}
+
+async function uploadBikePhoto(file){
+  if(!storage)throw new Error('Storage не инициализирован');
+  const ref=storage.ref(`bikes/${currentUser.uid}/${Date.now()}_${file.name}`);
+  const progressEl=document.getElementById('uploadProgress');
+  const barEl=document.getElementById('uploadProgressBar');
+  progressEl.style.display='block';
+  return new Promise((resolve,reject)=>{
+    const task=ref.put(file);
+    task.on('state_changed',
+      snap=>{const pct=Math.round(snap.bytesTransferred/snap.totalBytes*100);barEl.style.width=pct+'%';},
+      err=>reject(err),
+      async()=>{const url=await task.snapshot.ref.getDownloadURL();progressEl.style.display='none';resolve(url);}
+    );
+  });
+}
+
+let bikesCache=[];
+document.addEventListener('input',e=>{if(e.target.id==='bikeFilter')renderBikes();});
+document.addEventListener('change',e=>{if(e.target.id==='bikeTypeF'||e.target.id==='bikeSortF')loadBikes();});
+
+async function loadBikes(){
+  const feed=document.getElementById('globalBikeFeed');if(!feed)return;
+  feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--fm);">Загрузка...</div>';
+  if(!db){feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;">Firebase не подключён</div>';return;}
+  try{
+    const sortBy=document.getElementById('bikeSortF')?.value||'newest';
+    let q=db.collection('bikes').limit(50);
+    if(sortBy==='rating')q=q.orderBy('likes','desc');
+    else if(sortBy==='name')q=q.orderBy('name');
+    else q=q.orderBy('createdAt','desc');
+    const snap=await q.get();
+    bikesCache=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderBikes();
+  }catch(e){
+    console.error('loadBikes:',e);
+    feed.innerHTML=`<div style="text-align:center;color:var(--danger);padding:24px;">Ошибка: ${e.message}</div>`;
+  }
+}
+
+function renderBikes(){
+  const feed=document.getElementById('globalBikeFeed');if(!feed)return;
+  const filterText=(document.getElementById('bikeFilter')?.value||'').toLowerCase();
+  const filterType=document.getElementById('bikeTypeF')?.value||'';
+  let bikes=[...bikesCache];
+  if(filterText)bikes=bikes.filter(b=>(b.name||'').toLowerCase().includes(filterText)||(b.type||'').toLowerCase().includes(filterText));
+  if(filterType)bikes=bikes.filter(b=>b.type===filterType);
+  feed.innerHTML='';
+  if(!bikes.length){const p=document.createElement('div');p.style.cssText='text-align:center;color:var(--muted);padding:28px;';p.textContent=bikesCache.length?'Ничего не найдено':'Гараж пуст — добавь первый байк! 🚲';feed.appendChild(p);return;}
+  bikes.forEach(b=>{
+    const card=document.createElement('div');card.className='bike-card';
+    let thumb;
+    if(b.photoUrl){thumb=document.createElement('img');thumb.src=b.photoUrl;thumb.className='bike-thumb';thumb.alt=b.name;thumb.onerror=()=>{thumb.style.display='none';};}
+    else{thumb=document.createElement('div');thumb.className='bike-ph';thumb.textContent='🚲';}
+    const info=document.createElement('div');
+    const nameEl=document.createElement('div');nameEl.className='bike-name';nameEl.textContent=b.name;
+    const meta=document.createElement('div');meta.className='bike-meta';meta.textContent=(b.type||'')+' · '+(b.ownerNick||'Аноним');
+    const isOwn=currentUser&&b.ownerId===currentUser.uid;
+    const likedBy=Array.isArray(b.likedBy)?b.likedBy:[];
+    const hasLiked=currentUser&&likedBy.includes(currentUser.uid);
+    info.append(nameEl,meta);
+    const likeBtn=document.createElement('button');likeBtn.className='like-btn'+(hasLiked?' liked':'');likeBtn.style.marginTop='10px';likeBtn.innerHTML=(hasLiked?'❤️':'🤍')+' '+(b.likes||0);
+    if(isOwn){likeBtn.disabled=true;const own=document.createElement('span');own.style.cssText='font-size:11px;color:var(--accent);display:block;margin-top:4px;';own.textContent='👈 Твой байк';info.appendChild(own);}
+    else if(!currentUser){likeBtn.disabled=true;}
+    else if(hasLiked){likeBtn.onclick=()=>unlikeBike(b.id,likeBtn);}
+    else{likeBtn.onclick=()=>likeBike(b.id,likeBtn);}
+    info.appendChild(likeBtn);
+    if(isOwn){const del=document.createElement('button');del.className='btn btn-danger';del.style.cssText='padding:5px 10px;font-size:11px;margin-top:6px;';del.textContent='🗑 Удалить';del.onclick=()=>confirmAction('Удалить '+b.name+'?','Навсегда.',()=>deleteBike(b.id));info.appendChild(del);}
+    card.append(thumb,info);feed.appendChild(card);
+  });
+}
+
+async function likeBike(id,btn){if(!currentUser||!db)return;btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid),likes:firebase.firestore.FieldValue.increment(1)});const b=bikesCache.find(x=>x.id===id);if(b){if(!b.likedBy)b.likedBy=[];b.likedBy.push(currentUser.uid);b.likes=(b.likes||0)+1;}sfx.tick();btn.className='like-btn liked';btn.innerHTML='❤️ '+(b?b.likes:'');btn.onclick=()=>unlikeBike(id,btn);btn.disabled=false;toast('❤️');}catch(e){btn.disabled=false;toast('Ошибка: '+e.message);}}
+async function unlikeBike(id,btn){if(!currentUser||!db)return;btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid),likes:firebase.firestore.FieldValue.increment(-1)});const b=bikesCache.find(x=>x.id===id);if(b){b.likedBy=(b.likedBy||[]).filter(u=>u!==currentUser.uid);b.likes=Math.max(0,(b.likes||1)-1);}btn.className='like-btn';btn.innerHTML='🤍 '+(b?b.likes:'');btn.onclick=()=>likeBike(id,btn);btn.disabled=false;}catch(e){btn.disabled=false;}}
+
+async function addBike(){
+  if(!currentUser){toast('Сначала войди!');return;}
+  const name=document.getElementById('bikeName').value.trim();
+  const type=document.getElementById('bikeType').value;
+  const urlInput=document.getElementById('bikePhotoUrl').value.trim();
+  if(!name)return toast('Напиши модель байка!');
+  if(!bikePhotoFile&&!urlInput)return toast('Добавь фото (из галереи или ссылку)!');
+
+  const btn=document.getElementById('bikeSubmitBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Загружаю...';
+
+  try{
+    let photoUrl=urlInput;
+    // Если выбрали файл — загружаем в Storage
+    if(bikePhotoFile){
+      try{
+        photoUrl=await uploadBikePhoto(bikePhotoFile);
+      }catch(e){
+        // Если Storage недоступен — конвертируем в base64 (резервный вариант)
+        photoUrl=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(bikePhotoFile);});
+        console.warn('Storage failed, using base64');
+      }
+    }
+
+    await db.collection('bikes').add({
+      name,type,photoUrl,
+      ownerId:currentUser.uid,
+      ownerNick:state.nickname||currentUser.displayName||'Аноним',
+      likedBy:[],likes:0,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Сброс формы
+    document.getElementById('bikeName').value='';
+    document.getElementById('bikePhotoUrl').value='';
+    document.getElementById('bikeFileInput').value='';
+    document.getElementById('bikePreview').style.display='none';
+    bikePhotoFile=null;
+
+    sfx.save();toast('🚲 Байк добавлен!');confetti(25);
+    btn.disabled=false;btn.textContent='Добавить в гараж 🚲';
+    switchBikeTab('feed');loadBikes();
+  }catch(e){
+    toast('Ошибка: '+e.message);
+    btn.disabled=false;btn.textContent='Добавить в гараж 🚲';
+  }
+}
+
+async function deleteBike(id){if(!currentUser||!db)return;try{await db.collection('bikes').doc(id).delete();bikesCache=bikesCache.filter(b=>b.id!==id);sfx.save();renderBikes();toast('Байк удалён');}catch(e){toast('Ошибка: '+e.message);}}
+
+/* ══ PROOFS ══ */
+function ytId(url){const m=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null;}
+function addProof(){const title=document.getElementById('proofTitle').value.trim();const skill=document.getElementById('proofSkill').value;const url=document.getElementById('proofUrl').value.trim();if(!title)return toast('Введи название!');if(!url)return toast('Вставь ссылку!');const id=ytId(url);if(!id)return toast('Неверная YouTube ссылка!');if(!state.proofs)state.proofs=[];state.proofs.unshift({id:Date.now().toString(),title,skill,ytId:id,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0});document.getElementById('proofTitle').value='';document.getElementById('proofUrl').value='';sfx.save();saveCloud();renderProofs();toast('🎬 Видео загружено!');checkAutoCompleteChallenge();checkAch();}
+function reactProof(id,type){if(!state.proofReactions)state.proofReactions={};const key=id+'_'+state.nickname;if(!state.proofReactions[key])state.proofReactions[key]=[];if(state.proofReactions[key].includes(type)){state.proofReactions[key]=state.proofReactions[key].filter(t=>t!==type);const p=state.proofs.find(x=>x.id===id);if(p)p[type]=Math.max(0,(p[type]||0)-1);}else{state.proofReactions[key].push(type);const p=state.proofs.find(x=>x.id===id);if(p)p[type]=(p[type]||0)+1;}sfx.tick();saveCloud();renderProofs();}
+function renderProofs(){const el=document.getElementById('proofFeed');if(!el)return;el.innerHTML='';if(!state.proofs||!state.proofs.length){const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Нет видео!';el.appendChild(p);return;}state.proofs.forEach(p=>{const card=document.createElement('div');card.className='proof-card';const head=document.createElement('div');head.className='proof-head';const info=document.createElement('div');const h4=document.createElement('h4');h4.style.cssText='margin:0 0 2px;font-size:15px;';h4.textContent=p.title;const meta=document.createElement('span');meta.style.cssText='font-size:11px;color:var(--muted);';meta.textContent=p.author+' · '+(SNAMES[p.skill]||p.skill)+' · '+new Date(p.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});info.append(h4,meta);head.appendChild(info);if(p.author===state.nickname){const d=document.createElement('button');d.className='btn btn-danger';d.style.cssText='padding:4px 8px;font-size:11px;';d.textContent='✕';d.onclick=()=>confirmAction('Удалить?','',()=>{state.proofs=state.proofs.filter(x=>x.id!==p.id);saveCloud();renderProofs();});head.appendChild(d);}const vw=document.createElement('div');vw.className='proof-vid';const iframe=document.createElement('iframe');iframe.src='https://www.youtube.com/embed/'+p.ytId;iframe.allowFullscreen=true;vw.appendChild(iframe);const reacts=document.createElement('div');reacts.className='proof-reacts';const key=p.id+'_'+state.nickname;const my=state.proofReactions&&state.proofReactions[key]?state.proofReactions[key]:[];['likes','fires'].forEach(type=>{const btn=document.createElement('button');btn.className='pr-btn'+(my.includes(type)?' active':'');btn.textContent=(type==='likes'?'👍 ':'🔥 ')+(p[type]||0);btn.onclick=()=>reactProof(p.id,type);reacts.appendChild(btn);});card.append(head,vw,reacts);el.appendChild(card);});}
+
+/* ══ FRIENDS ══ */
+async function renderFriends(){const el=document.getElementById('friendFeed');if(!el)return;el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>';const myPts=calcXP();const filterText=(document.getElementById('friendFilter')?.value||'').toLowerCase();const sortBy=document.getElementById('friendSort')?.value||'pts';let all=[{id:'_me',name:(state.nickname||'Я')+' 👈',pts:myPts,isMe:true}];if(db&&currentUser){try{const snap=await db.collection('leaderboard').orderBy('pts','desc').limit(50).get();snap.docs.forEach(d=>{const u=d.data();if(u.uid!==currentUser.uid&&u.nickname)all.push({id:d.id,name:u.nickname,pts:u.pts||0});});}catch(e){}}if(filterText)all=all.filter(f=>f.name.toLowerCase().includes(filterText));if(sortBy==='name')all.sort((a,b)=>a.name.localeCompare(b.name));else all.sort((a,b)=>b.pts-a.pts);el.innerHTML='';const medals=['🥇','🥈','🥉'];all.forEach((f,i)=>{const row=document.createElement('div');row.className='lb-row';row.style.animationDelay=i*.04+'s';if(f.isMe)row.style.cssText+='border-color:rgba(76,201,240,.4);background:linear-gradient(160deg,rgba(76,201,240,.06),rgba(124,92,255,.04));';const pl=document.createElement('div');pl.className='lb-place';pl.textContent=i<3?medals[i]:'#'+(i+1);const info=document.createElement('div');info.className='lb-info';const h4=document.createElement('h4');h4.textContent=f.name;const sub=document.createElement('span');sub.textContent=f.pts+' XP';info.append(h4,sub);const pts=document.createElement('div');pts.className='lb-pts';pts.textContent=f.pts;row.append(pl,info,pts);el.appendChild(row);});}
+document.getElementById('friendFilter')?.addEventListener('input',renderFriends);
+document.getElementById('friendSort')?.addEventListener('change',renderFriends);
+
+/* ══ DUELS ══ */
+async function createDuel(){
+  if(!currentUser){toast('Сначала войди!');return;}
+  const skill=document.getElementById('duelSkill').value;
+  const target=document.getElementById('duelTarget').value.trim();
+  const opponent=document.getElementById('duelOpponent').value.trim();
+  const deadline=document.getElementById('duelDeadline').value;
+  if(!target)return toast('Укажи цель!');
+  if(!deadline)return toast('Укажи дедлайн!');
+  const duel={
+    id:Date.now().toString(),
+    skill,target,deadline,
+    opponent:opponent||null,
+    challenger:state.nickname,
+    challengerUid:currentUser.uid,
+    // participants — массив UID для Security Rules.
+    // При создании содержит только создателя.
+    // При принятии — добавляется UID соперника (см. acceptDuel).
+    participants:[currentUser.uid],
+    status:'open',
+    created:new Date().toISOString(),
+    challengerResult:null,opponentResult:null,
+    acceptedBy:null,acceptedByUid:null,winner:null
+  };
+  if(!state.duels)state.duels=[];
+  state.duels.unshift(duel);
+  if(db){
+    try{
+      await db.collection('duels').doc(duel.id).set({...duel,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      toast('Дуэль создана! ⚡');
+    }catch(e){toast('Создано локально: '+e.message);}
+  }
+  document.getElementById('duelTarget').value='';
+  document.getElementById('duelOpponent').value='';
+  document.getElementById('duelDeadline').value='';
+  saveCloud();renderDuels();
+}
+
+async function acceptDuel(id){
+  const d=state.duels.find(x=>x.id===id);
+  if(!d)return;
+  if(d.challenger===state.nickname)return toast('Нельзя принять свою дуэль!');
+  if(d.acceptedBy)return toast('Дуэль уже принята!');
+  d.acceptedBy=state.nickname;
+  d.acceptedByUid=currentUser.uid;
+  d.status='active';
+  // Добавляем UID соперника в participants — теперь он тоже может обновлять дуэль
+  if(!d.participants)d.participants=[d.challengerUid];
+  if(!d.participants.includes(currentUser.uid))d.participants.push(currentUser.uid);
+  if(db){
+    try{
+      await db.collection('duels').doc(id).update({
+        acceptedBy:state.nickname,
+        acceptedByUid:currentUser.uid,
+        status:'active',
+        // arrayUnion безопаснее чем перезапись — не затирает существующие UID
+        participants:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+    }catch(e){console.warn('acceptDuel update:',e);}
+  }
+  sfx.levelUp();toast('Принято! ⚡');saveCloud();renderDuels();
+}
+async function submitDuelResult(id){const d=state.duels.find(x=>x.id===id);if(!d)return;const val=parseFloat(prompt('Твой результат ('+SUNITS[d.skill]+'):'));if(isNaN(val)||val<=0)return toast('Неверно!');const isC=d.challenger===state.nickname;if(isC)d.challengerResult=val;else d.opponentResult=val;if(d.challengerResult!==null&&d.opponentResult!==null){d.status='done';d.winner=d.challengerResult>=d.opponentResult?d.challenger:d.acceptedBy;if(d.winner===state.nickname){state.duelsWon=(state.duelsWon||0)+1;sfx.max();showLvlUp('ПОБЕДА!','','⚡',true);confetti(80);}else toast('Победил '+d.winner);}else toast('Результат записан!');if(db){try{await db.collection('duels').doc(id).update({challengerResult:d.challengerResult,opponentResult:d.opponentResult,status:d.status,winner:d.winner||null});}catch(e){}}saveCloud();renderDuels();checkAch();}
+async function renderDuels(){const el=document.getElementById('duelList');if(!el)return;el.innerHTML='';let duels=[...(state.duels||[])];if(db){try{const snap=await db.collection('duels').where('status','in',['open','active']).orderBy('createdAt','desc').limit(20).get();snap.docs.forEach(d=>{const gd={id:d.id,...d.data()};if(!duels.find(x=>x.id===gd.id))duels.unshift(gd);});}catch(e){}}if(!duels.length){const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Нет дуэлей.';el.appendChild(p);return;}duels.slice(0,20).forEach(d=>{const card=document.createElement('div');card.className='duel-card';const h4=document.createElement('h4');h4.textContent='⚡ '+(SNAMES[d.skill]||d.skill)+' — '+d.target;const vs=document.createElement('div');vs.className='duel-vs';const p1=document.createElement('div');p1.className='player';p1.textContent=d.challenger;if(d.challengerResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.challengerResult+' '+SUNITS[d.skill];p1.appendChild(r);}const vb=document.createElement('div');vb.className='vs-badge';vb.textContent='VS';const p2=document.createElement('div');p2.className='player';p2.textContent=d.acceptedBy?d.acceptedBy:(d.opponent?d.opponent:'??? (открытая)');if(d.opponentResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.opponentResult+' '+SUNITS[d.skill];p2.appendChild(r);}vs.append(p1,vb,p2);const meta=document.createElement('p');meta.style.cssText='font-size:12px;color:var(--muted);margin:0 0 10px;';meta.textContent='Дедлайн: '+d.deadline+' · '+(d.status==='done'?'Победитель: '+(d.winner||'—'):d.status==='active'?'Активна':'Открытая');card.append(h4,vs,meta);const isC=d.challenger===state.nickname;const isO=d.acceptedBy===state.nickname;const canAc=d.status==='open'&&!isC&&(!d.opponent||d.opponent===state.nickname);const canSu=d.status==='active'&&(isC||isO);if(canAc){const b=document.createElement('button');b.className='btn btn-primary btn-full';b.style.padding='10px';b.textContent='⚡ Принять!';b.onclick=()=>acceptDuel(d.id);card.appendChild(b);}else if(canSu){const b=document.createElement('button');b.className='btn btn-warn btn-full';b.style.padding='10px';b.textContent='📏 Внести результат';b.onclick=()=>submitDuelResult(d.id);card.appendChild(b);}else if(d.status==='done'){const dn=document.createElement('div');dn.style.cssText='text-align:center;font-weight:900;color:var(--good);padding:8px;';dn.textContent='🏆 '+(d.winner||'—')+' победил!';card.appendChild(dn);}el.appendChild(card);});}
+
+/* ══════════════════════════════
+   УВЕДОМЛЕНИЯ — исправленная версия
+   Проблема была: Notification API работает только на HTTPS или localhost.
+   В APK (WebView) уведомления нужно запрашивать иначе.
+══════════════════════════════ */
+let notifInt=null;
+
+function initNotifUI(){
+  if(!state.notif)state.notif={enabled:false,time:'17:00'};
+  const tog=document.getElementById('notifToggle');
+  const tim=document.getElementById('notifTime');
+  if(tog)tog.checked=!!state.notif.enabled;
+  if(tim)tim.value=state.notif.time||'17:00';
+  updateNotifStatus();
+  if(state.notif.enabled)scheduleNotif();
+}
+
+async function requestNotifPermission(){
+  if(!('Notification' in window)){
+    toast('Браузер не поддерживает уведомления');
+    return;
+  }
+  const perm=await Notification.requestPermission();
+  if(perm==='granted'){
+    state.notif.enabled=true;
+    document.getElementById('notifToggle').checked=true;
+    saveCloud();scheduleNotif();updateNotifStatus();
+    toast('✅ Уведомления включены!');
+    // Показываем тестовое уведомление
+    new Notification('MTB Skills Pro 🚵‍♂️',{body:'Уведомления работают! 🔥',icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png'});
+  }else{
+    toast('Разрешение отклонено. Разреши в настройках браузера.');
+    updateNotifStatus();
+  }
+}
+
+function saveNotifSettings(){
+  if(!state.notif)state.notif={};
+  state.notif.time=document.getElementById('notifTime').value;
+  saveCloud();if(state.notif.enabled)scheduleNotif();toast('Время сохранено!');
+}
+
+function toggleNotif(){
+  const en=document.getElementById('notifToggle').checked;
+  if(en){
+    requestNotifPermission();
+  }else{
+    state.notif.enabled=false;saveCloud();clearInterval(notifInt);updateNotifStatus();toast('Выключено');
+  }
+}
+
+function scheduleNotif(){
+  clearInterval(notifInt);
+  notifInt=setInterval(()=>{
+    if(Notification.permission!=='granted'||!state.notif.enabled)return;
+    const now=new Date();
+    const[h,m]=(state.notif.time||'17:00').split(':').map(Number);
+    if(now.getHours()===h&&now.getMinutes()===m&&now.getSeconds()<30){
+      new Notification('MTB Skills Pro 🚵‍♂️',{
+        body:'Время тренироваться! ⛑️ Не забудь шлем!',
+        icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png',
+        tag:'mtb-daily',
+        requireInteraction:false
+      });
+    }
+  },20000);
+}
+
+function testNotif(){
+  if(!('Notification' in window)){toast('Не поддерживается в этом браузере');return;}
+  if(Notification.permission==='granted'){
+    new Notification('MTB Skills Pro 🚵‍♂️',{body:'Тест работает! 🔥',icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png'});
+    toast('Уведомление отправлено!');
+  }else{
+    requestNotifPermission();
+  }
+}
+
+function updateNotifStatus(){
+  const el=document.getElementById('notifStatus');if(!el)return;
+  if(!('Notification' in window)){
+    el.textContent='❌ Твой браузер не поддерживает уведомления. Попробуй открыть в Chrome.';return;
+  }
+  const p=Notification.permission;
+  if(p==='granted'&&state.notif&&state.notif.enabled){
+    el.textContent=`✅ Работают! Уведомление придёт каждый день в ${state.notif.time||'17:00'}`;
+  }else if(p==='granted'){
+    el.textContent='✅ Разрешение есть. Нажми «Разрешить уведомления» чтобы включить.';
+  }else if(p==='denied'){
+    el.textContent='❌ Заблокировано. Открой настройки браузера → Уведомления → Разреши для этого сайта.';
+  }else{
+    el.textContent='⚠️ Нажми кнопку «Разрешить уведомления» ниже.';
+  }
+}
+
+/* ══ EXPORT / RESET ══ */
+function exportData(){const a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(state));a.download='mtb_backup.json';a.click();}
+async function resetAll(){localStorage.removeItem(SK);localStorage.removeItem('mtb_dts');localStorage.removeItem('mtb_wts');if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();}catch(e){}}location.reload();}
+
+/* ══ EVENTS ══ */
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('nickInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')setNickname();});
+document.getElementById('authEmail')?.addEventListener('keydown',e=>{if(e.key==='Enter')handleEmailAuth();});
+document.getElementById('authPass')?.addEventListener('keydown',e=>{if(e.key==='Enter')handleEmailAuth();});
+
+/* ══ BOOT ══ */
+initFB();
+</script>
+</body>
+</html>
