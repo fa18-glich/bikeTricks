@@ -572,7 +572,7 @@ select.field{cursor:pointer;}
     </div>
 
     <div class="panel">
-      <div class="panel-head"><div><h3>🛠 Аккаунт</h3></div></div>
+      <div class="panel-head"><div><h3>🛠 Поддержка</h3></div></div>
       <div class="sup-grid">
         <div class="ct-card"><div class="ci">💬</div><h4>Telegram</h4><a href="https://t.me/Pvp0101gg" target="_blank">@Pvp0101gg</a><br><br><a href="https://t.me/Pvp0101gg" target="_blank" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
         <div class="ct-card"><div class="ci">📧</div><h4>Email</h4><a href="mailto:pvp0101gg@gmail.com">pvp0101gg@gmail.com</a><br><br><a href="mailto:pvp0101gg@gmail.com" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
@@ -580,7 +580,6 @@ select.field{cursor:pointer;}
       <div class="form-card" style="margin-top:14px;text-align:center;">
         <p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Вошёл: <strong id="userEmailDisp" style="color:var(--accent);"></strong><br>Ник: <strong id="myNickDisp" style="color:var(--accent);"></strong> <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;margin-left:6px;" onclick="changeNick()">Сменить</button></p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-          <button class="btn btn-ghost" onclick="exportData()">📦 Экспорт</button>
           <button class="btn btn-danger" onclick="confirmAction('Выйти?','Данные останутся в облаке.',doSignOut)">🚪 Выйти</button>
           <button class="btn btn-danger" onclick="confirmAction('Сбросить всё?','Удалит весь прогресс. Нельзя отменить!',resetAll)">🗑 Сброс</button>
         </div>
@@ -660,11 +659,21 @@ function closeConf(){document.getElementById('confirmCont').innerHTML='';confirm
 function execConf(){if(confirmCb)confirmCb();closeConf();}
 let toastT=null;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2500);}
+
+let _saveTimer=null;
+function saveCloudDebounced(ms=1500){clearTimeout(_saveTimer);_saveTimer=setTimeout(()=>saveCloud(),ms);}
 function popSt(id){const el=document.getElementById(id);if(!el)return;el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
 
 /* ══ STATIC DATA ══ */
 const LVL_GOALS={wh:['Подними переднее колесо хотя бы на 5 см','Удержи вилли на 10 метров','Вилли на 30 метров — контролируй тормозом','Вилли на 100 метров — уровень Red Bull'],mn:['Выброси вес назад без педалирования','Мэнуал на 10 метров, руки прямые','Мэнуал на 20 метров — баланс коленями','Мэнуал на 50 метров — про-стрит'],ts:['Простой неподвижно 5 секунд','Трекстенд 15 секунд','Трекстенд 30 секунд с закрытыми глазами','100 секунд — уровень триал-про'],bh:['Отработай фазу фронт-лифта','Скуп — оба колеса отрываются','Полноценный прыжок','Высокий чистый хоп'],st:['Наклон вперёд — заднее отрывается','Стоппи 45°','Стоппи 90°','Full Control — удержание на переднем']};
-const REC_SKILLS=[{id:'wh',name:'Вилли',unit:'метров',icon:'🚴'},{id:'mn',name:'Мэнуал',unit:'метров',icon:'🏄'},{id:'ts',name:'Трекстенд',unit:'секунд',icon:'⏱️'},{id:'bh',name:'Банни-хоп',unit:'см высота',icon:'🦘'},{id:'st',name:'Стоппи',unit:'метров',icon:'🎯'}];
+// max — физически достижимый предел
+const REC_SKILLS=[
+  {id:'wh',name:'Вилли',unit:'метров',icon:'🚴',max:500,hint:'макс. 500м'},
+  {id:'mn',name:'Мэнуал',unit:'метров',icon:'🏄',max:300,hint:'макс. 300м'},
+  {id:'ts',name:'Трекстенд',unit:'секунд',icon:'⏱️',max:3600,hint:'макс. 3600с'},
+  {id:'bh',name:'Банни-хоп',unit:'см высота',icon:'🦘',max:200,hint:'макс. 200см'},
+  {id:'st',name:'Стоппи',unit:'метров',icon:'🎯',max:100,hint:'макс. 100м'},
+];
 const SNAMES={wh:'Вилли',mn:'Мэнуал',ts:'Трекстенд',bh:'Банни-хоп',st:'Стоппи'};
 const SUNITS={wh:'метров',mn:'метров',ts:'секунд',bh:'см',st:'метров'};
 const ACHIEVEMENTS=[
@@ -739,8 +748,20 @@ async function saveCloud(){
   saveLS();
   if(!db||!currentUser)return;
   try{
-    await db.collection('users').doc(currentUser.uid).set(state,{merge:true});
-    await db.collection('leaderboard').doc(currentUser.uid).set({nickname:state.nickname,pts:calcXP(),uid:currentUser.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    // Глубокое копирование чтобы не мутировать state
+    const toSave=JSON.parse(JSON.stringify(state));
+    // Не сохраняем в users:
+    // duels — отдельная коллекция; trSession — runtime; proofReactions может быть большим
+    delete toSave.duels;
+    if(Array.isArray(toSave.proofReactions))toSave.proofReactions={};
+    if(Array.isArray(toSave.skills))toSave.skills=toSave.skills.map(s=>({...s,trSession:0}));
+    await db.collection('users').doc(currentUser.uid).set(toSave,{merge:true});
+    await db.collection('leaderboard').doc(currentUser.uid).set({
+      nickname:state.nickname,
+      pts:calcXP(),
+      uid:currentUser.uid,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
     setSyncDot('synced');
   }catch(e){console.warn('saveCloud:',e);setSyncDot('error');saveLS();}
 }
@@ -765,6 +786,14 @@ function initFB(){
       else if(e.code==='unimplemented')console.warn('Persistence не поддерживается');
     });
 
+    // Проверяем redirect ПЕРЕД onAuthStateChanged — иначе race condition
+    try{
+      setLoadText('Проверяю Google вход...');
+      await auth.getRedirectResult();
+      // если redirect успешен — onAuthStateChanged сам вызовется с user
+    }catch(re){console.warn('getRedirectResult:',re.code||re.message);}
+    redirectHandled=true;
+
     auth.onAuthStateChanged(async user=>{
       if(user){
         currentUser=user;setLoadText('Загружаю данные...');
@@ -772,6 +801,9 @@ function initFB(){
           const doc=await db.collection('users').doc(user.uid).get();
           if(doc.exists){
             state={...defState(),...doc.data()};
+            // Duels не хранятся в облаке — берём из localStorage
+            const ls=JSON.parse(localStorage.getItem(SK)||'{}');
+            if(Array.isArray(ls.duels))state.duels=ls.duels;
             DEF_SKILLS.forEach(ds=>{
               const sk=state.skills.find(x=>x.id===ds.id);
               if(!sk)state.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0});
@@ -779,21 +811,12 @@ function initFB(){
             });
             saveLS();setSyncDot('synced');
           }else{await saveCloud();}
-        }catch(e){console.warn('Cloud:',e);setSyncDot('error');}
-        // Сбрасываем дневные счётчики при новом дне
+        }catch(e){console.warn('Cloud load:',e);setSyncDot('error');}
         resetDailyCountersIfNeeded();
         hideLoad();
         if(!state.nickname)showNickScr();else initApp();
       }else{
         currentUser=null;
-        if(!redirectHandled){
-          redirectHandled=true;
-          try{
-            setLoadText('Проверяю Google вход...');
-            const r=await auth.getRedirectResult();
-            if(r&&r.user)return; // onAuthStateChanged сам вызовется
-          }catch(e){console.warn('Redirect:',e.code);}
-        }
         hideLoad();showAuthScr();
       }
     });
@@ -823,16 +846,35 @@ async function handleEmailAuth(){
   btn.disabled=true;btn.innerHTML=`<span class="spinner"></span>${authMode==='login'?'Входим...':'Создаём...'}`;
   try{
     if(authMode==='login'){
-      await auth.signInWithEmailAndPassword(email,pass);
+      const cred=await auth.signInWithEmailAndPassword(email,pass);
+      // Если email не подтверждён — предупреждаем, но всё равно пускаем
+      // (строгую блокировку не делаем, чтобы не мешать работе)
+      if(cred.user&&!cred.user.emailVerified&&cred.user.providerData[0]?.providerId==='password'){
+        console.info('Email не верифицирован');
+      }
     }else{
       const nick=document.getElementById('authNick').value.trim();
       const cred=await auth.createUserWithEmailAndPassword(email,pass);
       // Отправляем письмо верификации
-      try{await cred.user.sendEmailVerification();}catch(e){}
+      try{await cred.user.sendEmailVerification();}catch(ve){console.warn('sendEmailVerification:',ve);}
       state.nickname=nick;await saveCloud();
+      showMsg('✅ Аккаунт создан! Проверь почту — отправили письмо для подтверждения.','ok');
+      btn.disabled=false;btn.textContent='Войти';
+      switchAuthTab('login');
+      return;
     }
   }catch(e){
-    const msgs={'auth/user-not-found':'Пользователь не найден','auth/wrong-password':'Неверный пароль','auth/email-already-in-use':'Email уже зарегистрирован','auth/invalid-email':'Неверный формат email','auth/weak-password':'Слишком слабый пароль','auth/invalid-credential':'Неверный email или пароль','auth/too-many-requests':'Слишком много попыток. Подожди.','auth/network-request-failed':'Ошибка сети.','auth/firebase-app-check-token-is-invalid':'Отключи App Check в Firebase Console → App Check.'};
+    const msgs={
+      'auth/user-not-found':'Пользователь не найден',
+      'auth/wrong-password':'Неверный пароль',
+      'auth/email-already-in-use':'Email уже зарегистрирован',
+      'auth/invalid-email':'Неверный формат email',
+      'auth/weak-password':'Слишком слабый пароль',
+      'auth/invalid-credential':'Неверный email или пароль',
+      'auth/too-many-requests':'Слишком много попыток. Подожди.',
+      'auth/network-request-failed':'Ошибка сети.',
+      'auth/firebase-app-check-token-is-invalid':'Отключи App Check в Firebase Console → App Check.'
+    };
     showMsg(msgs[e.code]||e.message);
     btn.disabled=false;btn.textContent=authMode==='login'?'Войти':'Создать аккаунт';
   }
@@ -842,18 +884,27 @@ async function signInWithGoogle(){
   if(!auth){showMsg('Firebase ещё загружается...');return;}
   clearMsg();
   const btn=document.getElementById('googleBtn');
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Перехожу на Google...';
+  const ICON=btn.innerHTML;
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Открываю Google...';
+  const provider=new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({prompt:'select_account'});
   try{
-    const provider=new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({prompt:'select_account'});
-    await auth.signInWithRedirect(provider);
+    // popup не меняет URL — нет 404. redirect используем только как fallback.
+    await auth.signInWithPopup(provider);
   }catch(e){
-    btn.disabled=false;btn.innerHTML='<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Войти через Google';
-    if(e.code==='auth/unauthorized-domain'){showMsg('Домен не авторизован. Firebase Console → Authentication → Settings → Authorized domains → Add domain');}
-    else{showMsg('Google Auth: '+e.message);}
+    btn.disabled=false;btn.innerHTML=ICON;
+    if(e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'){
+      showMsg('Popup заблокирован. Пробую redirect...','ok');
+      try{await auth.signInWithRedirect(provider);}catch(re){showMsg(re.message);}
+    }else if(e.code==='auth/cancelled-popup-request'){
+      // пользователь открыл дважды — не показываем ошибку
+    }else if(e.code==='auth/unauthorized-domain'){
+      showMsg('Домен не авторизован → Firebase Console → Authentication → Settings → Authorized domains');
+    }else{
+      showMsg('Google Auth: '+e.message);
+    }
   }
 }
-
 async function handleForgotPassword(){
   clearMsg();
   const email=document.getElementById('authEmail').value.trim();
@@ -885,7 +936,14 @@ function updateUserUI(){
 }
 
 async function setNickname(){const v=document.getElementById('nickInput').value.trim();if(!v||v.length<2){toast('Мин. 2 символа!');return;}state.nickname=v;await saveCloud();sfx.save();document.getElementById('nickScreen').style.display='none';initApp();}
-function changeNick(){const n=prompt('Новый никнейм:',state.nickname);if(n&&n.trim().length>=2){state.nickname=n.trim();saveCloud();setT('myNickDisp',state.nickname);setT('welcomeText','Привет, '+state.nickname+' 👋');toast('Ник обновлён!');}}
+function changeNick(){
+  const n=prompt('Новый никнейм:',state.nickname);
+  if(!n)return;
+  const v=n.trim().replace(/[<>&"']/g,''); // убираем спец-символы
+  if(v.length<2){toast('Никнейм минимум 2 символа');return;}
+  if(v.length>24){toast('Никнейм максимум 24 символа');return;}
+  state.nickname=v;saveCloud();setT('myNickDisp',state.nickname);setT('welcomeText','Привет, '+state.nickname+' 👋');toast('Ник обновлён!');
+}
 
 function initApp(){
   document.getElementById('authScreen').style.display='none';
@@ -911,14 +969,23 @@ function timerTick(){const e=Date.now()-tStart,min=Math.floor(e/60000),sec=Math.
 /* ══ STREAK & DAILY RESET ══ */
 function resetDailyCountersIfNeeded(){
   const today=new Date().toDateString();
-  if(state.lastTrainDate!==today){
-    // Сбрасываем дневные счётчики тренировок
-    state.skills.forEach(s=>s.trToday=0);
+  if(state.lastTrainDate&&state.lastTrainDate!==today){
+    // Новый день — сбрасываем дневные и сессионные счётчики
+    state.skills.forEach(s=>{s.trToday=0;s.trSession=0;});
+    // Также сбрасываем флаги дневных авто-челленджей
+    // чтобы они не оставались "выполненными" при генерации новых
     saveLS();
   }
 }
 function updateStreak(){const today=new Date().toDateString();const yest=new Date(Date.now()-86400000).toDateString();if(state.lastTrainDate&&state.lastTrainDate!==today&&state.lastTrainDate!==yest){state.streak=0;saveCloud();}renderStreak();}
-function recordTrainToday(){const today=new Date().toDateString();const yest=new Date(Date.now()-86400000).toDateString();if(state.lastTrainDate!==today){state.streak=(state.lastTrainDate===yest?(state.streak||0)+1:1);state.lastTrainDate=today;saveCloud();renderStreak();}}
+function recordTrainToday(){
+  const today=new Date().toDateString();
+  const yest=new Date(Date.now()-86400000).toDateString();
+  if(state.lastTrainDate===today)return; // уже записано сегодня
+  state.streak=(state.lastTrainDate===yest?(state.streak||0)+1:1);
+  state.lastTrainDate=today;
+  saveCloud();renderStreak();
+}
 function renderStreak(){const b=document.getElementById('streakBanner');if(!b)return;if(state.streak>0){b.style.display='flex';const d=state.streak;setT('streakText',d+' '+(d===1?'день':d<5?'дня':'дней')+' подряд 🔥');setT('streakSub',d>=7?'В огне! 🏆':d>=3?'Хорошая серия!':'Начало положено!');}else b.style.display='none';}
 
 /* ══ TABS ══ */
@@ -936,7 +1003,11 @@ function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElem
 function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);document.getElementById('modalVideo').src=base.video;const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});const btn=document.getElementById('modalTrainBtn');btn.textContent=isMax?'✅ МАКСИМУМ ДОСТИГНУТ':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';btn.disabled=isMax;document.getElementById('modal').classList.add('show');}
 function closeModal(){timerReset();document.getElementById('modal').classList.remove('show');document.getElementById('modalVideo').src='';}
 
+let _lastTrainTs=0;
 function trainCurrent(){
+  const now=Date.now();
+  if(now-_lastTrainTs<2000){toast('Подожди секунду...');return;}
+  _lastTrainTs=now;
   const user=state.skills.find(s=>s.id===activeSkillId);
   const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
   if(!user||!base)return;
@@ -958,13 +1029,29 @@ function trainCurrent(){
   ['totalPoints','totalTrainings','openLevels','avgProgress'].forEach(popSt);
 
   // Проверяем и автозасчитываем AUTO-челленджи
-  saveCloud();renderSkills();
+  saveCloudDebounced();renderSkills();
   checkAutoCompleteChallenge();
 }
 
 /* ══ RECORDS ══ */
-function addRecord(id){const inp=document.getElementById('ri-'+id);const val=parseFloat(inp.value);if(isNaN(val)||val<=0)return toast('Введи число!');if(!state.records[id])state.records[id]=[];state.records[id].push({val,date:new Date().toISOString()});inp.value='';const all=state.records[id].map(r=>r.val);sfx.save();saveCloud();renderRecords();if(val>=Math.max(...all)){toast('🏆 Новый рекорд: '+val+'!');confetti(30);checkAutoCompleteChallenge();}else toast('📊 Записано: '+val);checkAch();}
-function renderRecords(){const el=document.getElementById('recordsList');if(!el)return;el.innerHTML='';REC_SKILLS.forEach(rs=>{const data=state.records[rs.id]||[];const best=data.length?Math.max(...data.map(r=>r.val)):0;const last10=data.slice(-10);const mx=last10.length?Math.max(...last10.map(r=>r.val)):1;const entry=document.createElement('div');entry.className='rec-entry';const hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;';const h4=document.createElement('h4');h4.style.cssText='margin:0;font-size:16px;';h4.textContent=rs.icon+' '+rs.name;const cnt=document.createElement('span');cnt.style.cssText='font-size:11px;color:var(--muted);';cnt.textContent='Замеров: '+data.length;hdr.append(h4,cnt);const bestEl=document.createElement('div');bestEl.className='rec-best';bestEl.textContent=best||'—';if(best){const u=document.createElement('span');u.style.cssText='font-size:14px;color:var(--muted);';u.textContent=' '+rs.unit;bestEl.appendChild(u);}entry.append(hdr,bestEl);if(data.length>=2){const chart=document.createElement('div');chart.className='rec-chart';last10.forEach(r=>{const bh=Math.max(6,(r.val/mx)*64);const bar=document.createElement('div');bar.className='rec-bar';bar.style.height=bh+'px';bar.dataset.val=r.val+' '+rs.unit;chart.appendChild(bar);});const dir=document.createElement('div');dir.style.cssText='display:flex;justify-content:space-between;font-size:10px;color:var(--muted);';dir.innerHTML='<span>← старые</span><span>новые →</span>';entry.append(chart,dir);}const row=document.createElement('div');row.className='rec-inp-row';const inp=document.createElement('input');inp.id='ri-'+rs.id;inp.className='field';inp.type='number';inp.min='0';inp.step='0.1';inp.placeholder='Новый ('+rs.unit+')';inp.style.margin='0';inp.addEventListener('keydown',e=>{if(e.key==='Enter')addRecord(rs.id);});const ab=document.createElement('button');ab.className='btn btn-primary';ab.style.cssText='padding:10px 14px;white-space:nowrap;';ab.textContent='📏 Записать';ab.onclick=()=>addRecord(rs.id);row.append(inp,ab);entry.appendChild(row);el.appendChild(entry);});}
+function addRecord(id){
+  const inp=document.getElementById('ri-'+id);
+  const val=parseFloat(inp.value);
+  if(isNaN(val)||val<=0)return toast('Введи число!');
+  const rs=REC_SKILLS.find(r=>r.id===id);
+  if(rs&&val>rs.max){toast('Слишком большое значение. Максимум: '+rs.max+' '+rs.unit);return;}
+  if(!state.records[id])state.records[id]=[];
+  // Лимит 100 записей на трюк
+  if(state.records[id].length>=100)state.records[id].shift();
+  const prevBest=state.records[id].length>0?Math.max(...state.records[id].map(r=>r.val)):-Infinity;
+  state.records[id].push({val,date:new Date().toISOString()});
+  inp.value='';
+  sfx.save();saveCloud();renderRecords();
+  if(val>prevBest){toast('🏆 Новый рекорд: '+val+'!');confetti(30);checkAutoCompleteChallenge();}
+  else toast('📊 Записано: '+val);
+  checkAch();
+}
+function renderRecords(){const el=document.getElementById('recordsList');if(!el)return;el.innerHTML='';REC_SKILLS.forEach(rs=>{const data=state.records[rs.id]||[];const best=data.length?Math.max(...data.map(r=>r.val)):0;const last10=data.slice(-10);const mx=last10.length?Math.max(...last10.map(r=>r.val)):1;const entry=document.createElement('div');entry.className='rec-entry';const hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;';const h4=document.createElement('h4');h4.style.cssText='margin:0;font-size:16px;';h4.textContent=rs.icon+' '+rs.name;const cnt=document.createElement('span');cnt.style.cssText='font-size:11px;color:var(--muted);';cnt.textContent='Замеров: '+data.length;hdr.append(h4,cnt);const bestEl=document.createElement('div');bestEl.className='rec-best';bestEl.textContent=best||'—';if(best){const u=document.createElement('span');u.style.cssText='font-size:14px;color:var(--muted);';u.textContent=' '+rs.unit;bestEl.appendChild(u);}entry.append(hdr,bestEl);if(data.length>=2){const chart=document.createElement('div');chart.className='rec-chart';last10.forEach(r=>{const bh=Math.max(6,(r.val/mx)*64);const bar=document.createElement('div');bar.className='rec-bar';bar.style.height=bh+'px';bar.dataset.val=r.val+' '+rs.unit;chart.appendChild(bar);});const dir=document.createElement('div');dir.style.cssText='display:flex;justify-content:space-between;font-size:10px;color:var(--muted);';dir.innerHTML='<span>← старые</span><span>новые →</span>';entry.append(chart,dir);}const row=document.createElement('div');row.className='rec-inp-row';const inp=document.createElement('input');inp.id='ri-'+rs.id;inp.className='field';inp.type='number';inp.min='0';inp.step='0.1';inp.placeholder='Новый ('+rs.unit+(rs.hint?', '+rs.hint:'')+')';inp.max=rs.max||'';inp.min='0';inp.style.margin='0';inp.addEventListener('keydown',e=>{if(e.key==='Enter')addRecord(rs.id);});const ab=document.createElement('button');ab.className='btn btn-primary';ab.style.cssText='padding:10px 14px;white-space:nowrap;';ab.textContent='📏 Записать';ab.onclick=()=>addRecord(rs.id);row.append(inp,ab);entry.appendChild(row);el.appendChild(entry);});}
 
 /* ══════════════════════════════════════════
    УМНЫЕ ЧЕЛЛЕНДЖИ — СИСТЕМА АВТО-ПРОВЕРКИ
@@ -983,18 +1070,17 @@ function genChallengesIfNeeded(){
   const sh=a=>[...a].sort(()=>Math.random()-.5);
 
   if(needD||!state.challenges.some(c=>!c.completed&&c.type==='daily')){
-    // Сбрасываем дневные счётчики сессий для авто-челленджей
+    // Сбрасываем сессионные счётчики при новом дне
     state.skills.forEach(s=>s.trSession=0);
     sh(CH_TMPL.filter(t=>t.type==='daily')).slice(0,3).forEach(t=>{
       keep.push({id:Date.now().toString()+Math.random(),text:t.text,xp:t.xp,type:t.type,auto:t.auto,trackType:t.trackType,trackSkill:t.trackSkill||null,target:t.target||0,completed:false,created:new Date().toISOString()});
     });
     localStorage.setItem('mtb_dts',todayTs.toString());
-    // Запоминаем стартовый XP для отслеживания недельного XP
-    if(needW){state.weeklyXpStart=calcXP();state.weeklyXpStartTs=weekTs;}
   }else{(state.challenges||[]).filter(c=>!c.completed&&c.type==='daily').forEach(c=>keep.push(c));}
 
   if(needW||!state.challenges.some(c=>!c.completed&&c.type==='weekly')){
-    if(!needD)state.weeklyXpStart=calcXP();
+    // Запоминаем стартовый XP один раз при начале новой недели
+    state.weeklyXpStart=calcXP();state.weeklyXpStartTs=weekTs;
     sh(CH_TMPL.filter(t=>t.type==='weekly')).slice(0,2).forEach(t=>{
       keep.push({id:Date.now().toString()+Math.random(),text:t.text,xp:t.xp,type:t.type,auto:t.auto,trackType:t.trackType,trackSkill:t.trackSkill||null,target:t.target||0,completed:false,created:new Date().toISOString()});
     });
@@ -1017,7 +1103,9 @@ function getChallengeProgress(ch){
   }else if(ch.trackType==='xp'){
     cur=Math.max(0,calcXP()-(state.weeklyXpStart||0));
   }else if(ch.trackType==='video'){
-    cur=(state.proofs||[]).length;
+    // Считаем видео добавленные после создания задания
+    const chCreated=ch.created?new Date(ch.created).getTime():0;
+    cur=(state.proofs||[]).filter(p=>new Date(p.date).getTime()>=chCreated).length;
   }else if(ch.trackType==='streak'){
     cur=state.streak||0;
   }
@@ -1136,6 +1224,10 @@ function renderChallenges(){
 ══════════════════════ */
 function handleBikePhoto(input){
   const file=input.files[0];if(!file)return;
+  // Проверяем тип файла
+  if(!file.type.startsWith('image/')){toast('Выбери файл-изображение (jpg, png...)');input.value='';return;}
+  // Проверяем размер — не более 5MB
+  if(file.size>5*1024*1024){toast('Фото слишком большое. Максимум 5MB.');input.value='';return;}
   bikePhotoFile=file;
   const reader=new FileReader();
   reader.onload=e=>{
@@ -1148,12 +1240,28 @@ function handleBikePhoto(input){
 
 async function uploadBikePhoto(file){
   if(!storage)throw new Error('Storage не инициализирован');
-  const ref=storage.ref(`bikes/${currentUser.uid}/${Date.now()}_${file.name}`);
+  // Сжимаем изображение перед загрузкой если > 1MB
+  let uploadFile=file;
+  if(file.size>1024*1024){
+    uploadFile=await new Promise(res=>{
+      const img=new Image();const url=URL.createObjectURL(file);
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        const maxW=1200;const ratio=Math.min(maxW/img.width,maxW/img.height,1);
+        canvas.width=Math.round(img.width*ratio);canvas.height=Math.round(img.height*ratio);
+        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(b=>res(new File([b],file.name,{type:'image/jpeg'})),'image/jpeg',0.82);
+      };img.src=url;
+    });
+  }
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const ref=storage.ref(`bikes/${currentUser.uid}/${Date.now()}_${safeName}`);
   const progressEl=document.getElementById('uploadProgress');
   const barEl=document.getElementById('uploadProgressBar');
-  progressEl.style.display='block';
+  progressEl.style.display='block';barEl.style.width='0%';
   return new Promise((resolve,reject)=>{
-    const task=ref.put(file);
+    const task=ref.put(uploadFile,{contentType:'image/jpeg'});
     task.on('state_changed',
       snap=>{const pct=Math.round(snap.bytesTransferred/snap.totalBytes*100);barEl.style.width=pct+'%';},
       err=>reject(err),
@@ -1163,7 +1271,10 @@ async function uploadBikePhoto(file){
 }
 
 let bikesCache=[];
-document.addEventListener('input',e=>{if(e.target.id==='bikeFilter')renderBikes();});
+let _bikeFilterTimer=null;
+document.addEventListener('input',e=>{
+  if(e.target.id==='bikeFilter'){clearTimeout(_bikeFilterTimer);_bikeFilterTimer=setTimeout(renderBikes,200);}
+});
 document.addEventListener('change',e=>{if(e.target.id==='bikeTypeF'||e.target.id==='bikeSortF')loadBikes();});
 
 async function loadBikes(){
@@ -1217,7 +1328,12 @@ function renderBikes(){
   });
 }
 
-async function likeBike(id,btn){if(!currentUser||!db)return;btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid),likes:firebase.firestore.FieldValue.increment(1)});const b=bikesCache.find(x=>x.id===id);if(b){if(!b.likedBy)b.likedBy=[];b.likedBy.push(currentUser.uid);b.likes=(b.likes||0)+1;}sfx.tick();btn.className='like-btn liked';btn.innerHTML='❤️ '+(b?b.likes:'');btn.onclick=()=>unlikeBike(id,btn);btn.disabled=false;toast('❤️');}catch(e){btn.disabled=false;toast('Ошибка: '+e.message);}}
+async function likeBike(id,btn){
+  if(!currentUser||!db)return;
+  const b=bikesCache.find(x=>x.id===id);
+  if(b&&b.ownerId===currentUser.uid){toast('Нельзя лайкать свой байк');return;}
+  if(b&&Array.isArray(b.likedBy)&&b.likedBy.includes(currentUser.uid)){toast('Уже лайкнул');return;}
+  btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid),likes:firebase.firestore.FieldValue.increment(1)});const b=bikesCache.find(x=>x.id===id);if(b){if(!b.likedBy)b.likedBy=[];b.likedBy.push(currentUser.uid);b.likes=(b.likes||0)+1;}sfx.tick();btn.className='like-btn liked';btn.innerHTML='❤️ '+(b?b.likes:'');btn.onclick=()=>unlikeBike(id,btn);btn.disabled=false;toast('❤️');}catch(e){btn.disabled=false;toast('Ошибка: '+e.message);}}
 async function unlikeBike(id,btn){if(!currentUser||!db)return;btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid),likes:firebase.firestore.FieldValue.increment(-1)});const b=bikesCache.find(x=>x.id===id);if(b){b.likedBy=(b.likedBy||[]).filter(u=>u!==currentUser.uid);b.likes=Math.max(0,(b.likes||1)-1);}btn.className='like-btn';btn.innerHTML='🤍 '+(b?b.likes:'');btn.onclick=()=>likeBike(id,btn);btn.disabled=false;}catch(e){btn.disabled=false;}}
 
 async function addBike(){
@@ -1268,11 +1384,40 @@ async function addBike(){
   }
 }
 
-async function deleteBike(id){if(!currentUser||!db)return;try{await db.collection('bikes').doc(id).delete();bikesCache=bikesCache.filter(b=>b.id!==id);sfx.save();renderBikes();toast('Байк удалён');}catch(e){toast('Ошибка: '+e.message);}}
+async function deleteBike(id){
+  if(!currentUser||!db)return;
+  try{
+    // Пробуем удалить фото из Storage если это Storage URL
+    const bike=bikesCache.find(b=>b.id===id);
+    if(bike&&bike.photoUrl&&bike.photoUrl.includes('firebasestorage')&&storage){
+      try{await storage.refFromURL(bike.photoUrl).delete();}catch(e){console.warn('Storage photo delete:',e);}
+    }
+    await db.collection('bikes').doc(id).delete();
+    bikesCache=bikesCache.filter(b=>b.id!==id);
+    sfx.save();renderBikes();toast('Байк удалён');
+  }catch(e){toast('Ошибка: '+e.message);}
+}
 
 /* ══ PROOFS ══ */
-function ytId(url){const m=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null;}
-function addProof(){const title=document.getElementById('proofTitle').value.trim();const skill=document.getElementById('proofSkill').value;const url=document.getElementById('proofUrl').value.trim();if(!title)return toast('Введи название!');if(!url)return toast('Вставь ссылку!');const id=ytId(url);if(!id)return toast('Неверная YouTube ссылка!');if(!state.proofs)state.proofs=[];state.proofs.unshift({id:Date.now().toString(),title,skill,ytId:id,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0});document.getElementById('proofTitle').value='';document.getElementById('proofUrl').value='';sfx.save();saveCloud();renderProofs();toast('🎬 Видео загружено!');checkAutoCompleteChallenge();checkAch();}
+function ytId(url){
+  if(!url||typeof url!=='string')return null;
+  const u=url.trim();
+  if(!/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)/i.test(u))return null;
+  const m=u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m?m[1]:null;
+}
+function addProof(){
+  const rawTitle=document.getElementById('proofTitle').value.trim();
+  const skill=document.getElementById('proofSkill').value;
+  const url=document.getElementById('proofUrl').value.trim();
+  if(!rawTitle)return toast('Введи название!');
+  if(rawTitle.length>100)return toast('Максимум 100 символов в названии');
+  const title=rawTitle.replace(/[<>&"]/g,'').slice(0,100);
+  if(!url)return toast('Вставь ссылку!');
+  const id=ytId(url);if(!id)return toast('Неверная YouTube ссылка!');
+  if(!state.proofs)state.proofs=[];
+  if(state.proofs.length>=20){toast('Максимум 20 видео. Удали старые.');return;}
+  state.proofs.unshift({id:Date.now().toString(),title,skill,ytId:id,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0});document.getElementById('proofTitle').value='';document.getElementById('proofUrl').value='';sfx.save();saveCloud();renderProofs();toast('🎬 Видео загружено!');checkAutoCompleteChallenge();checkAch();}
 function reactProof(id,type){if(!state.proofReactions)state.proofReactions={};const key=id+'_'+state.nickname;if(!state.proofReactions[key])state.proofReactions[key]=[];if(state.proofReactions[key].includes(type)){state.proofReactions[key]=state.proofReactions[key].filter(t=>t!==type);const p=state.proofs.find(x=>x.id===id);if(p)p[type]=Math.max(0,(p[type]||0)-1);}else{state.proofReactions[key].push(type);const p=state.proofs.find(x=>x.id===id);if(p)p[type]=(p[type]||0)+1;}sfx.tick();saveCloud();renderProofs();}
 function renderProofs(){const el=document.getElementById('proofFeed');if(!el)return;el.innerHTML='';if(!state.proofs||!state.proofs.length){const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Нет видео!';el.appendChild(p);return;}state.proofs.forEach(p=>{const card=document.createElement('div');card.className='proof-card';const head=document.createElement('div');head.className='proof-head';const info=document.createElement('div');const h4=document.createElement('h4');h4.style.cssText='margin:0 0 2px;font-size:15px;';h4.textContent=p.title;const meta=document.createElement('span');meta.style.cssText='font-size:11px;color:var(--muted);';meta.textContent=p.author+' · '+(SNAMES[p.skill]||p.skill)+' · '+new Date(p.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});info.append(h4,meta);head.appendChild(info);if(p.author===state.nickname){const d=document.createElement('button');d.className='btn btn-danger';d.style.cssText='padding:4px 8px;font-size:11px;';d.textContent='✕';d.onclick=()=>confirmAction('Удалить?','',()=>{state.proofs=state.proofs.filter(x=>x.id!==p.id);saveCloud();renderProofs();});head.appendChild(d);}const vw=document.createElement('div');vw.className='proof-vid';const iframe=document.createElement('iframe');iframe.src='https://www.youtube.com/embed/'+p.ytId;iframe.allowFullscreen=true;vw.appendChild(iframe);const reacts=document.createElement('div');reacts.className='proof-reacts';const key=p.id+'_'+state.nickname;const my=state.proofReactions&&state.proofReactions[key]?state.proofReactions[key]:[];['likes','fires'].forEach(type=>{const btn=document.createElement('button');btn.className='pr-btn'+(my.includes(type)?' active':'');btn.textContent=(type==='likes'?'👍 ':'🔥 ')+(p[type]||0);btn.onclick=()=>reactProof(p.id,type);reacts.appendChild(btn);});card.append(head,vw,reacts);el.appendChild(card);});}
 
@@ -1306,6 +1451,7 @@ async function createDuel(){
     acceptedBy:null,acceptedByUid:null,winner:null
   };
   if(!state.duels)state.duels=[];
+  if(state.duels.length>=50)state.duels=state.duels.slice(0,49);
   state.duels.unshift(duel);
   if(db){
     try{
@@ -1343,7 +1489,39 @@ async function acceptDuel(id){
   }
   sfx.levelUp();toast('Принято! ⚡');saveCloud();renderDuels();
 }
-async function submitDuelResult(id){const d=state.duels.find(x=>x.id===id);if(!d)return;const val=parseFloat(prompt('Твой результат ('+SUNITS[d.skill]+'):'));if(isNaN(val)||val<=0)return toast('Неверно!');const isC=d.challenger===state.nickname;if(isC)d.challengerResult=val;else d.opponentResult=val;if(d.challengerResult!==null&&d.opponentResult!==null){d.status='done';d.winner=d.challengerResult>=d.opponentResult?d.challenger:d.acceptedBy;if(d.winner===state.nickname){state.duelsWon=(state.duelsWon||0)+1;sfx.max();showLvlUp('ПОБЕДА!','','⚡',true);confetti(80);}else toast('Победил '+d.winner);}else toast('Результат записан!');if(db){try{await db.collection('duels').doc(id).update({challengerResult:d.challengerResult,opponentResult:d.opponentResult,status:d.status,winner:d.winner||null});}catch(e){}}saveCloud();renderDuels();checkAch();}
+async function submitDuelResult(id){
+  const d=state.duels.find(x=>x.id===id);if(!d)return;
+  const val=parseFloat(prompt('Твой результат ('+SUNITS[d.skill]+'):'));
+  if(isNaN(val)||val<=0)return toast('Неверно!');
+  // Определяем роль по UID (надёжнее чем по никнейму — ник можно поменять)
+  const isC=d.challengerUid===currentUser.uid;
+  if(isC)d.challengerResult=val;else d.opponentResult=val;
+  if(d.challengerResult!==null&&d.opponentResult!==null){
+    d.status='done';
+    // Победитель: у кого больше результат
+    const challengerWins=d.challengerResult>=d.opponentResult;
+    d.winner=challengerWins?d.challenger:d.acceptedBy;
+    d.winnerUid=challengerWins?d.challengerUid:d.acceptedByUid;
+    if(d.winnerUid===currentUser.uid){
+      state.duelsWon=(state.duelsWon||0)+1;
+      sfx.max();showLvlUp('ПОБЕДА!','','⚡',true);confetti(80);
+    }else{
+      toast('Дуэль завершена. Победил '+d.winner);
+    }
+  }else{toast('Результат записан! Ждём соперника.');}
+  if(db){
+    try{
+      await db.collection('duels').doc(id).update({
+        challengerResult:d.challengerResult,
+        opponentResult:d.opponentResult,
+        status:d.status,
+        winner:d.winner||null,
+        winnerUid:d.winnerUid||null
+      });
+    }catch(e){console.warn('submitDuelResult update:',e);}
+  }
+  saveCloud();renderDuels();checkAch();
+}
 async function renderDuels(){const el=document.getElementById('duelList');if(!el)return;el.innerHTML='';let duels=[...(state.duels||[])];if(db){try{const snap=await db.collection('duels').where('status','in',['open','active']).orderBy('createdAt','desc').limit(20).get();snap.docs.forEach(d=>{const gd={id:d.id,...d.data()};if(!duels.find(x=>x.id===gd.id))duels.unshift(gd);});}catch(e){}}if(!duels.length){const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Нет дуэлей.';el.appendChild(p);return;}duels.slice(0,20).forEach(d=>{const card=document.createElement('div');card.className='duel-card';const h4=document.createElement('h4');h4.textContent='⚡ '+(SNAMES[d.skill]||d.skill)+' — '+d.target;const vs=document.createElement('div');vs.className='duel-vs';const p1=document.createElement('div');p1.className='player';p1.textContent=d.challenger;if(d.challengerResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.challengerResult+' '+SUNITS[d.skill];p1.appendChild(r);}const vb=document.createElement('div');vb.className='vs-badge';vb.textContent='VS';const p2=document.createElement('div');p2.className='player';p2.textContent=d.acceptedBy?d.acceptedBy:(d.opponent?d.opponent:'??? (открытая)');if(d.opponentResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.opponentResult+' '+SUNITS[d.skill];p2.appendChild(r);}vs.append(p1,vb,p2);const meta=document.createElement('p');meta.style.cssText='font-size:12px;color:var(--muted);margin:0 0 10px;';meta.textContent='Дедлайн: '+d.deadline+' · '+(d.status==='done'?'Победитель: '+(d.winner||'—'):d.status==='active'?'Активна':'Открытая');card.append(h4,vs,meta);const isC=d.challenger===state.nickname;const isO=d.acceptedBy===state.nickname;const canAc=d.status==='open'&&!isC&&(!d.opponent||d.opponent===state.nickname);const canSu=d.status==='active'&&(isC||isO);if(canAc){const b=document.createElement('button');b.className='btn btn-primary btn-full';b.style.padding='10px';b.textContent='⚡ Принять!';b.onclick=()=>acceptDuel(d.id);card.appendChild(b);}else if(canSu){const b=document.createElement('button');b.className='btn btn-warn btn-full';b.style.padding='10px';b.textContent='📏 Внести результат';b.onclick=()=>submitDuelResult(d.id);card.appendChild(b);}else if(d.status==='done'){const dn=document.createElement('div');dn.style.cssText='text-align:center;font-weight:900;color:var(--good);padding:8px;';dn.textContent='🏆 '+(d.winner||'—')+' победил!';card.appendChild(dn);}el.appendChild(card);});}
 
 /* ══════════════════════════════
