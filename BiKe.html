@@ -1687,7 +1687,7 @@ async function sendFriendRequest(){
   if(!code||code.length!==12){msg.textContent='Введи 12-значный код';msg.className='auth-msg err';msg.style.display='block';return;}
   if(!db||!currentUser){toast('Firebase не подключён');return;}
   if(state.uniqueCode===code){toast('Нельзя добавить себя');return;}
-  if(state.friends.includes(code)){toast('Этот пользователь уже твой друг');return;}
+  if((state.friends||[]).includes(code)){toast('Этот пользователь уже твой друг');return;}
   const sent=(state.friendRequestsSent||[]).find(r=>r.toCode===code&&r.status==='pending');
   if(sent){toast('Запрос уже отправлен');return;}
   try{
@@ -1696,13 +1696,20 @@ async function sendFriendRequest(){
     const target=snap.data();
     if(!target||!target.uid){toast('Код не найден');return;}
     const reqId=Date.now().toString()+Math.random().toString(36).slice(2,7);
-    const req={id:reqId,toUid:target.uid,toNick:target.nickname,toCode:code,status:'pending'};
+    const reqData={
+      id:reqId,
+      fromUid:currentUser.uid,
+      fromNick:state.nickname,
+      fromCode:state.uniqueCode,
+      toUid:target.uid,
+      toNick:target.nickname,
+      toCode:code,
+      status:'pending',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('friend_requests').doc(reqId).set(reqData);
     if(!state.friendRequestsSent)state.friendRequestsSent=[];
-    state.friendRequestsSent.push(req);
-    await db.collection('users').doc(target.uid).update({
-      friendRequestsReceived:firebase.firestore.FieldValue.arrayUnion({id:reqId,fromUid:currentUser.uid,fromNick:state.nickname,fromCode:state.uniqueCode,status:'pending'})
-    }).catch(()=>{});
-    await db.collection('users').doc(currentUser.uid).set({friendRequestsSent:firebase.firestore.FieldValue.arrayUnion(req)},{merge:true}).catch(()=>{});
+    state.friendRequestsSent.push({id:reqId,toUid:target.uid,toNick:target.nickname,toCode:code,status:'pending'});
     saveCloud();
     document.getElementById('friendCodeInput').value='';
     toast('Запрос отправлен! ✓');
@@ -1712,16 +1719,15 @@ async function sendFriendRequest(){
 async function acceptFriendRequest(reqId,fromUid,fromNick,fromCode){
   if(!db||!currentUser)return;
   try{
+    await db.collection('friend_requests').doc(reqId).update({status:'accepted'});
     if(!state.friends)state.friends=[];
     if(!state.friends.includes(fromUid))state.friends.push(fromUid);
-    if(!state.friendRequestsReceived)state.friendRequestsReceived=[];
-    state.friendRequestsReceived=state.friendRequestsReceived.filter(r=>r.id!==reqId);
-    await db.collection('users').doc(currentUser.uid).set({friends:state.friends,friendRequestsReceived:state.friendRequestsReceived.filter(r=>r.id!==reqId)},{merge:true}).catch(()=>{});
     const other=await db.collection('users').doc(fromUid).get();
     const otherData=other.data()||{};
     const otherFriends=otherData.friends||[];
     if(!otherFriends.includes(currentUser.uid))otherFriends.push(currentUser.uid);
-    await db.collection('users').doc(fromUid).set({friends:otherFriends,friendRequestsSent:firebase.firestore.FieldValue.arrayRemove({id:reqId,toUid:currentUser.uid,toNick:state.nickname,toCode:state.uniqueCode,status:'pending'})},{merge:true}).catch(()=>{});
+    await db.collection('users').doc(fromUid).set({friends:otherFriends},{merge:true});
+    await db.collection('users').doc(currentUser.uid).set({friends:state.friends},{merge:true});
     saveCloud();
     toast(fromNick+' теперь твой друг! 🎉');
     renderFriendsTab();
@@ -1730,15 +1736,7 @@ async function acceptFriendRequest(reqId,fromUid,fromNick,fromCode){
 async function declineFriendRequest(reqId){
   if(!db||!currentUser)return;
   try{
-    if(!state.friendRequestsReceived)state.friendRequestsReceived=[];
-    state.friendRequestsReceived=state.friendRequestsReceived.filter(r=>r.id!==reqId);
-    await db.collection('users').doc(currentUser.uid).set({friendRequestsReceived:state.friendRequestsReceived.filter(r=>r.id!==reqId)},{merge:true}).catch(()=>{});
-    const req=(state.friendRequestsReceived.find(r=>r.id===reqId));
-    if(req){
-      await db.collection('users').doc(req.fromUid).update({
-        friendRequestsSent:firebase.firestore.FieldValue.arrayRemove({id:reqId,toUid:currentUser.uid,toNick:state.nickname,toCode:state.uniqueCode,status:'pending'})
-      }).catch(()=>{});
-    }
+    await db.collection('friend_requests').doc(reqId).update({status:'declined'});
     saveCloud();
     toast('Запрос отклонён');
     renderFriendsTab();
@@ -1747,12 +1745,9 @@ async function declineFriendRequest(reqId){
 async function cancelFriendRequest(reqId,toUid,toNick){
   if(!db||!currentUser)return;
   try{
+    await db.collection('friend_requests').doc(reqId).delete();
     if(!state.friendRequestsSent)state.friendRequestsSent=[];
     state.friendRequestsSent=state.friendRequestsSent.filter(r=>r.id!==reqId);
-    await db.collection('users').doc(currentUser.uid).set({friendRequestsSent:state.friendRequestsSent.filter(r=>r.id!==reqId)},{merge:true}).catch(()=>{});
-    await db.collection('users').doc(toUid).update({
-      friendRequestsReceived:firebase.firestore.FieldValue.arrayRemove({id:reqId,fromUid:currentUser.uid,fromNick:state.nickname,fromCode:state.uniqueCode,status:'pending'})
-    }).catch(()=>{});
     saveCloud();
     toast('Запрос отменён');
     renderFriendsTab();
@@ -1785,9 +1780,6 @@ function switchFriendsSub(sub){
 async function renderFriendsTab(){
   if(!currentUser)return;
   document.getElementById('myCodeNum').textContent=formatCode(state.uniqueCode);
-  const inpCount=(state.friendRequestsReceived||[]).filter(r=>r.status==='pending').length;
-  const frInp=document.getElementById('frInpCount');
-  if(frInp)frInp.textContent=inpCount?' ('+inpCount+')':'';
   const frFr=document.getElementById('frFriendsCount');
   if(frFr)frFr.textContent=(state.friends||[]).length?' ('+state.friends.length+')':'';
   const recEl=document.getElementById('friendsReceived');
@@ -1796,28 +1788,37 @@ async function renderFriendsTab(){
   recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px;">Загрузка...</div>';
   frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px;">Загрузка...</div>';
   sentEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px;">Загрузка...</div>';
-  const pendingRec=(state.friendRequestsReceived||[]).filter(r=>r.status==='pending');
-  if(!pendingRec.length){
-    recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет входящих запросов</div>';
-  }else{
-    recEl.innerHTML='';
-    pendingRec.forEach(req=>{
-      const card=document.createElement('div');card.className='req-card';
-      card.innerHTML='<div class="req-card-icon">👤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.fromNick)+'</div><div class="req-card-code">'+formatCode(req.fromCode)+'</div></div><div class="req-card-btns"><button class="btn btn-success" style="padding:8px 12px;font-size:12px;" onclick="acceptFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\',\''+esc(req.fromNick)+'\',\''+esc(req.fromCode)+'\')">✓</button><button class="btn btn-danger" style="padding:8px 12px;font-size:12px;" onclick="declineFriendRequest(\''+req.id+'\')">✕</button></div>';
-      recEl.appendChild(card);
-    });
-  }
-  const sentPending=(state.friendRequestsSent||[]).filter(r=>r.status==='pending');
-  if(!sentPending.length){
-    sentEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет исходящих запросов</div>';
-  }else{
-    sentEl.innerHTML='';
-    sentPending.forEach(req=>{
-      const card=document.createElement('div');card.className='req-card';
-      card.innerHTML='<div class="req-card-icon">📤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.toNick)+'</div><div class="req-card-code">'+formatCode(req.toCode)+'</div></div><div class="req-card-btns"><button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="cancelFriendRequest(\''+req.id+'\',\''+esc(req.toUid)+'\',\''+esc(req.toNick)+'\')">✕ Отменить</button></div>';
-      sentEl.appendChild(card);
-    });
-  }
+  try{
+    const [recSnap,sentSnap]=await Promise.all([
+      db.collection('friend_requests').where('toUid','==',currentUser.uid).where('status','==','pending').get(),
+      db.collection('friend_requests').where('fromUid','==',currentUser.uid).where('status','==','pending').get()
+    ]);
+    const pendingRec=recSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const sentPending=sentSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const inpCount=pendingRec.length;
+    const frInp=document.getElementById('frInpCount');
+    if(frInp)frInp.textContent=inpCount?' ('+inpCount+')':'';
+    if(!pendingRec.length){
+      recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет входящих запросов</div>';
+    }else{
+      recEl.innerHTML='';
+      pendingRec.forEach(req=>{
+        const card=document.createElement('div');card.className='req-card';
+        card.innerHTML='<div class="req-card-icon">👤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.fromNick)+'</div><div class="req-card-code">'+formatCode(req.fromCode||'')+'</div></div><div class="req-card-btns"><button class="btn btn-success" style="padding:8px 12px;font-size:12px;" onclick="acceptFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\',\''+esc(req.fromNick)+'\',\''+esc(req.fromCode||'')+'\')">✓</button><button class="btn btn-danger" style="padding:8px 12px;font-size:12px;" onclick="declineFriendRequest(\''+req.id+'\')">✕</button></div>';
+        recEl.appendChild(card);
+      });
+    }
+    if(!sentPending.length){
+      sentEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет исходящих запросов</div>';
+    }else{
+      sentEl.innerHTML='';
+      sentPending.forEach(req=>{
+        const card=document.createElement('div');card.className='req-card';
+        card.innerHTML='<div class="req-card-icon">📤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.toNick)+'</div><div class="req-card-code">'+formatCode(req.toCode||'')+'</div></div><div class="req-card-btns"><button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="cancelFriendRequest(\''+req.id+'\',\''+esc(req.toUid)+'\',\''+esc(req.toNick)+'\')">✕ Отменить</button></div>';
+        sentEl.appendChild(card);
+      });
+    }
+  }catch(e){recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Ошибка загрузки</div>';sentEl.innerHTML='';}
   const friendIds=state.friends||[];
   if(!friendIds.length){
     frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Пока нет друзей. Пригласи друга по коду!</div>';
@@ -1830,18 +1831,15 @@ async function renderFriendsTab(){
           const snap=await db.collection('leaderboard').doc(fid).get();
           if(snap.exists){
             const d=snap.data();
-            const uSnap=await db.collection('users').doc(fid).get();
-            const uData=uSnap.data()||{};
-            friendData.push({uid:fid,nickname:d.nickname||'???',pts:d.pts||0,updatedAt:uData.lastActive||null});
+            friendData.push({uid:fid,nickname:d.nickname||'???',pts:d.pts||0});
           }
         }catch(e){}
       }
       frEl.innerHTML='';
       friendData.sort((a,b)=>b.pts-a.pts);
       friendData.forEach(f=>{
-        const isOnline=false;
         const row=document.createElement('div');row.className='friend-row';
-        row.innerHTML='<div class="friend-row-icon">👤</div><div class="friend-row-info"><div class="friend-row-name">'+esc(f.nickname)+'</div><div class="friend-row-status '+(isOnline?'online':'offline')+'">'+(isOnline?'🟢 Онлайн':'⚫ Офлайн')+'</div></div><div class="friend-row-xp">'+f.pts+' XP</div><button class="btn btn-danger" style="padding:8px 10px;font-size:11px;" onclick="removeFriend(\''+esc(f.uid)+'\',\''+esc(f.nickname)+'\')">✕</button>';
+        row.innerHTML='<div class="friend-row-icon">👤</div><div class="friend-row-info"><div class="friend-row-name">'+esc(f.nickname)+'</div><div class="friend-row-status offline">⚫ Офлайн</div></div><div class="friend-row-xp">'+f.pts+' XP</div><button class="btn btn-danger" style="padding:8px 10px;font-size:11px;" onclick="removeFriend(\''+esc(f.uid)+'\',\''+esc(f.nickname)+'\')">✕</button>';
         frEl.appendChild(row);
       });
     }catch(e){frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Ошибка загрузки</div>';}
