@@ -570,7 +570,7 @@ select.field{cursor:pointer;}
       <div class="panel-head"><div><h3>👥 Друзья</h3></div></div>
       <div class="my-code-box">
         <div class="my-code-label">Мой код:</div>
-        <div class="my-code-num" id="myCodeNum">— — — — — —</div>
+        <div class="my-code-num" id="myCodeNum">——————</div>
         <button class="btn btn-ghost copy-btn" onclick="copyMyCode()">📋</button>
       </div>
       <div class="friends-add-row">
@@ -823,15 +823,18 @@ async function saveCloud(){
     if(Array.isArray(toSave.proofReactions))toSave.proofReactions={};
     if(Array.isArray(toSave.skills))toSave.skills=toSave.skills.map(s=>({...s,trSession:0}));
     await db.collection('users').doc(currentUser.uid).set(toSave,{merge:true});
+    if(state.uniqueCode){
+      await db.collection('codes').doc(state.uniqueCode).set({
+        uid:currentUser.uid,
+        nickname:state.nickname||'User'
+      },{merge:true}).catch(()=>{});
+    }
     await db.collection('leaderboard').doc(currentUser.uid).set({
       nickname:state.nickname,
       pts:calcXP(),
       uid:currentUser.uid,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-    if(state.uniqueCode){
-      try{await db.collection('codes').doc(state.uniqueCode).set({uid:currentUser.uid,nickname:state.nickname,code:state.uniqueCode},{merge:true});}catch(e){console.warn('codes save:',e);}
-    }
     setSyncDot('synced');
   }catch(e){console.warn('saveCloud:',e);setSyncDot('error');saveLS();}
 }
@@ -878,11 +881,6 @@ async function initFB(){
           const doc=await db.collection('users').doc(user.uid).get();
           if(doc.exists){
             state={...defState(),...doc.data()};
-            if(!state.uniqueCode){
-              state.uniqueCode=generateUniqueCode();
-              if(db)try{await db.collection('codes').doc(state.uniqueCode).set({uid:currentUser.uid,nickname:state.nickname,code:state.uniqueCode},{merge:true});}catch(e){console.warn('codes save:',e);}
-              saveCloud();
-            }
             const ls=JSON.parse(localStorage.getItem(SK)||'{}');
             if(Array.isArray(ls.duels))state.duels=ls.duels;
             DEF_SKILLS.forEach(ds=>{
@@ -892,6 +890,15 @@ async function initFB(){
             });
             saveLS();setSyncDot('synced');
           }else{await saveCloud();}
+          if(!state.uniqueCode){
+            state.uniqueCode=generateUniqueCode();
+            try{
+              await db.collection('codes').doc(state.uniqueCode).set({
+                uid:user.uid,
+                nickname:state.nickname||'User'
+              });
+            }catch(e){console.warn('Code save:',e);}
+          }
         }catch(e){console.warn('Cloud load:',e);setSyncDot('error');}
         resetDailyCountersIfNeeded();
         hideLoad();
@@ -1038,18 +1045,19 @@ async function deleteAccount(){
     return;
   }
   const uid=currentUser.uid;
-  const code=state.uniqueCode;
   try{
     await db.collection('users').doc(uid).delete();
     await db.collection('leaderboard').doc(uid).delete();
-    if(code)await db.collection('codes').doc(code).delete();
+    if(state.nickname){
+      await db.collection('nicknames').doc(state.nickname.toLowerCase()).delete().catch(()=>{});
+    }
     const friends=state.friends||[];
-    for(const fid of friends){
+    for(const f of friends){
       try{
-        const od=await db.collection('users').doc(fid).get();
+        const od=await db.collection('users').doc(f.uid).get();
         const o=(od.data()||{});
         if(Array.isArray(o.friends)){
-          await db.collection('users').doc(fid).update({friends:o.friends.filter(u=>u!==uid)});
+          await db.collection('users').doc(f.uid).update({friends:o.friends.filter(u=>(typeof u==='string'?u:u.uid)!==uid)});
         }
       }catch(e){}
     }
@@ -1086,20 +1094,41 @@ function updateUserUI(){
 async function setNickname(){
   const v=document.getElementById('nickInput').value.trim();
   if(!v||v.length<2){toast('Мин. 2 символа!');return;}
-  state.nickname=v;
-  if(!state.uniqueCode){
-    state.uniqueCode=generateUniqueCode();
-    if(db)try{await db.collection('codes').doc(state.uniqueCode).set({uid:currentUser.uid,nickname:state.nickname,code:state.uniqueCode});}catch(e){console.warn('registerCode:',e);}
+  const normalized=v.toLowerCase();
+  if(db){
+    try{
+      const snap=await db.collection('nicknames').doc(normalized).get();
+      if(snap.exists&&snap.data().uid!==currentUser.uid){
+        toast('Этот никнейм уже занят!');return;
+      }
+      await db.collection('nicknames').doc(normalized).set({uid:currentUser.uid,nickname:v});
+    }catch(e){console.error('nickname check:',e);}
   }
+  state.nickname=v;
+  if(!state.uniqueCode)state.uniqueCode=generateUniqueCode();
   await saveCloud();
   sfx.save();document.getElementById('nickScreen').style.display='none';initApp();
 }
-function changeNick(){
+async function changeNick(){
   const n=prompt('Новый никнейм:',state.nickname);
   if(!n)return;
-  const v=n.trim().replace(/[<>&"']/g,''); // убираем спец-символы
+  const v=n.trim().replace(/[<>&"']/g,'');
   if(v.length<2){toast('Никнейм минимум 2 символа');return;}
   if(v.length>24){toast('Никнейм максимум 24 символа');return;}
+  const normalized=v.toLowerCase();
+  if(db){
+    try{
+      const snap=await db.collection('nicknames').doc(normalized).get();
+      if(snap.exists&&snap.data().uid!==currentUser.uid){
+        toast('Этот никнейм уже занят!');return;
+      }
+      const oldNormalized=state.nickname?.toLowerCase();
+      if(oldNormalized&&oldNormalized!==normalized){
+        await db.collection('nicknames').doc(oldNormalized).delete();
+      }
+      await db.collection('nicknames').doc(normalized).set({uid:currentUser.uid,nickname:v});
+    }catch(e){console.error('nickname update:',e);}
+  }
   state.nickname=v;saveCloud();setT('myNickDisp',state.nickname);setT('welcomeText','Привет, '+state.nickname+' 👋');toast('Ник обновлён!');
 }
 
@@ -1680,6 +1709,7 @@ function copyMyCode(){
   if(!state.uniqueCode){toast('Код ещё не создан');return;}
   navigator.clipboard.writeText(state.uniqueCode).then(()=>toast('Код скопирован!')).catch(()=>toast('Не удалось скопировать'));
 }
+
 async function sendFriendRequest(){
   const code=document.getElementById('friendCodeInput').value.trim().replace(/\s/g,'');
   const msg=document.getElementById('friendsReqMsg');
@@ -1692,9 +1722,10 @@ async function sendFriendRequest(){
   if(sent){toast('Запрос уже отправлен');return;}
   try{
     const snap=await db.collection('codes').doc(code).get();
-    if(!snap.exists){toast('Код не найден');return;}
+    if(!snap.exists){msg.textContent='Код не найден';msg.className='auth-msg err';msg.style.display='block';return;}
     const target=snap.data();
-    if(!target||!target.uid){toast('Код не найден');return;}
+    if(!target||!target.uid){msg.textContent='Код не найден';msg.className='auth-msg err';msg.style.display='block';return;}
+    if(target.uid===currentUser.uid){toast('Нельзя добавить себя');return;}
     const reqId=Date.now().toString()+Math.random().toString(36).slice(2,7);
     const reqData={
       id:reqId,
@@ -1804,7 +1835,7 @@ async function renderFriendsTab(){
       recEl.innerHTML='';
       pendingRec.forEach(req=>{
         const card=document.createElement('div');card.className='req-card';
-        card.innerHTML='<div class="req-card-icon">👤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.fromNick)+'</div><div class="req-card-code">'+formatCode(req.fromCode||'')+'</div></div><div class="req-card-btns"><button class="btn btn-success" style="padding:8px 12px;font-size:12px;" onclick="acceptFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\',\''+esc(req.fromNick)+'\',\''+esc(req.fromCode||'')+'\')">✓</button><button class="btn btn-danger" style="padding:8px 12px;font-size:12px;" onclick="declineFriendRequest(\''+req.id+'\')">✕</button></div>';
+        card.innerHTML='<div class="req-card-icon">👤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.fromNick||'???')+'</div><div class="req-card-code">'+formatCode(req.fromCode||'')+'</div></div><div class="req-card-btns"><button class="btn btn-success" style="padding:8px 12px;font-size:12px;" onclick="acceptFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\',\''+esc(req.fromNick||'')+'\',\''+esc(req.fromCode||'')+'\')">✓</button><button class="btn btn-danger" style="padding:8px 12px;font-size:12px;" onclick="declineFriendRequest(\''+req.id+'\')">✕</button></div>';
         recEl.appendChild(card);
       });
     }
@@ -1814,7 +1845,7 @@ async function renderFriendsTab(){
       sentEl.innerHTML='';
       sentPending.forEach(req=>{
         const card=document.createElement('div');card.className='req-card';
-        card.innerHTML='<div class="req-card-icon">📤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.toNick)+'</div><div class="req-card-code">'+formatCode(req.toCode||'')+'</div></div><div class="req-card-btns"><button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="cancelFriendRequest(\''+req.id+'\',\''+esc(req.toUid)+'\',\''+esc(req.toNick)+'\')">✕ Отменить</button></div>';
+        card.innerHTML='<div class="req-card-icon">📤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.toNick||'???')+'</div><div class="req-card-code">'+formatCode(req.toCode||'')+'</div></div><div class="req-card-btns"><button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="cancelFriendRequest(\''+req.id+'\',\''+esc(req.toUid)+'\',\''+esc(req.toNick||'')+'\')">✕ Отменить</button></div>';
         sentEl.appendChild(card);
       });
     }
@@ -2065,7 +2096,7 @@ function updateNotifStatus(){
 
 /* ══ EXPORT / RESET ══ */
 function exportData(){const a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(state));a.download='mtb_backup.json';a.click();}
-async function resetAll(){localStorage.removeItem(SK);localStorage.removeItem('mtb_dts');localStorage.removeItem('mtb_wts');if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();await db.collection('leaderboard').doc(currentUser.uid).delete();if(state.uniqueCode)await db.collection('codes').doc(state.uniqueCode).delete();}catch(e){}}location.reload();}
+async function resetAll(){localStorage.removeItem(SK);localStorage.removeItem('mtb_dts');localStorage.removeItem('mtb_wts');if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();await db.collection('leaderboard').doc(currentUser.uid).delete();}catch(e){}}location.reload();}
 
 /* ══ EVENTS ══ */
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
