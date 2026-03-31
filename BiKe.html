@@ -291,6 +291,31 @@ select.field{cursor:pointer;}
 .toggle input:checked+.toggle-sl{background:var(--accent);}
 .toggle input:checked+.toggle-sl::before{transform:translateX(20px);}
 
+/* FRIENDS TAB */
+.my-code-box{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:12px;}
+.my-code-label{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;}
+.my-code-num{font-family:var(--fm);font-size:16px;font-weight:700;letter-spacing:3px;color:var(--accent);flex:1;}
+.copy-btn{padding:8px 12px;font-size:14px;flex-shrink:0;}
+.friends-add-row{display:flex;gap:8px;margin-bottom:12px;}
+.friends-add-row .field{margin:0;flex:1;}
+.fr-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:rgba(76,201,240,.2);color:var(--accent);font-size:10px;font-weight:800;}
+.fr-count:empty,.fr-count[data-zero]{display:none;}
+.friends-panel{}
+.req-card{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px;}
+.req-card-icon{font-size:28px;flex-shrink:0;}
+.req-card-info{flex:1;min-width:0;}
+.req-card-name{font-size:14px;font-weight:800;margin-bottom:2px;}
+.req-card-code{font-size:11px;font-family:var(--fm);color:var(--muted);letter-spacing:2px;}
+.req-card-btns{display:flex;gap:6px;}
+.friend-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px;}
+.friend-row-icon{font-size:28px;flex-shrink:0;}
+.friend-row-info{flex:1;min-width:0;}
+.friend-row-name{font-size:14px;font-weight:800;margin-bottom:2px;}
+.friend-row-status{font-size:11px;}
+.friend-row-status.online{color:var(--good);}
+.friend-row-status.offline{color:var(--muted);}
+.friend-row-xp{font-size:12px;font-weight:700;color:var(--accent);font-family:var(--fm);text-align:right;}
+
 /* SUPPORT */
 .sup-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .ct-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:22px;padding:20px;text-align:center;transition:transform .2s;}
@@ -430,6 +455,7 @@ select.field{cursor:pointer;}
     <button class="tab-btn" data-tab="bikes">🚲<span>Гараж</span></button>
     <button class="tab-btn" data-tab="videos">🎬<span>Видео</span></button>
     <button class="tab-btn" data-tab="friends">🏆<span>Топ</span></button>
+    <button class="tab-btn" data-tab="friends2">👥<span>Друзья</span></button>
     <button class="tab-btn" data-tab="duel">⚡<span>Дуэли</span></button>
     <button class="tab-btn" data-tab="support">🛠<span>Ещё</span></button>
   </nav>
@@ -538,6 +564,31 @@ select.field{cursor:pointer;}
     </div>
   </section>
 
+  <!-- FRIENDS2 -->
+  <section id="tab-friends2" class="tab">
+    <div class="panel">
+      <div class="panel-head"><div><h3>👥 Друзья</h3></div></div>
+      <div class="my-code-box">
+        <div class="my-code-label">Мой код:</div>
+        <div class="my-code-num" id="myCodeNum">— — — — — —</div>
+        <button class="btn btn-ghost copy-btn" onclick="copyMyCode()">📋</button>
+      </div>
+      <div class="friends-add-row">
+        <input id="friendCodeInput" class="field" type="text" placeholder="Введи код друга (12 цифр)" maxlength="12"/>
+        <button class="btn btn-primary" onclick="sendFriendRequest()">Отправить</button>
+      </div>
+      <div id="friendsReqMsg" style="display:none;" class="auth-msg"></div>
+      <div class="sub-tabs" id="friendsSubTabs">
+        <button class="sub-tab active" data-fsub="received" onclick="switchFriendsSub('received')">Входящие <span id="frInpCount" class="fr-count"></span></button>
+        <button class="sub-tab" data-fsub="friends" onclick="switchFriendsSub('friends')">Друзья <span id="frFriendsCount" class="fr-count"></span></button>
+        <button class="sub-tab" data-fsub="sent" onclick="switchFriendsSub('sent')">Исходящие</button>
+      </div>
+      <div id="friendsReceived" class="friends-panel"></div>
+      <div id="friendsList" class="friends-panel" style="display:none;"></div>
+      <div id="friendsSent" class="friends-panel" style="display:none;"></div>
+    </div>
+  </section>
+
   <!-- DUELS -->
   <section id="tab-duel" class="tab">
     <div class="panel">
@@ -546,7 +597,6 @@ select.field{cursor:pointer;}
         <select id="duelSkill" class="field" style="cursor:pointer;"><option value="wh">Вилли (метры)</option><option value="mn">Мэнуал (метры)</option><option value="ts">Трекстенд (секунды)</option><option value="bh">Банни-хоп (см)</option><option value="st">Стоппи (метры)</option></select>
         <input id="duelTarget" class="field" placeholder="Цель — напр. 30 метров"/>
         <input id="duelOpponent" class="field" placeholder="Никнейм соперника (необязательно)"/>
-        <input id="duelDeadline" class="field" type="date"/>
         <button class="btn btn-primary btn-full" onclick="createDuel()">Бросить вызов! ⚡</button>
       </div>
       <div id="duelList"></div>
@@ -599,10 +649,7 @@ select.field{cursor:pointer;}
       </div>
       <div class="form-card" style="margin-top:14px;text-align:center;">
         <p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Вошёл: <strong id="userEmailDisp" style="color:var(--accent);"></strong><br>Ник: <strong id="myNickDisp" style="color:var(--accent);"></strong> <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;margin-left:6px;" onclick="changeNick()">Сменить</button></p>
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-          <button class="btn btn-danger" onclick="confirmAction('Выйти?','Данные останутся в облаке.',doSignOut)">🚪 Выйти</button>
-          <button class="btn btn-danger" onclick="confirmAction('Сбросить всё?','Удалит весь прогресс. Нельзя отменить!',resetAll)">🗑 Сброс</button>
-        </div>
+        <button class="btn btn-danger" onclick="confirmAction('Удалить аккаунт?','Все данные будут удалены. Восстановить невозможно!',deleteAccount)">🗑 Удалить аккаунт</button>
       </div>
     </div>
   </section>
@@ -745,7 +792,7 @@ const DEF_SKILLS=[
 
 /* ══ STATE ══ */
 const SK='mtb_v16';
-function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0};}
+function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,uniqueCode:'',friends:[],friendRequestsSent:[],friendRequestsReceived:[]};}
 let state=loadLS();
 let activeSkillId=null;
 let bikePhotoFile=null;
@@ -782,6 +829,9 @@ async function saveCloud(){
       uid:currentUser.uid,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
+    if(state.uniqueCode){
+      try{await db.collection('codes').doc(state.uniqueCode).set({uid:currentUser.uid,nickname:state.nickname,code:state.uniqueCode},{merge:true});}catch(e){console.warn('codes save:',e);}
+    }
     setSyncDot('synced');
   }catch(e){console.warn('saveCloud:',e);setSyncDot('error');saveLS();}
 }
@@ -828,6 +878,11 @@ async function initFB(){
           const doc=await db.collection('users').doc(user.uid).get();
           if(doc.exists){
             state={...defState(),...doc.data()};
+            if(!state.uniqueCode){
+              state.uniqueCode=generateUniqueCode();
+              if(db)try{await db.collection('codes').doc(state.uniqueCode).set({uid:currentUser.uid,nickname:state.nickname,code:state.uniqueCode},{merge:true});}catch(e){console.warn('codes save:',e);}
+              saveCloud();
+            }
             const ls=JSON.parse(localStorage.getItem(SK)||'{}');
             if(Array.isArray(ls.duels))state.duels=ls.duels;
             DEF_SKILLS.forEach(ds=>{
@@ -851,7 +906,7 @@ async function initFB(){
     if(fbTimeout){clearTimeout(fbTimeout);fbTimeout=null;}
     const errMsg=e.message||'';
     if(errMsg.includes('app-check')||e.code==='firebase-app-check-token-is-invalid'||errMsg.includes('App Check')){
-      toast('⚠️ App Check блокує запити. Вимкни Enforce у Firebase Console → App Check');
+      toast('⚠️ App Check блокирует запросы. Отключи Enforce в Firebase Console → App Check');
     }
     hideLoad();showAuthScr();
   }
@@ -966,7 +1021,56 @@ async function handleForgotPassword(){
   }finally{if(btn){btn.disabled=false;btn.textContent='Забыл пароль?';}}
 }
 
-async function doSignOut(){if(auth)await auth.signOut();location.reload();}
+async function deleteAccount(){
+  if(!currentUser||!db||!auth){toast('Ошибка: Firebase не готов');return;}
+  const providerId=currentUser?.providerData?.[0]?.providerId;
+  try{
+    if(providerId==='google.com'){
+      const provider=new firebase.auth.GoogleAuthProvider();
+      await auth.currentUser.reauthenticateWithPopup(provider);
+    }else{
+      const password=prompt('Для удаления аккаунта введи пароль:');
+      if(!password){toast('Отменено');return;}
+      try{await auth.signInWithEmailAndPassword(currentUser.email,password);}catch(e){toast('Неверный пароль');return;}
+    }
+  }catch(e){
+    toast('Не удалось подтвердить. Войди снова и попробуй.');
+    return;
+  }
+  const uid=currentUser.uid;
+  const code=state.uniqueCode;
+  try{
+    await db.collection('users').doc(uid).delete();
+    await db.collection('leaderboard').doc(uid).delete();
+    if(code)await db.collection('codes').doc(code).delete();
+    const friends=state.friends||[];
+    for(const fid of friends){
+      try{
+        const od=await db.collection('users').doc(fid).get();
+        const o=(od.data()||{});
+        if(Array.isArray(o.friends)){
+          await db.collection('users').doc(fid).update({friends:o.friends.filter(u=>u!==uid)});
+        }
+      }catch(e){}
+    }
+    const bsnap=await db.collection('bikes').where('ownerId','==',uid).get();
+    for(const bd of bsnap.docs)await bd.ref.delete();
+    await auth.currentUser.delete();
+  }catch(e){
+    console.warn('deleteAccount:',e);
+  }
+  localStorage.removeItem(SK);
+  localStorage.removeItem('mtb_dts');
+  localStorage.removeItem('mtb_wts');
+  location.reload();
+}
+async function doSignOut(){
+  if(auth)await auth.signOut();
+  localStorage.removeItem(SK);
+  localStorage.removeItem('mtb_dts');
+  localStorage.removeItem('mtb_wts');
+  location.reload();
+}
 function hideLoad(){const el=document.getElementById('loadingScreen');el.classList.add('hidden');setTimeout(()=>el.style.display='none',600);}
 function showAuthScr(){document.getElementById('authScreen').style.display='flex';document.getElementById('nickScreen').style.display='none';}
 function showNickScr(){document.getElementById('authScreen').style.display='none';document.getElementById('nickScreen').style.display='flex';}
@@ -979,7 +1083,17 @@ function updateUserUI(){
   if(name){dn.textContent=name;info.style.display='flex';}
 }
 
-async function setNickname(){const v=document.getElementById('nickInput').value.trim();if(!v||v.length<2){toast('Мин. 2 символа!');return;}state.nickname=v;await saveCloud();sfx.save();document.getElementById('nickScreen').style.display='none';initApp();}
+async function setNickname(){
+  const v=document.getElementById('nickInput').value.trim();
+  if(!v||v.length<2){toast('Мин. 2 символа!');return;}
+  state.nickname=v;
+  if(!state.uniqueCode){
+    state.uniqueCode=generateUniqueCode();
+    if(db)try{await db.collection('codes').doc(state.uniqueCode).set({uid:currentUser.uid,nickname:state.nickname,code:state.uniqueCode});}catch(e){console.warn('registerCode:',e);}
+  }
+  await saveCloud();
+  sfx.save();document.getElementById('nickScreen').style.display='none';initApp();
+}
 function changeNick(){
   const n=prompt('Новый никнейм:',state.nickname);
   if(!n)return;
@@ -1033,7 +1147,7 @@ function recordTrainToday(){
 function renderStreak(){const b=document.getElementById('streakBanner');if(!b)return;if(state.streak>0){b.style.display='flex';const d=state.streak;setT('streakText',d+' '+(d===1?'день':d<5?'дня':'дней')+' подряд 🔥');setT('streakSub',d>=7?'В огне! 🏆':d>=3?'Хорошая серия!':'Начало положено!');}else b.style.display='none';}
 
 /* ══ TABS ══ */
-document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{sfx.tab();document.querySelectorAll('.tab,.tab-btn').forEach(el=>el.classList.remove('active'));btn.classList.add('active');const t=btn.dataset.tab;const el=document.getElementById('tab-'+t);if(el)el.classList.add('active');if(t==='skills')renderSkills();if(t==='records')renderRecords();if(t==='challenges'){genChallengesIfNeeded();renderChallenges();}if(t==='bikes'){switchBikeTab('feed');loadBikes();}if(t==='videos')renderProofs();if(t==='friends')renderFriends();if(t==='duel')renderDuels();});});
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{sfx.tab();document.querySelectorAll('.tab,.tab-btn').forEach(el=>el.classList.remove('active'));btn.classList.add('active');const t=btn.dataset.tab;const el=document.getElementById('tab-'+t);if(el)el.classList.add('active');if(t==='skills')renderSkills();if(t==='records')renderRecords();if(t==='challenges'){genChallengesIfNeeded();renderChallenges();}if(t==='bikes'){switchBikeTab('feed');loadBikes();}if(t==='videos')renderProofs();if(t==='friends')renderFriends();if(t==='friends2')renderFriendsTab();if(t==='duel')renderDuels();});});
 function switchBikeTab(tab){document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));const b=document.querySelector(`[data-subtab="${tab}"]`);if(b)b.classList.add('active');document.getElementById('bikes-feed').style.display=tab==='feed'?'block':'none';document.getElementById('bikes-add').style.display=tab==='add'?'block':'none';if(tab==='feed')loadBikes();}
 
 /* ══ ACH ══ */
@@ -1552,6 +1666,188 @@ function renderProofs(){
 }
 
 /* ══ FRIENDS ══ */
+let friendsCurrentSub='received';
+function generateUniqueCode(){
+  let c='';
+  for(let i=0;i<12;i++)c+=Math.floor(Math.random()*10);
+  return c;
+}
+function formatCode(c){
+  if(!c)return'——————';
+  return c;
+}
+function copyMyCode(){
+  if(!state.uniqueCode){toast('Код ещё не создан');return;}
+  navigator.clipboard.writeText(state.uniqueCode).then(()=>toast('Код скопирован!')).catch(()=>toast('Не удалось скопировать'));
+}
+async function sendFriendRequest(){
+  const code=document.getElementById('friendCodeInput').value.trim().replace(/\s/g,'');
+  const msg=document.getElementById('friendsReqMsg');
+  msg.style.display='none';
+  if(!code||code.length!==12){msg.textContent='Введи 12-значный код';msg.className='auth-msg err';msg.style.display='block';return;}
+  if(!db||!currentUser){toast('Firebase не подключён');return;}
+  if(state.uniqueCode===code){toast('Нельзя добавить себя');return;}
+  if(state.friends.includes(code)){toast('Этот пользователь уже твой друг');return;}
+  const sent=(state.friendRequestsSent||[]).find(r=>r.toCode===code&&r.status==='pending');
+  if(sent){toast('Запрос уже отправлен');return;}
+  try{
+    const snap=await db.collection('codes').doc(code).get();
+    if(!snap.exists){toast('Код не найден');return;}
+    const target=snap.data();
+    if(!target||!target.uid){toast('Код не найден');return;}
+    const reqId=Date.now().toString()+Math.random().toString(36).slice(2,7);
+    const req={id:reqId,toUid:target.uid,toNick:target.nickname,toCode:code,status:'pending'};
+    if(!state.friendRequestsSent)state.friendRequestsSent=[];
+    state.friendRequestsSent.push(req);
+    await db.collection('users').doc(target.uid).update({
+      friendRequestsReceived:firebase.firestore.FieldValue.arrayUnion({id:reqId,fromUid:currentUser.uid,fromNick:state.nickname,fromCode:state.uniqueCode,status:'pending'})
+    }).catch(()=>{});
+    await db.collection('users').doc(currentUser.uid).set({friendRequestsSent:firebase.firestore.FieldValue.arrayUnion(req)},{merge:true}).catch(()=>{});
+    saveCloud();
+    document.getElementById('friendCodeInput').value='';
+    toast('Запрос отправлен! ✓');
+    renderFriendsTab();
+  }catch(e){toast('Ошибка: '+e.message);}
+}
+async function acceptFriendRequest(reqId,fromUid,fromNick,fromCode){
+  if(!db||!currentUser)return;
+  try{
+    if(!state.friends)state.friends=[];
+    if(!state.friends.includes(fromUid))state.friends.push(fromUid);
+    if(!state.friendRequestsReceived)state.friendRequestsReceived=[];
+    state.friendRequestsReceived=state.friendRequestsReceived.filter(r=>r.id!==reqId);
+    await db.collection('users').doc(currentUser.uid).set({friends:state.friends,friendRequestsReceived:state.friendRequestsReceived.filter(r=>r.id!==reqId)},{merge:true}).catch(()=>{});
+    const other=await db.collection('users').doc(fromUid).get();
+    const otherData=other.data()||{};
+    const otherFriends=otherData.friends||[];
+    if(!otherFriends.includes(currentUser.uid))otherFriends.push(currentUser.uid);
+    await db.collection('users').doc(fromUid).set({friends:otherFriends,friendRequestsSent:firebase.firestore.FieldValue.arrayRemove({id:reqId,toUid:currentUser.uid,toNick:state.nickname,toCode:state.uniqueCode,status:'pending'})},{merge:true}).catch(()=>{});
+    saveCloud();
+    toast(fromNick+' теперь твой друг! 🎉');
+    renderFriendsTab();
+  }catch(e){toast('Ошибка: '+e.message);}
+}
+async function declineFriendRequest(reqId){
+  if(!db||!currentUser)return;
+  try{
+    if(!state.friendRequestsReceived)state.friendRequestsReceived=[];
+    state.friendRequestsReceived=state.friendRequestsReceived.filter(r=>r.id!==reqId);
+    await db.collection('users').doc(currentUser.uid).set({friendRequestsReceived:state.friendRequestsReceived.filter(r=>r.id!==reqId)},{merge:true}).catch(()=>{});
+    const req=(state.friendRequestsReceived.find(r=>r.id===reqId));
+    if(req){
+      await db.collection('users').doc(req.fromUid).update({
+        friendRequestsSent:firebase.firestore.FieldValue.arrayRemove({id:reqId,toUid:currentUser.uid,toNick:state.nickname,toCode:state.uniqueCode,status:'pending'})
+      }).catch(()=>{});
+    }
+    saveCloud();
+    toast('Запрос отклонён');
+    renderFriendsTab();
+  }catch(e){toast('Ошибка: '+e.message);}
+}
+async function cancelFriendRequest(reqId,toUid,toNick){
+  if(!db||!currentUser)return;
+  try{
+    if(!state.friendRequestsSent)state.friendRequestsSent=[];
+    state.friendRequestsSent=state.friendRequestsSent.filter(r=>r.id!==reqId);
+    await db.collection('users').doc(currentUser.uid).set({friendRequestsSent:state.friendRequestsSent.filter(r=>r.id!==reqId)},{merge:true}).catch(()=>{});
+    await db.collection('users').doc(toUid).update({
+      friendRequestsReceived:firebase.firestore.FieldValue.arrayRemove({id:reqId,fromUid:currentUser.uid,fromNick:state.nickname,fromCode:state.uniqueCode,status:'pending'})
+    }).catch(()=>{});
+    saveCloud();
+    toast('Запрос отменён');
+    renderFriendsTab();
+  }catch(e){toast('Ошибка: '+e.message);}
+}
+async function removeFriend(friendUid,friendName){
+  if(!confirm('Удалить '+friendName+' из друзей?'))return;
+  if(!db||!currentUser)return;
+  try{
+    if(!state.friends)state.friends=[];
+    state.friends=state.friends.filter(u=>u!==friendUid);
+    await db.collection('users').doc(currentUser.uid).set({friends:state.friends},{merge:true}).catch(()=>{});
+    const other=await db.collection('users').doc(friendUid).get();
+    const otherData=other.data()||{};
+    const otherFriends=otherData.friends||[];
+    const updatedOther=otherFriends.filter(u=>u!==currentUser.uid);
+    await db.collection('users').doc(friendUid).set({friends:updatedOther},{merge:true}).catch(()=>{});
+    saveCloud();
+    toast('Друг удалён');
+    renderFriendsTab();
+  }catch(e){toast('Ошибка: '+e.message);}
+}
+function switchFriendsSub(sub){
+  friendsCurrentSub=sub;
+  document.querySelectorAll('#friendsSubTabs .sub-tab').forEach(b=>b.classList.toggle('active',b.dataset.fsub===sub));
+  document.getElementById('friendsReceived').style.display=sub==='received'?'block':'none';
+  document.getElementById('friendsList').style.display=sub==='friends'?'block':'none';
+  document.getElementById('friendsSent').style.display=sub==='sent'?'block':'none';
+}
+async function renderFriendsTab(){
+  if(!currentUser)return;
+  document.getElementById('myCodeNum').textContent=formatCode(state.uniqueCode);
+  const inpCount=(state.friendRequestsReceived||[]).filter(r=>r.status==='pending').length;
+  const frInp=document.getElementById('frInpCount');
+  if(frInp)frInp.textContent=inpCount?' ('+inpCount+')':'';
+  const frFr=document.getElementById('frFriendsCount');
+  if(frFr)frFr.textContent=(state.friends||[]).length?' ('+state.friends.length+')':'';
+  const recEl=document.getElementById('friendsReceived');
+  const frEl=document.getElementById('friendsList');
+  const sentEl=document.getElementById('friendsSent');
+  recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px;">Загрузка...</div>';
+  frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px;">Загрузка...</div>';
+  sentEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px;">Загрузка...</div>';
+  const pendingRec=(state.friendRequestsReceived||[]).filter(r=>r.status==='pending');
+  if(!pendingRec.length){
+    recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет входящих запросов</div>';
+  }else{
+    recEl.innerHTML='';
+    pendingRec.forEach(req=>{
+      const card=document.createElement('div');card.className='req-card';
+      card.innerHTML='<div class="req-card-icon">👤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.fromNick)+'</div><div class="req-card-code">'+formatCode(req.fromCode)+'</div></div><div class="req-card-btns"><button class="btn btn-success" style="padding:8px 12px;font-size:12px;" onclick="acceptFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\',\''+esc(req.fromNick)+'\',\''+esc(req.fromCode)+'\')">✓</button><button class="btn btn-danger" style="padding:8px 12px;font-size:12px;" onclick="declineFriendRequest(\''+req.id+'\')">✕</button></div>';
+      recEl.appendChild(card);
+    });
+  }
+  const sentPending=(state.friendRequestsSent||[]).filter(r=>r.status==='pending');
+  if(!sentPending.length){
+    sentEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет исходящих запросов</div>';
+  }else{
+    sentEl.innerHTML='';
+    sentPending.forEach(req=>{
+      const card=document.createElement('div');card.className='req-card';
+      card.innerHTML='<div class="req-card-icon">📤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.toNick)+'</div><div class="req-card-code">'+formatCode(req.toCode)+'</div></div><div class="req-card-btns"><button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="cancelFriendRequest(\''+req.id+'\',\''+esc(req.toUid)+'\',\''+esc(req.toNick)+'\')">✕ Отменить</button></div>';
+      sentEl.appendChild(card);
+    });
+  }
+  const friendIds=state.friends||[];
+  if(!friendIds.length){
+    frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Пока нет друзей. Пригласи друга по коду!</div>';
+  }else{
+    frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">Загрузка...</div>';
+    try{
+      const friendData=[];
+      for(const fid of friendIds){
+        try{
+          const snap=await db.collection('leaderboard').doc(fid).get();
+          if(snap.exists){
+            const d=snap.data();
+            const uSnap=await db.collection('users').doc(fid).get();
+            const uData=uSnap.data()||{};
+            friendData.push({uid:fid,nickname:d.nickname||'???',pts:d.pts||0,updatedAt:uData.lastActive||null});
+          }
+        }catch(e){}
+      }
+      frEl.innerHTML='';
+      friendData.sort((a,b)=>b.pts-a.pts);
+      friendData.forEach(f=>{
+        const isOnline=false;
+        const row=document.createElement('div');row.className='friend-row';
+        row.innerHTML='<div class="friend-row-icon">👤</div><div class="friend-row-info"><div class="friend-row-name">'+esc(f.nickname)+'</div><div class="friend-row-status '+(isOnline?'online':'offline')+'">'+(isOnline?'🟢 Онлайн':'⚫ Офлайн')+'</div></div><div class="friend-row-xp">'+f.pts+' XP</div><button class="btn btn-danger" style="padding:8px 10px;font-size:11px;" onclick="removeFriend(\''+esc(f.uid)+'\',\''+esc(f.nickname)+'\')">✕</button>';
+        frEl.appendChild(row);
+      });
+    }catch(e){frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Ошибка загрузки</div>';}
+  }
+  switchFriendsSub(friendsCurrentSub);
+}
 async function renderFriends(){const el=document.getElementById('friendFeed');if(!el)return;el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>';const myPts=calcXP();const filterText=(document.getElementById('friendFilter')?.value||'').toLowerCase();const sortBy=document.getElementById('friendSort')?.value||'pts';let all=[{id:'_me',name:(state.nickname||'Я')+' 👈',pts:myPts,isMe:true}];if(db&&currentUser){try{const snap=await db.collection('leaderboard').orderBy('pts','desc').limit(50).get();snap.docs.forEach(d=>{const u=d.data();if(u.uid!==currentUser.uid&&u.nickname)all.push({id:d.id,name:u.nickname,pts:u.pts||0});});}catch(e){}}if(filterText)all=all.filter(f=>f.name.toLowerCase().includes(filterText));if(sortBy==='name')all.sort((a,b)=>a.name.localeCompare(b.name));else all.sort((a,b)=>b.pts-a.pts);el.innerHTML='';const medals=['🥇','🥈','🥉'];all.forEach((f,i)=>{const row=document.createElement('div');row.className='lb-row';row.style.animationDelay=i*.04+'s';if(f.isMe)row.style.cssText+='border-color:rgba(76,201,240,.4);background:linear-gradient(160deg,rgba(76,201,240,.06),rgba(124,92,255,.04));';const pl=document.createElement('div');pl.className='lb-place';pl.textContent=i<3?medals[i]:'#'+(i+1);const info=document.createElement('div');info.className='lb-info';const h4=document.createElement('h4');h4.textContent=f.name;const sub=document.createElement('span');sub.textContent=f.pts+' XP';info.append(h4,sub);const pts=document.createElement('div');pts.className='lb-pts';pts.textContent=f.pts;row.append(pl,info,pts);el.appendChild(row);});}
 document.getElementById('friendFilter')?.addEventListener('input',renderFriends);
 document.getElementById('friendSort')?.addEventListener('change',renderFriends);
@@ -1562,26 +1858,22 @@ async function createDuel(){
   const skill=document.getElementById('duelSkill').value;
   const target=document.getElementById('duelTarget').value.trim();
   const opponent=document.getElementById('duelOpponent').value.trim();
-  const deadline=document.getElementById('duelDeadline').value;
   if(!target)return toast('Укажи цель!');
-  if(!deadline)return toast('Укажи дедлайн!');
+  if(!state.duels)state.duels=[];
+  const myActive=state.duels.filter(d=>d.challenger===state.nickname&&(d.status==='open'||d.status==='active'));
+  if(myActive.length>=1){toast('⚠️ У тебя уже есть дуэль! Заверши или отмени её.');return;}
   const duel={
     id:Date.now().toString(),
-    skill,target,deadline,
+    skill,target,
     opponent:opponent||null,
     challenger:state.nickname,
     challengerUid:currentUser.uid,
-    // participants — массив UID для Security Rules.
-    // При создании содержит только создателя.
-    // При принятии — добавляется UID соперника (см. acceptDuel).
     participants:[currentUser.uid],
     status:'open',
     created:new Date().toISOString(),
     challengerResult:null,opponentResult:null,
     acceptedBy:null,acceptedByUid:null,winner:null
   };
-  if(!state.duels)state.duels=[];
-  if(state.duels.length>=50)state.duels=state.duels.slice(0,49);
   state.duels.unshift(duel);
   if(db){
     try{
@@ -1591,7 +1883,6 @@ async function createDuel(){
   }
   document.getElementById('duelTarget').value='';
   document.getElementById('duelOpponent').value='';
-  document.getElementById('duelDeadline').value='';
   saveCloud();renderDuels();
 }
 
@@ -1652,7 +1943,20 @@ async function submitDuelResult(id){
   }
   saveCloud();renderDuels();checkAch();
 }
-async function renderDuels(){const el=document.getElementById('duelList');if(!el)return;el.innerHTML='';let duels=[...(state.duels||[])];if(db){try{const snap=await db.collection('duels').where('status','in',['open','active']).orderBy('createdAt','desc').limit(20).get();snap.docs.forEach(d=>{const gd={id:d.id,...d.data()};if(!duels.find(x=>x.id===gd.id))duels.unshift(gd);});}catch(e){}}if(!duels.length){const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Нет дуэлей.';el.appendChild(p);return;}duels.slice(0,20).forEach(d=>{const card=document.createElement('div');card.className='duel-card';const h4=document.createElement('h4');h4.textContent='⚡ '+(SNAMES[d.skill]||d.skill)+' — '+d.target;const vs=document.createElement('div');vs.className='duel-vs';const p1=document.createElement('div');p1.className='player';p1.textContent=d.challenger;if(d.challengerResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.challengerResult+' '+SUNITS[d.skill];p1.appendChild(r);}const vb=document.createElement('div');vb.className='vs-badge';vb.textContent='VS';const p2=document.createElement('div');p2.className='player';p2.textContent=d.acceptedBy?d.acceptedBy:(d.opponent?d.opponent:'??? (открытая)');if(d.opponentResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.opponentResult+' '+SUNITS[d.skill];p2.appendChild(r);}vs.append(p1,vb,p2);const meta=document.createElement('p');meta.style.cssText='font-size:12px;color:var(--muted);margin:0 0 10px;';meta.textContent='Дедлайн: '+d.deadline+' · '+(d.status==='done'?'Победитель: '+(d.winner||'—'):d.status==='active'?'Активна':'Открытая');card.append(h4,vs,meta);const isC=d.challenger===state.nickname;const isO=d.acceptedBy===state.nickname;const canAc=d.status==='open'&&!isC&&(!d.opponent||d.opponent===state.nickname);const canSu=d.status==='active'&&(isC||isO);if(canAc){const b=document.createElement('button');b.className='btn btn-primary btn-full';b.style.padding='10px';b.textContent='⚡ Принять!';b.onclick=()=>acceptDuel(d.id);card.appendChild(b);}else if(canSu){const b=document.createElement('button');b.className='btn btn-warn btn-full';b.style.padding='10px';b.textContent='📏 Внести результат';b.onclick=()=>submitDuelResult(d.id);card.appendChild(b);}else if(d.status==='done'){const dn=document.createElement('div');dn.style.cssText='text-align:center;font-weight:900;color:var(--good);padding:8px;';dn.textContent='🏆 '+(d.winner||'—')+' победил!';card.appendChild(dn);}el.appendChild(card);});}
+async function cancelDuel(id){
+  const d=state.duels.find(x=>x.id===id);
+  if(!d)return;
+  if(d.challenger!==state.nickname){toast('Только создатель может отменить дуэль!');return;}
+  if(d.status==='active'){
+    if(!confirm('Дуэль уже активна! Отменить?'))return;
+  }
+  state.duels=state.duels.filter(x=>x.id!==id);
+  if(db){
+    try{await db.collection('duels').doc(id).delete();}catch(e){console.warn('cancelDuel:',e);}
+  }
+  saveCloud();toast('Дуэль отменена');renderDuels();
+}
+async function renderDuels(){const el=document.getElementById('duelList');if(!el)return;el.innerHTML='';let duels=[...(state.duels||[])];if(db){try{const snap=await db.collection('duels').where('status','in',['open','active']).orderBy('createdAt','desc').limit(20).get();snap.docs.forEach(d=>{const gd={id:d.id,...d.data()};if(!duels.find(x=>x.id===gd.id))duels.unshift(gd);});}catch(e){}}if(!duels.length){const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Нет дуэлей.';el.appendChild(p);return;}duels.slice(0,20).forEach(d=>{const card=document.createElement('div');card.className='duel-card';const h4=document.createElement('h4');h4.textContent='⚡ '+(SNAMES[d.skill]||d.skill)+' — '+d.target;const vs=document.createElement('div');vs.className='duel-vs';const p1=document.createElement('div');p1.className='player';p1.textContent=d.challenger;if(d.challengerResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.challengerResult+' '+SUNITS[d.skill];p1.appendChild(r);}const vb=document.createElement('div');vb.className='vs-badge';vb.textContent='VS';const p2=document.createElement('div');p2.className='player';p2.textContent=d.acceptedBy?d.acceptedBy:(d.opponent?d.opponent:'??? (открытая)');if(d.opponentResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.opponentResult+' '+SUNITS[d.skill];p2.appendChild(r);}vs.append(p1,vb,p2);const meta=document.createElement('p');meta.style.cssText='font-size:12px;color:var(--muted);margin:0 0 10px;';const dl=d.deadline?' · Дедлайн: '+d.deadline:'';meta.textContent=(d.status==='done'?'Победитель: '+(d.winner||'—'):d.status==='active'?'Активна':'Открытая')+dl;card.append(h4,vs,meta);const isC=d.challenger===state.nickname;const isO=d.acceptedBy===state.nickname;const canAc=d.status==='open'&&!isC&&(!d.opponent||d.opponent===state.nickname);const canSu=d.status==='active'&&(isC||isO);if(canAc){const b=document.createElement('button');b.className='btn btn-primary btn-full';b.style.padding='10px';b.textContent='⚡ Принять!';b.onclick=()=>acceptDuel(d.id);card.appendChild(b);}else if(canSu){const b=document.createElement('button');b.className='btn btn-warn';b.style.cssText='padding:10px;font-size:13px;flex:1;';b.textContent='📏 Результат';b.onclick=()=>submitDuelResult(d.id);const cb=document.createElement('button');cb.className='btn btn-danger';cb.style.cssText='padding:10px 14px;font-size:13px;';cb.textContent='✕';cb.title='Отменить дуэль';cb.onclick=()=>{if(d.status==='active'&&!confirm('Дуэль активна! Отменить?'))return;cancelDuel(d.id);};const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px;';btnRow.append(b,cb);card.appendChild(btnRow);}else if(d.status==='done'){const dn=document.createElement('div');dn.style.cssText='text-align:center;font-weight:900;color:var(--good);padding:8px;';dn.textContent='🏆 '+(d.winner||'—')+' победил!';card.appendChild(dn);}else if(d.status==='open'&&isC){const cb=document.createElement('button');cb.className='btn btn-danger';cb.style.cssText='padding:10px;font-size:13px;width:100%;';cb.textContent='✕ Отменить дуэль';cb.onclick=()=>cancelDuel(d.id);card.appendChild(cb);}el.appendChild(card);});}
 
 /* ══════════════════════════════
    УВЕДОМЛЕНИЯ — исправленная версия
@@ -1763,7 +2067,7 @@ function updateNotifStatus(){
 
 /* ══ EXPORT / RESET ══ */
 function exportData(){const a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(state));a.download='mtb_backup.json';a.click();}
-async function resetAll(){localStorage.removeItem(SK);localStorage.removeItem('mtb_dts');localStorage.removeItem('mtb_wts');if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();}catch(e){}}location.reload();}
+async function resetAll(){localStorage.removeItem(SK);localStorage.removeItem('mtb_dts');localStorage.removeItem('mtb_wts');if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();await db.collection('leaderboard').doc(currentUser.uid).delete();if(state.uniqueCode)await db.collection('codes').doc(state.uniqueCode).delete();}catch(e){}}location.reload();}
 
 /* ══ EVENTS ══ */
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
