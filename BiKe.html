@@ -794,11 +794,18 @@ async function initFB(){
     console.error('Firebase SDK не загружен');
     hideLoad();showAuthScr();return;
   }
+  let fbTimeout=null;
   try{
     firebase.initializeApp(FB_CFG);
     db=firebase.firestore();
     auth=firebase.auth();
     storage=firebase.storage();
+
+    // Таймаут — якщо Firebase не відповідає за 12 секунд, показуємо екран авторизації
+    fbTimeout=setTimeout(()=>{
+      console.error('Firebase timeout — показуємо екран авторизації');
+      hideLoad();showAuthScr();
+    },12000);
 
     // Оффлайн-режим Firestore
     db.enablePersistence({synchronizeTabs:true}).catch(e=>{
@@ -810,18 +817,17 @@ async function initFB(){
     try{
       setLoadText('Проверяю Google вход...');
       await auth.getRedirectResult();
-      // если redirect успешен — onAuthStateChanged сам вызовется с user
     }catch(re){console.warn('getRedirectResult:',re.code||re.message);}
     redirectHandled=true;
 
     auth.onAuthStateChanged(async user=>{
+      if(fbTimeout){clearTimeout(fbTimeout);fbTimeout=null;}
       if(user){
         currentUser=user;setLoadText('Загружаю данные...');
         try{
           const doc=await db.collection('users').doc(user.uid).get();
           if(doc.exists){
             state={...defState(),...doc.data()};
-            // Duels не хранятся в облаке — берём из localStorage
             const ls=JSON.parse(localStorage.getItem(SK)||'{}');
             if(Array.isArray(ls.duels))state.duels=ls.duels;
             DEF_SKILLS.forEach(ds=>{
@@ -840,7 +846,15 @@ async function initFB(){
         hideLoad();showAuthScr();
       }
     });
-  }catch(e){console.error('FB init:',e);hideLoad();showAuthScr();}
+  }catch(e){
+    console.error('FB init:',e);
+    if(fbTimeout){clearTimeout(fbTimeout);fbTimeout=null;}
+    const errMsg=e.message||'';
+    if(errMsg.includes('app-check')||e.code==='firebase-app-check-token-is-invalid'||errMsg.includes('App Check')){
+      toast('⚠️ App Check блокує запити. Вимкни Enforce у Firebase Console → App Check');
+    }
+    hideLoad();showAuthScr();
+  }
 }
 
 /* ══ AUTH ══ */
@@ -1448,7 +1462,6 @@ function addProof(){
   if(!state.proofs)state.proofs=[];
   if(state.proofs.length>=20){toast('Максимум 20 видео. Удали старые.');return;}
   state.proofs.unshift({id:Date.now().toString(),title,skill,ytId:id,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0});document.getElementById('proofTitle').value='';document.getElementById('proofUrl').value='';sfx.save();saveCloud();renderProofs();toast('🎬 Видео загружено!');checkAutoCompleteChallenge();checkAch();}
-<<<<<<< HEAD:BiKe.html
 function rateProof(id,stars){
   if(!currentUser){toast('Войди чтобы оценивать');return;}
   const p=state.proofs.find(x=>x.id===id);
@@ -1468,8 +1481,6 @@ function rateProof(id,stars){
   saveCloudDebounced();renderProofs();checkAch();
 }
 
-=======
->>>>>>> f3f5f0ae259cf10b86e4d66d857ceee8700f5850:Title.html
 function reactProof(id,type){if(!state.proofReactions)state.proofReactions={};const key=id+'_'+state.nickname;if(!state.proofReactions[key])state.proofReactions[key]=[];if(state.proofReactions[key].includes(type)){state.proofReactions[key]=state.proofReactions[key].filter(t=>t!==type);const p=state.proofs.find(x=>x.id===id);if(p)p[type]=Math.max(0,(p[type]||0)-1);}else{state.proofReactions[key].push(type);const p=state.proofs.find(x=>x.id===id);if(p)p[type]=(p[type]||0)+1;}sfx.tick();saveCloud();renderProofs();}
 function renderProofs(){
   const el=document.getElementById('proofFeed');if(!el)return;
