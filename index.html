@@ -40,7 +40,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hid
 #loadingScreen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .5s;}
 #loadingScreen.hidden{opacity:0;pointer-events:none;}
 .load-inner{text-align:center;}
-.load-logo{font-size:56px;margin-bottom:20px;animation:float 2s ease-in-out infinite alternate;}
+.load-logo{width:80px;height:80px;margin-bottom:20px;animation:float 2s ease-in-out infinite alternate;object-fit:contain;}
 @keyframes float{from{transform:translateY(0)}to{transform:translateY(-10px)}}
 .load-bar{width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:999px;margin:0 auto 14px;overflow:hidden;}
 .load-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;animation:loadFill 2s ease forwards;}
@@ -58,7 +58,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hid
 .auth-box{position:relative;z-index:1;width:100%;max-width:440px;background:rgba(19,22,30,.97);border:1px solid var(--line);border-radius:28px;padding:32px 28px;backdrop-filter:blur(20px);animation:authIn .5s cubic-bezier(.34,1.56,.64,1);margin:auto;}
 @keyframes authIn{from{transform:scale(.88) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
 .auth-logo{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
-.auth-emoji{font-size:48px;line-height:1;}
+.auth-emoji{width:48px;height:48px;object-fit:contain;}
 .auth-title{font-family:var(--fd);font-size:28px;letter-spacing:3px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .auth-sub{color:var(--muted);font-size:13px;margin-top:2px;}
 .google-btn{width:100%;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--text);cursor:pointer;font-weight:700;font-size:15px;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;}
@@ -383,7 +383,7 @@ select.field{cursor:pointer;}
 
 <div id="loadingScreen">
   <div class="load-inner">
-    <div class="load-logo">🚵‍♂️</div>
+    <img src="image/icon.png" class="load-logo" alt="MTB">
     <div class="load-bar"><div class="load-fill"></div></div>
     <p class="load-text" id="loadText">Подключение...</p>
   </div>
@@ -393,7 +393,7 @@ select.field{cursor:pointer;}
   <div class="auth-shapes"><div class="sh sh1"></div><div class="sh sh2"></div><div class="sh sh3"></div></div>
   <div class="auth-box">
     <div class="auth-logo">
-      <span class="auth-emoji">🚵‍♂️</span>
+      <img src="image/icon.png" class="auth-emoji" alt="MTB">
       <div><div class="auth-title">MTB SKILLS PRO</div><div class="auth-sub">Твой карманный тренер</div></div>
     </div>
     <button class="google-btn" id="googleBtn" onclick="signInWithGoogle()">
@@ -792,7 +792,7 @@ const DEF_SKILLS=[
 
 /* ══ STATE ══ */
 const SK='mtb_v16';
-function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,uniqueCode:'',friends:[],friendRequestsSent:[],friendRequestsReceived:[]};}
+function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[]};}
 let state=loadLS();
 let activeSkillId=null;
 let bikePhotoFile=null;
@@ -822,13 +822,7 @@ async function saveCloud(){
     delete toSave.duels;
     if(Array.isArray(toSave.proofReactions))toSave.proofReactions={};
     if(Array.isArray(toSave.skills))toSave.skills=toSave.skills.map(s=>({...s,trSession:0}));
-    await db.collection('users').doc(currentUser.uid).set(toSave,{merge:true});
-    if(state.uniqueCode){
-      await db.collection('codes').doc(state.uniqueCode).set({
-        uid:currentUser.uid,
-        nickname:state.nickname||'User'
-      },{merge:true}).catch(()=>{});
-    }
+    await db.collection('users').doc(currentUser.uid).set({...toSave,code:currentUser.uid.substring(0,12),uid:currentUser.uid},{merge:true});
     await db.collection('leaderboard').doc(currentUser.uid).set({
       nickname:state.nickname,
       pts:calcXP(),
@@ -890,15 +884,6 @@ async function initFB(){
             });
             saveLS();setSyncDot('synced');
           }else{await saveCloud();}
-          if(!state.uniqueCode){
-            state.uniqueCode=generateUniqueCode();
-            try{
-              await db.collection('codes').doc(state.uniqueCode).set({
-                uid:user.uid,
-                nickname:state.nickname||'User'
-              });
-            }catch(e){console.warn('Code save:',e);}
-          }
         }catch(e){console.warn('Cloud load:',e);setSyncDot('error');}
         resetDailyCountersIfNeeded();
         hideLoad();
@@ -1051,16 +1036,8 @@ async function deleteAccount(){
     if(state.nickname){
       await db.collection('nicknames').doc(state.nickname.toLowerCase()).delete().catch(()=>{});
     }
-    const friends=state.friends||[];
-    for(const f of friends){
-      try{
-        const od=await db.collection('users').doc(f.uid).get();
-        const o=(od.data()||{});
-        if(Array.isArray(o.friends)){
-          await db.collection('users').doc(f.uid).update({friends:o.friends.filter(u=>(typeof u==='string'?u:u.uid)!==uid)});
-        }
-      }catch(e){}
-    }
+    const friendsSnap=await db.collection('friends').where('uids','array-contains',uid).get();
+    for(const fd of friendsSnap.docs)await fd.ref.delete();
     const bsnap=await db.collection('bikes').where('ownerId','==',uid).get();
     for(const bd of bsnap.docs)await bd.ref.delete();
     await auth.currentUser.delete();
@@ -1105,7 +1082,6 @@ async function setNickname(){
     }catch(e){console.error('nickname check:',e);}
   }
   state.nickname=v;
-  if(!state.uniqueCode)state.uniqueCode=generateUniqueCode();
   await saveCloud();
   sfx.save();document.getElementById('nickScreen').style.display='none';initApp();
 }
@@ -1696,18 +1672,14 @@ function renderProofs(){
 
 /* ══ FRIENDS ══ */
 let friendsCurrentSub='received';
-function generateUniqueCode(){
-  let c='';
-  for(let i=0;i<12;i++)c+=Math.floor(Math.random()*10);
-  return c;
-}
 function formatCode(c){
   if(!c)return'——————';
   return c;
 }
 function copyMyCode(){
-  if(!state.uniqueCode){toast('Код ещё не создан');return;}
-  navigator.clipboard.writeText(state.uniqueCode).then(()=>toast('Код скопирован!')).catch(()=>toast('Не удалось скопировать'));
+  if(!currentUser){toast('Firebase не подключён');return;}
+  const code=currentUser.uid.substring(0,12);
+  navigator.clipboard.writeText(code).then(()=>toast('Код скопирован!')).catch(()=>toast('Не удалось скопировать'));
 }
 
 async function sendFriendRequest(){
@@ -1716,69 +1688,68 @@ async function sendFriendRequest(){
   msg.style.display='none';
   if(!code||code.length!==12){msg.textContent='Введи 12-значный код';msg.className='auth-msg err';msg.style.display='block';return;}
   if(!db||!currentUser){toast('Firebase не подключён');return;}
-  if(state.uniqueCode===code){toast('Нельзя добавить себя');return;}
-  if((state.friends||[]).includes(code)){toast('Этот пользователь уже твой друг');return;}
-  const sent=(state.friendRequestsSent||[]).find(r=>r.toCode===code&&r.status==='pending');
-  if(sent){toast('Запрос уже отправлен');return;}
+  const myCode=currentUser.uid.substring(0,12);
+  if(myCode===code){toast('Нельзя добавить себя');return;}
   try{
-    const snap=await db.collection('codes').doc(code).get();
-    if(!snap.exists){msg.textContent='Код не найден';msg.className='auth-msg err';msg.style.display='block';return;}
-    const target=snap.data();
-    if(!target||!target.uid){msg.textContent='Код не найден';msg.className='auth-msg err';msg.style.display='block';return;}
-    if(target.uid===currentUser.uid){toast('Нельзя добавить себя');return;}
-    const reqId=Date.now().toString()+Math.random().toString(36).slice(2,7);
+    const snap=await db.collection('users').where('code','==',code).limit(1).get();
+    if(snap.empty){msg.textContent='Код не найден';msg.className='auth-msg err';msg.style.display='block';return;}
+    const targetDoc=snap.docs[0];
+    const target=targetDoc.data();
+    const targetUid=targetDoc.id;
+    if(targetUid===currentUser.uid){toast('Нельзя добавить себя');return;}
+    const friendsSnap=await db.collection('friends').where('uids','array-contains',currentUser.uid).get();
+    const alreadyFriends=friendsSnap.docs.some(d=>d.data().uids.includes(targetUid));
+    if(alreadyFriends){toast('Этот пользователь уже твой друг');return;}
+    const sent=(state.friendRequestsSent||[]).find(r=>r.toUid===targetUid&&r.status==='pending');
+    if(sent){toast('Запрос уже отправлен');return;}
+    const reqId=Date.now().toString();
     const reqData={
       id:reqId,
       fromUid:currentUser.uid,
       fromNick:state.nickname,
-      fromCode:state.uniqueCode,
-      toUid:target.uid,
-      toNick:target.nickname,
-      toCode:code,
+      toUid:targetUid,
+      toNick:target.nickname||'???',
       status:'pending',
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      createdAt:Date.now()
     };
     await db.collection('friend_requests').doc(reqId).set(reqData);
     if(!state.friendRequestsSent)state.friendRequestsSent=[];
-    state.friendRequestsSent.push({id:reqId,toUid:target.uid,toNick:target.nickname,toCode:code,status:'pending'});
+    state.friendRequestsSent.push({id:reqId,toUid:targetUid,toNick:target.nickname||'???',status:'pending'});
     saveCloud();
     document.getElementById('friendCodeInput').value='';
     toast('Запрос отправлен! ✓');
     renderFriendsTab();
   }catch(e){toast('Ошибка: '+e.message);}
 }
-async function acceptFriendRequest(reqId,fromUid,fromNick,fromCode){
+async function acceptFriendRequest(reqId,fromUid,fromNick){
   if(!db||!currentUser)return;
   try{
-    await db.collection('friend_requests').doc(reqId).update({status:'accepted'});
-    if(!state.friends)state.friends=[];
-    if(!state.friends.includes(fromUid))state.friends.push(fromUid);
-    const other=await db.collection('users').doc(fromUid).get();
-    const otherData=other.data()||{};
-    const otherFriends=otherData.friends||[];
-    if(!otherFriends.includes(currentUser.uid))otherFriends.push(currentUser.uid);
-    await db.collection('users').doc(fromUid).set({friends:otherFriends},{merge:true});
-    await db.collection('users').doc(currentUser.uid).set({friends:state.friends},{merge:true});
-    saveCloud();
+    await db.collection('friend_requests').doc(reqId).set({status:'accepted'},{merge:true});
+    const friendDocId=[currentUser.uid,fromUid].sort().join('_');
+    await db.collection('friends').doc(friendDocId).set({
+      uids:[currentUser.uid,fromUid],
+      nicknames:{[currentUser.uid]:state.nickname,[fromUid]:fromNick},
+      createdAt:Date.now(),
+      createdBy:currentUser.uid
+    },{merge:true});
     toast(fromNick+' теперь твой друг! 🎉');
     renderFriendsTab();
   }catch(e){toast('Ошибка: '+e.message);}
 }
-async function declineFriendRequest(reqId){
+async function declineFriendRequest(reqId,fromUid){
   if(!db||!currentUser)return;
   try{
-    await db.collection('friend_requests').doc(reqId).update({status:'declined'});
+    await db.collection('friend_requests').doc(reqId).delete();
     saveCloud();
     toast('Запрос отклонён');
     renderFriendsTab();
   }catch(e){toast('Ошибка: '+e.message);}
 }
-async function cancelFriendRequest(reqId,toUid,toNick){
+async function cancelFriendRequest(reqId,toUid){
   if(!db||!currentUser)return;
   try{
     await db.collection('friend_requests').doc(reqId).delete();
-    if(!state.friendRequestsSent)state.friendRequestsSent=[];
-    state.friendRequestsSent=state.friendRequestsSent.filter(r=>r.id!==reqId);
+    state.friendRequestsSent=(state.friendRequestsSent||[]).filter(r=>r.id!==reqId);
     saveCloud();
     toast('Запрос отменён');
     renderFriendsTab();
@@ -1788,15 +1759,8 @@ async function removeFriend(friendUid,friendName){
   if(!confirm('Удалить '+friendName+' из друзей?'))return;
   if(!db||!currentUser)return;
   try{
-    if(!state.friends)state.friends=[];
-    state.friends=state.friends.filter(u=>u!==friendUid);
-    await db.collection('users').doc(currentUser.uid).set({friends:state.friends},{merge:true}).catch(()=>{});
-    const other=await db.collection('users').doc(friendUid).get();
-    const otherData=other.data()||{};
-    const otherFriends=otherData.friends||[];
-    const updatedOther=otherFriends.filter(u=>u!==currentUser.uid);
-    await db.collection('users').doc(friendUid).set({friends:updatedOther},{merge:true}).catch(()=>{});
-    saveCloud();
+    const friendDocId=[currentUser.uid,friendUid].sort().join('_');
+    await db.collection('friends').doc(friendDocId).delete();
     toast('Друг удалён');
     renderFriendsTab();
   }catch(e){toast('Ошибка: '+e.message);}
@@ -1810,9 +1774,8 @@ function switchFriendsSub(sub){
 }
 async function renderFriendsTab(){
   if(!currentUser)return;
-  document.getElementById('myCodeNum').textContent=formatCode(state.uniqueCode);
-  const frFr=document.getElementById('frFriendsCount');
-  if(frFr)frFr.textContent=(state.friends||[]).length?' ('+state.friends.length+')':'';
+  const myCode=currentUser.uid.substring(0,12);
+  document.getElementById('myCodeNum').textContent=formatCode(myCode);
   const recEl=document.getElementById('friendsReceived');
   const frEl=document.getElementById('friendsList');
   const sentEl=document.getElementById('friendsSent');
@@ -1826,6 +1789,7 @@ async function renderFriendsTab(){
     ]);
     const pendingRec=recSnap.docs.map(d=>({id:d.id,...d.data()}));
     const sentPending=sentSnap.docs.map(d=>({id:d.id,...d.data()}));
+    state.friendRequestsSent=sentPending;
     const inpCount=pendingRec.length;
     const frInp=document.getElementById('frInpCount');
     if(frInp)frInp.textContent=inpCount?' ('+inpCount+')':'';
@@ -1835,7 +1799,8 @@ async function renderFriendsTab(){
       recEl.innerHTML='';
       pendingRec.forEach(req=>{
         const card=document.createElement('div');card.className='req-card';
-        card.innerHTML='<div class="req-card-icon">👤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.fromNick||'???')+'</div><div class="req-card-code">'+formatCode(req.fromCode||'')+'</div></div><div class="req-card-btns"><button class="btn btn-success" style="padding:8px 12px;font-size:12px;" onclick="acceptFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\',\''+esc(req.fromNick||'')+'\',\''+esc(req.fromCode||'')+'\')">✓</button><button class="btn btn-danger" style="padding:8px 12px;font-size:12px;" onclick="declineFriendRequest(\''+req.id+'\')">✕</button></div>';
+        const fromCode=req.fromUid?req.fromUid.substring(0,12):'';
+        card.innerHTML='<div class="req-card-icon">👤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.fromNick||'???')+'</div><div class="req-card-code">'+formatCode(fromCode)+'</div></div><div class="req-card-btns"><button class="btn btn-success" style="padding:8px 12px;font-size:12px;" onclick="acceptFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\',\''+esc(req.fromNick||'')+'\')">✓</button><button class="btn btn-danger" style="padding:8px 12px;font-size:12px;" onclick="declineFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\')">✕</button></div>';
         recEl.appendChild(card);
       });
     }
@@ -1845,36 +1810,36 @@ async function renderFriendsTab(){
       sentEl.innerHTML='';
       sentPending.forEach(req=>{
         const card=document.createElement('div');card.className='req-card';
-        card.innerHTML='<div class="req-card-icon">📤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.toNick||'???')+'</div><div class="req-card-code">'+formatCode(req.toCode||'')+'</div></div><div class="req-card-btns"><button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="cancelFriendRequest(\''+req.id+'\',\''+esc(req.toUid)+'\',\''+esc(req.toNick||'')+'\')">✕ Отменить</button></div>';
+        const toCode=req.toUid?req.toUid.substring(0,12):'';
+        card.innerHTML='<div class="req-card-icon">📤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.toNick||'???')+'</div><div class="req-card-code">'+formatCode(toCode)+'</div></div><div class="req-card-btns"><button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="cancelFriendRequest(\''+req.id+'\',\''+esc(req.toUid)+'\')">✕ Отменить</button></div>';
         sentEl.appendChild(card);
       });
     }
   }catch(e){recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Ошибка загрузки</div>';sentEl.innerHTML='';}
-  const friendIds=state.friends||[];
-  if(!friendIds.length){
-    frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Пока нет друзей. Пригласи друга по коду!</div>';
-  }else{
-    frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">Загрузка...</div>';
-    try{
+  try{
+    const friendsSnap=await db.collection('friends').where('uids','array-contains',currentUser.uid).get();
+    const friends=friendsSnap.docs.map(d=>d.data());
+    const frCount=document.getElementById('frFriendsCount');
+    if(frCount)frCount.textContent=friends.length?' ('+friends.length+')':'';
+    if(!friends.length){
+      frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Пока нет друзей. Пригласи друга по коду!</div>';
+    }else{
+      frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">Загрузка...</div>';
       const friendData=[];
-      for(const fid of friendIds){
-        try{
-          const snap=await db.collection('leaderboard').doc(fid).get();
-          if(snap.exists){
-            const d=snap.data();
-            friendData.push({uid:fid,nickname:d.nickname||'???',pts:d.pts||0});
-          }
-        }catch(e){}
+      for(const f of friends){
+        const otherUid=f.uids.find(u=>u!==currentUser.uid);
+        const otherNick=f.nicknames[otherUid]||'???';
+        friendData.push({uid:otherUid,nickname:otherNick,docId:f.uids.sort().join('_')});
       }
       frEl.innerHTML='';
-      friendData.sort((a,b)=>b.pts-a.pts);
+      friendData.sort((a,b)=>a.nickname.localeCompare(b.nickname));
       friendData.forEach(f=>{
         const row=document.createElement('div');row.className='friend-row';
-        row.innerHTML='<div class="friend-row-icon">👤</div><div class="friend-row-info"><div class="friend-row-name">'+esc(f.nickname)+'</div><div class="friend-row-status offline">⚫ Офлайн</div></div><div class="friend-row-xp">'+f.pts+' XP</div><button class="btn btn-danger" style="padding:8px 10px;font-size:11px;" onclick="removeFriend(\''+esc(f.uid)+'\',\''+esc(f.nickname)+'\')">✕</button>';
+        row.innerHTML='<div class="friend-row-icon">👤</div><div class="friend-row-info"><div class="friend-row-name">'+esc(f.nickname)+'</div><div class="friend-row-status offline">⚫ Офлайн</div></div><div class="friend-row-xp"></div><button class="btn btn-danger" style="padding:8px 10px;font-size:11px;" onclick="removeFriend(\''+esc(f.uid)+'\',\''+esc(f.nickname)+'\')">✕</button>';
         frEl.appendChild(row);
       });
-    }catch(e){frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Ошибка загрузки</div>';}
-  }
+    }
+  }catch(e){frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Ошибка загрузки</div>';}
   switchFriendsSub(friendsCurrentSub);
 }
 async function renderFriends(){const el=document.getElementById('friendFeed');if(!el)return;el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>';const myPts=calcXP();const filterText=(document.getElementById('friendFilter')?.value||'').toLowerCase();const sortBy=document.getElementById('friendSort')?.value||'pts';let all=[{id:'_me',name:(state.nickname||'Я')+' 👈',pts:myPts,isMe:true}];if(db&&currentUser){try{const snap=await db.collection('leaderboard').orderBy('pts','desc').limit(50).get();snap.docs.forEach(d=>{const u=d.data();if(u.uid!==currentUser.uid&&u.nickname)all.push({id:d.id,name:u.nickname,pts:u.pts||0});});}catch(e){}}if(filterText)all=all.filter(f=>f.name.toLowerCase().includes(filterText));if(sortBy==='name')all.sort((a,b)=>a.name.localeCompare(b.name));else all.sort((a,b)=>b.pts-a.pts);el.innerHTML='';const medals=['🥇','🥈','🥉'];all.forEach((f,i)=>{const row=document.createElement('div');row.className='lb-row';row.style.animationDelay=i*.04+'s';if(f.isMe)row.style.cssText+='border-color:rgba(76,201,240,.4);background:linear-gradient(160deg,rgba(76,201,240,.06),rgba(124,92,255,.04));';const pl=document.createElement('div');pl.className='lb-place';pl.textContent=i<3?medals[i]:'#'+(i+1);const info=document.createElement('div');info.className='lb-info';const h4=document.createElement('h4');h4.textContent=f.name;const sub=document.createElement('span');sub.textContent=f.pts+' XP';info.append(h4,sub);const pts=document.createElement('div');pts.className='lb-pts';pts.textContent=f.pts;row.append(pl,info,pts);el.appendChild(row);});}
@@ -2107,5 +2072,6 @@ document.getElementById('authPass')?.addEventListener('keydown',e=>{if(e.key==='
 /* ══ BOOT ══ */
 initFB();
 </script>
+<script src="cordova.js"></script>
 </body>
 </html>
