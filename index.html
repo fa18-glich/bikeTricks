@@ -792,7 +792,7 @@ const DEF_SKILLS=[
 
 /* ══ STATE ══ */
 const SK='mtb_v16';
-function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[]};}
+function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[]};}
 let state=loadLS();
 let activeSkillId=null;
 let bikePhotoFile=null;
@@ -801,7 +801,7 @@ function loadLS(){
   try{const s=JSON.parse(localStorage.getItem(SK));if(s&&s.skills){
     ['records','challenges','completedChallenges','proofs','proofReactions','unlockedAchievements','duels'].forEach(k=>{if(!s[k])s[k]=k==='records'?{}:[];});
     if(!s.challengeXP)s.challengeXP=0;if(!s.duelsWon)s.duelsWon=0;
-    if(!s.weeklyXpStart)s.weeklyXpStart=0;if(!s.weeklyXpStartTs)s.weeklyXpStartTs=0;
+    if(!s.weeklyXpStart)s.weeklyXpStart=0;if(!s.weeklyXpStartTs)s.weeklyXpStartTs=0;if(!s.nicknameChangedAt)s.nicknameChangedAt=0;
     DEF_SKILLS.forEach(ds=>{
       const sk=s.skills.find(x=>x.id===ds.id);
       if(!sk)s.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0});
@@ -1086,6 +1086,14 @@ async function setNickname(){
   sfx.save();document.getElementById('nickScreen').style.display='none';initApp();
 }
 async function changeNick(){
+  const COOLDOWN=7*24*60*60*1000;
+  if(state.nicknameChangedAt){
+    const left=state.nicknameChangedAt+COOLDOWN-Date.now();
+    if(left>0){
+      const days=Math.ceil(left/86400000);
+      toast('Можно менять через '+days+' дн.');return;
+    }
+  }
   const n=prompt('Новый никнейм:',state.nickname);
   if(!n)return;
   const v=n.trim().replace(/[<>&"']/g,'');
@@ -1105,7 +1113,7 @@ async function changeNick(){
       await db.collection('nicknames').doc(normalized).set({uid:currentUser.uid,nickname:v});
     }catch(e){console.error('nickname update:',e);}
   }
-  state.nickname=v;saveCloud();setT('myNickDisp',state.nickname);setT('welcomeText','Привет, '+state.nickname+' 👋');toast('Ник обновлён!');
+  state.nickname=v;state.nicknameChangedAt=Date.now();saveCloud();setT('myNickDisp',state.nickname);setT('welcomeText','Привет, '+state.nickname+' 👋');toast('Ник обновлён! Зменить можно через неделю.');
 }
 
 function initApp(){
