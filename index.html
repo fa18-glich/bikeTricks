@@ -915,6 +915,7 @@ function switchAuthTab(mode){
 
 async function handleEmailAuth(){
   clearMsg();
+  const btn=document.getElementById('authSubmitBtn');
   const email=document.getElementById('authEmail').value.trim();
   const pass=document.getElementById('authPass').value;
   if(!email||!pass){showMsg('Заполни все поля');return;}
@@ -926,7 +927,6 @@ async function handleEmailAuth(){
     const nick=document.getElementById('authNick').value.trim();
     if(!nick||nick.length<2){showMsg('Введи никнейм (мин. 2 символа)');return;}
   }
-  const btn=document.getElementById('authSubmitBtn');
   btn.disabled=true;btn.innerHTML=`<span class="spinner"></span>${authMode==='login'?'Входим...':'Создаём...'}`;
   try{
     if(authMode==='login'){
