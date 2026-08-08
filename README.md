@@ -82,6 +82,8 @@ The Firebase config (`FB_CFG`) is hardcoded in the inline script of `index.html`
 - **Cloud Storage** — bike photo uploads (compressed client-side, falls back to base64 if Storage is unavailable).
 
 > If you enable *App Check enforcement*, requests will be blocked — the app shows a warning pointing to Firebase Console → App Check.
+>
+> **Security rules:** the repo ships with `firestore.rules` and `storage.rules`. Deploy them to your Firebase project (Firestore → Rules, Storage → Rules) before going live — they restrict writes to the document owner while keeping public features (leaderboard, bike feed, nickname lookup) working.
 
 ## 💾 Data Model
 
@@ -91,7 +93,7 @@ The Firebase config (`FB_CFG`) is hardcoded in the inline script of `index.html`
 
 ## 📱 Mobile Build (Cordova)
 
-The page references `cordova.js` at the end of the body, so it can be wrapped in a Cordova WebView and shipped as an Android APK:
+The page loads `cordova.js` automatically when opened from a `file://` protocol (i.e., inside a Cordova WebView) and skips it on the web, so it can be wrapped in a Cordova WebView and shipped as an Android APK:
 
 ```bash
 cordova create mtb-app com.example.mtbskills MTBSkills
@@ -195,6 +197,8 @@ npx serve .
 - **Cloud Storage** — загрузка фото байков (сжимается на клиенте, при недоступности Storage — fallback на base64).
 
 > Если включён *App Check enforcement*, запросы будут блокироваться — приложение покажет предупреждение со ссылкой на Firebase Console → App Check.
+>
+> **Правила безопасности:** в репозитории есть `firestore.rules` и `storage.rules`. Разверни их в своём проекте (Firestore → Rules, Storage → Rules) перед запуском — они ограничивают запись только владельцем документа, сохраняя публичные функции (лидерборд, лента байков, поиск по коду).
 
 ## 💾 Модель данных
 
@@ -204,7 +208,7 @@ npx serve .
 
 ## 📱 Сборка для мобильных (Cordova)
 
-Страница подключает `cordova.js` в конце `<body>`, поэтому её можно обернуть в Cordova WebView и собрать Android APK:
+Страница автоматически подключает `cordova.js`, когда открыта по протоколу `file://` (то есть внутри Cordova WebView), и пропускает его в вебе — поэтому её можно обернуть в Cordova WebView и собрать Android APK:
 
 ```bash
 cordova create mtb-app com.example.mtbskills MTBSkills
