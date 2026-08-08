@@ -245,9 +245,78 @@ select.field{cursor:pointer;}
 .proof-vid{width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin-bottom:10px;}
 .proof-vid iframe{width:100%;height:100%;border:0;}
 .proof-reacts{display:flex;gap:8px;flex-wrap:wrap;}
+/* TikTok-лента видео */
+.tt-wrap{position:relative;}
+.tt-feed{height:calc(100dvh - 182px);min-height:400px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;border-radius:20px;background:#000;box-shadow:var(--shadow);}
+.tt-feed::-webkit-scrollbar{display:none;}
+.tt-item{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden;}
+.tt-vid{position:absolute;inset:0;}
+.tt-vid iframe{width:100%;height:100%;object-fit:cover;border:0;pointer-events:none;}
+.tt-overlay{position:absolute;left:0;right:0;bottom:0;padding:14px;background:linear-gradient(transparent,rgba(0,0,0,.78));z-index:2;}
+.tt-title{font-size:16px;font-weight:800;margin:0 0 4px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);}
+.tt-meta{font-size:12px;color:rgba(255,255,255,.75);text-shadow:0 1px 3px rgba(0,0,0,.6);}
+.tt-rail{position:absolute;right:10px;bottom:120px;display:flex;flex-direction:column;gap:18px;align-items:center;z-index:3;}
+.tt-action{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:#fff;font-size:11px;font-weight:800;cursor:pointer;padding:0;text-shadow:0 1px 3px rgba(0,0,0,.8);}
+.tt-action .tt-ic{font-size:28px;transition:transform .15s;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));}
+.tt-action:active .tt-ic{transform:scale(1.25);}
+.tt-action.active .tt-ic{filter:drop-shadow(0 0 8px rgba(255,120,50,.9));}
+.tt-rate-pop{position:absolute;right:58px;bottom:130px;background:rgba(19,22,30,.96);border:1px solid var(--line);border-radius:14px;padding:6px 10px;display:flex;gap:2px;z-index:4;box-shadow:var(--shadow);animation:mcIn .2s cubic-bezier(.34,1.56,.64,1);}
+.tt-add{position:fixed;right:16px;bottom:76px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#7c5cff,#ff453a);color:#fff;font-size:26px;border:0;box-shadow:0 8px 24px rgba(124,92,255,.45);z-index:50;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s;}
+.tt-add:active{transform:scale(.9);}
+.tt-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;background:radial-gradient(circle at 50% 30%,rgba(124,92,255,.28),rgba(9,11,15,1) 72%);text-align:center;padding:24px;}
+.tt-empty h3{font-family:var(--fd);letter-spacing:2px;margin:0;font-size:22px;}
+.tt-empty p{font-size:14px;color:rgba(255,255,255,.7);margin:0;}
+.tt-prev{width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin-top:10px;display:none;position:relative;}
+.tt-prev.loaded{display:block;}
+.tt-prev img{width:100%;height:100%;object-fit:cover;}
+.tt-prev::after{content:'▶';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7);}
+.tt-tip{font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0;font-family:var(--fm);}
 .pr-btn{padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);cursor:pointer;font-size:13px;transition:.2s;color:var(--text);font-family:var(--fb);}
 .pr-btn:hover{background:rgba(255,255,255,.09);}
 .pr-btn.active{border-color:rgba(76,201,240,.45);background:rgba(76,201,240,.10);}
+
+/* TikTok-лента: доработки */
+.tt-feed{height:100vh;height:calc(100dvh - 182px);}
+.tt-seg{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:4px;padding:5px;border-radius:999px;background:rgba(10,12,18,.72);border:1px solid var(--line);backdrop-filter:blur(8px);}
+.tt-seg button{border:0;background:none;color:rgba(255,255,255,.65);font-size:12px;font-weight:800;font-family:var(--fb);padding:7px 14px;border-radius:999px;cursor:pointer;transition:.2s;white-space:nowrap;}
+.tt-seg button.active{background:linear-gradient(135deg,#4cc9f0,#7c5cff);color:#fff;box-shadow:0 4px 14px rgba(124,92,255,.4);}
+.tt-author{display:inline-flex;align-items:center;gap:5px;font-weight:800;color:#fff;background:none;border:0;padding:0;cursor:pointer;font-size:14px;font-family:var(--fb);text-shadow:0 1px 3px rgba(0,0,0,.7);}
+.tt-author:active{opacity:.7;}
+.tt-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,.4);z-index:5;pointer-events:none;font-family:var(--fm);}
+.tt-feed .tt-item{border-radius:20px;margin:0 0 8px;}
+.tt-feed .tt-item:first-child{margin-top:0;}
+
+/* ПРОФИЛЬ */
+.pf-hero{position:relative;overflow:hidden;background:linear-gradient(160deg,rgba(32,38,56,.97),rgba(18,22,34,.97));border:1px solid var(--line);border-radius:24px;padding:22px 18px;margin-bottom:14px;text-align:center;}
+.pf-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% -10%,rgba(76,201,240,.16),transparent 55%);pointer-events:none;}
+.pf-avatar{width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid transparent;background:linear-gradient(135deg,var(--accent),var(--accent2)) border-box;box-shadow:0 10px 30px rgba(124,92,255,.35);margin:0 auto 12px;display:block;position:relative;}
+.pf-avatar-init{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;font-size:34px;font-weight:900;font-family:var(--fm);color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));margin:0 auto 12px;border:3px solid rgba(76,201,240,.35);}
+.pf-nick{font-size:22px;font-weight:900;margin-bottom:2px;position:relative;}
+.pf-email{font-size:12px;color:var(--muted);margin-bottom:10px;position:relative;}
+.pf-rank{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--accent);border:1px solid rgba(76,201,240,.3);background:rgba(76,201,240,.08);padding:5px 12px;border-radius:999px;position:relative;}
+.pf-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;position:relative;}
+.pf-stat{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;padding:12px;cursor:pointer;transition:.2s;}
+.pf-stat:hover{border-color:rgba(76,201,240,.35);}
+.pf-stat .v{font-size:22px;font-weight:900;font-family:var(--fm);color:var(--accent);}
+.pf-stat .l{font-size:11px;color:var(--muted);font-weight:700;margin-top:2px;}
+.pf-follow{position:relative;margin:0 auto;display:inline-block;}
+.pf-follow-btn{position:relative;padding:12px 34px;border-radius:999px;border:0;font-size:14px;font-weight:900;font-family:var(--fb);cursor:pointer;transition:.2s;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 20px rgba(76,201,240,.3);}
+.pf-follow-btn:active{transform:scale(.96);}
+.pf-follow-btn.following{background:rgba(255,255,255,.08);color:var(--muted);border:1px solid var(--line);box-shadow:none;}
+.pf-follow-btn:disabled{opacity:.6;cursor:not-allowed;}
+.pf-list{display:grid;gap:8px;}
+.pf-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;padding:12px 14px;}
+.pf-row-av{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--line);flex-shrink:0;display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:var(--fm);font-size:15px;}
+.pf-row-info{flex:1;min-width:0;}
+.pf-row-name{font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pf-row-sub{font-size:11px;color:var(--muted);font-family:var(--fm);}
+.pf-vids{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pf-vid{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#000;cursor:pointer;}
+.pf-vid img{width:100%;height:100%;object-fit:cover;transition:transform .3s;}
+.pf-vid:hover img{transform:scale(1.06);}
+.pf-vid::after{content:'▶';position:absolute;inset:0;display:grid;place-items:center;font-size:26px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7);}
+.pf-vid .pf-vid-t{position:absolute;left:0;right:0;bottom:0;padding:6px 10px;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.8));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pf-empty{text-align:center;color:var(--muted);padding:26px;font-size:13px;}
 
 /* LEADERBOARD */
 .lb-row{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:14px;margin-bottom:8px;}
@@ -456,6 +525,7 @@ select.field{cursor:pointer;}
     <button class="tab-btn" data-tab="friends">🏆<span>Топ</span></button>
     <button class="tab-btn" data-tab="friends2">👥<span>Друзья</span></button>
     <button class="tab-btn" data-tab="duel">⚡<span>Дуэли</span></button>
+    <button class="tab-btn" data-tab="profile">👤<span>Профиль</span></button>
     <button class="tab-btn" data-tab="support">🛠<span>Ещё</span></button>
   </nav>
 
@@ -538,15 +608,14 @@ select.field{cursor:pointer;}
 
   <!-- VIDEOS -->
   <section id="tab-videos" class="tab">
-    <div class="panel">
-      <div class="panel-head"><div><h3>🎬 Видео-доказательства</h3></div></div>
-      <div class="form-card" style="margin-bottom:14px;">
-        <input id="proofTitle" class="field" placeholder="Название (напр. Вилли 50 метров!)"/>
-        <select id="proofSkill" class="field" style="cursor:pointer;"><option value="wh">Вилли</option><option value="mn">Мэнуал</option><option value="ts">Трекстенд</option><option value="bh">Банни-хоп</option><option value="st">Стоппи</option></select>
-        <input id="proofUrl" class="field" placeholder="Ссылка на YouTube видео"/>
-        <button class="btn btn-primary btn-full" onclick="addProof()">Загрузить 🎥</button>
+    <div class="tt-wrap">
+      <div class="tt-seg" id="ttSeg">
+        <button data-vseg="all" class="active" onclick="setVidSeg('all')">🔥 Для тебя</button>
+        <button data-vseg="subs" onclick="setVidSeg('subs')">📌 Подписки</button>
+        <button data-vseg="mine" onclick="setVidSeg('mine')">👤 Мои</button>
       </div>
-      <div id="proofFeed"></div>
+      <div id="proofFeed" class="tt-feed"></div>
+      <button class="tt-add" id="ttAdd" onclick="openProofModal()" aria-label="Загрузить видео">➕</button>
     </div>
   </section>
 
@@ -599,6 +668,11 @@ select.field{cursor:pointer;}
       </div>
       <div id="duelList"></div>
     </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section id="tab-profile" class="tab">
+    <div id="profileRoot"></div>
   </section>
 
   <!-- MORE -->
@@ -668,6 +742,34 @@ select.field{cursor:pointer;}
     <div id="modalDaily" style="display:none;text-align:center;font-size:12px;color:var(--muted);margin:8px 0 0;font-family:var(--fm);"></div>
     <div id="modalSteps"></div>
     <button id="modalTrainBtn" class="btn btn-primary btn-full" style="margin-top:12px;padding:16px;font-size:16px;" onclick="trainCurrent()">💪 ВЫПОЛНИТЬ ПОДХОД (+10%)</button>
+  </div>
+</div>
+
+<div id="proofModal" class="modal">
+  <div class="modal-card">
+    <div class="modal-head"><h2>🎬 Загрузить видео</h2><button class="btn btn-ghost" style="padding:8px 12px;" onclick="closeProofModal()">✕</button></div>
+    <div class="form-card">
+      <input id="proofTitle" class="field" placeholder="Название — напр. «Вилли 50 метров!»"/>
+      <select id="proofSkill" class="field" style="cursor:pointer;"><option value="wh">Вилли</option><option value="mn">Мэнуал</option><option value="ts">Трекстенд</option><option value="bh">Банни-хоп</option><option value="st">Стоппи</option></select>
+      <input id="proofUrl" class="field" placeholder="Ссылка на YouTube (watch, share, shorts)"/>
+      <div id="proofPrev" class="tt-prev"></div>
+      <button class="btn btn-primary btn-full" style="margin-top:12px;" onclick="addProof()">Загрузить 🎥</button>
+      <p class="tt-tip">💡 Вставь ссылку с YouTube — превью появится само. Только YouTube-видео.</p>
+    </div>
+  </div>
+</div>
+
+<div id="profileModal" class="modal">
+  <div class="modal-card" style="max-width:520px;">
+    <div class="modal-head"><h2>👤 Профиль</h2><button class="btn btn-ghost" style="padding:8px 12px;" onclick="closeProfileModal()">✕</button></div>
+    <div id="profileModalBody"></div>
+  </div>
+</div>
+
+<div id="playerModal" class="modal">
+  <div class="modal-card" style="max-width:640px;">
+    <div class="modal-head"><h2 id="playerTitle">Видео</h2><button class="btn btn-ghost" style="padding:8px 12px;" onclick="closePlayer()">✕</button></div>
+    <div class="vid-box"><iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe></div>
   </div>
 </div>
 
@@ -793,7 +895,7 @@ const DEF_SKILLS=[
 
 /* ══ STATE ══ */
 const SK='mtb_v16';
-function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[]};}
+function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[]};}
 let state=loadLS();
 let activeSkillId=null;
 let bikePhotoFile=null;
@@ -803,6 +905,7 @@ function loadLS(){
     ['records','challenges','completedChallenges','proofs','proofReactions','unlockedAchievements','duels'].forEach(k=>{if(!s[k])s[k]=k==='records'?{}:[];});
     if(!s.challengeXP)s.challengeXP=0;if(!s.duelsWon)s.duelsWon=0;
     if(!s.weeklyXpStart)s.weeklyXpStart=0;if(!s.weeklyXpStartTs)s.weeklyXpStartTs=0;if(!s.nicknameChangedAt)s.nicknameChangedAt=0;
+    if(!Array.isArray(s.following))s.following=[];
     DEF_SKILLS.forEach(ds=>{
       const sk=s.skills.find(x=>x.id===ds.id);
       if(!sk)s.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0});
@@ -823,7 +926,7 @@ async function saveCloud(){
     delete toSave.duels;
     if(Array.isArray(toSave.proofReactions))toSave.proofReactions={};
     if(Array.isArray(toSave.skills))toSave.skills=toSave.skills.map(s=>({...s,trSession:0}));
-    await db.collection('users').doc(currentUser.uid).set({...toSave,code:currentUser.uid.substring(0,12),uid:currentUser.uid},{merge:true});
+    await db.collection('users').doc(currentUser.uid).set({...toSave,code:currentUser.uid.substring(0,12),uid:currentUser.uid,photoURL:currentUser.photoURL||null},{merge:true});
     await db.collection('leaderboard').doc(currentUser.uid).set({
       nickname:state.nickname,
       pts:calcXP(),
@@ -1139,6 +1242,7 @@ function initApp(){
   initNotifUI();updateStreak();genChallengesIfNeeded();
   setInterval(updateChTimer,60000);updateChTimer();
   genPWA();
+  syncProofs();
 }
 function genPWA(){const sec=(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1');if('serviceWorker' in navigator&&sec){navigator.serviceWorker.register('sw.js').catch(()=>{});}}
 
@@ -1172,7 +1276,22 @@ function recordTrainToday(){
 function renderStreak(){const b=document.getElementById('streakBanner');if(!b)return;if(state.streak>0){b.style.display='flex';const d=state.streak;setT('streakText',d+' '+(d===1?'день':d<5?'дня':'дней')+' подряд 🔥');setT('streakSub',d>=7?'В огне! 🏆':d>=3?'Хорошая серия!':'Начало положено!');}else b.style.display='none';}
 
 /* ══ TABS ══ */
-document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{sfx.tab();document.querySelectorAll('.tab,.tab-btn').forEach(el=>el.classList.remove('active'));btn.classList.add('active');const t=btn.dataset.tab;const el=document.getElementById('tab-'+t);if(el)el.classList.add('active');if(t==='skills')renderSkills();if(t==='records')renderRecords();if(t==='challenges'){genChallengesIfNeeded();renderChallenges();}if(t==='bikes'){switchBikeTab('feed');loadBikes();}if(t==='videos')renderProofs();if(t==='friends')renderFriends();if(t==='friends2')renderFriendsTab();if(t==='duel')renderDuels();});});
+function gotoTab(t){
+  sfx.tab();
+  document.querySelectorAll('.tab,.tab-btn').forEach(el=>el.classList.remove('active'));
+  const tb=document.querySelector('.tab-btn[data-tab="'+t+'"]');if(tb)tb.classList.add('active');
+  const el=document.getElementById('tab-'+t);if(el)el.classList.add('active');
+  if(t==='skills')renderSkills();
+  if(t==='records')renderRecords();
+  if(t==='challenges'){genChallengesIfNeeded();renderChallenges();}
+  if(t==='bikes'){switchBikeTab('feed');loadBikes();}
+  if(t==='videos'){const b=document.getElementById('ttAdd');if(b)b.style.display='flex';setVidSeg(vidSeg);loadVideos();}
+  if(t==='friends')renderFriends();
+  if(t==='friends2')renderFriendsTab();
+  if(t==='duel')renderDuels();
+  if(t==='profile')renderProfile();
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>gotoTab(btn.dataset.tab)));
 function switchBikeTab(tab){document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));const b=document.querySelector(`[data-subtab="${tab}"]`);if(b)b.classList.add('active');document.getElementById('bikes-feed').style.display=tab==='feed'?'block':'none';document.getElementById('bikes-add').style.display=tab==='add'?'block':'none';if(tab==='feed')loadBikes();}
 
 /* ══ ACH ══ */
@@ -1579,7 +1698,8 @@ async function deleteBike(id){
   }catch(e){toast('Ошибка: '+e.message);}
 }
 
-/* ══ PROOFS ══ */
+/* ══ PROOFS (TikTok-лента) ══ */
+let videosCache=[],vidSeg='all',ttObserver=null;
 function ytId(url){
   if(!url||typeof url!=='string')return null;
   const u=url.trim();
@@ -1587,7 +1707,26 @@ function ytId(url){
   const m=u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   return m?m[1]:null;
 }
-function addProof(){
+async function pushProofToCloud(proof){
+  if(!db||!currentUser)return;
+  try{
+    const ref=db.collection('videos').doc(currentUser.uid+'_'+proof.id);
+    const s=await ref.get();
+    if(!s.exists){
+      await ref.set({
+        pid:proof.id,ownerId:currentUser.uid,ownerNick:state.nickname||'Аноним',
+        title:proof.title,skill:proof.skill||'wh',ytId:proof.ytId,
+        likedBy:[],likes:0,ratedBy:{},ratingSum:0,ratingCount:0,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  }catch(e){console.warn('pushProofToCloud:',e);}
+}
+async function syncProofs(){
+  if(!db||!currentUser)return;
+  for(const p of state.proofs||[]){await pushProofToCloud(p);}
+}
+async function addProof(){
   const rawTitle=document.getElementById('proofTitle').value.trim();
   const skill=document.getElementById('proofSkill').value;
   const url=document.getElementById('proofUrl').value.trim();
@@ -1595,98 +1734,441 @@ function addProof(){
   if(rawTitle.length>100)return toast('Максимум 100 символов в названии');
   const title=rawTitle.replace(/[<>&"]/g,'').slice(0,100);
   if(!url)return toast('Вставь ссылку!');
-  const id=ytId(url);if(!id)return toast('Неверная YouTube ссылка!');
+  const ytid=ytId(url);if(!ytid)return toast('Неверная YouTube ссылка!');
   if(!state.proofs)state.proofs=[];
   if(state.proofs.length>=20){toast('Максимум 20 видео. Удали старые.');return;}
-  state.proofs.unshift({id:Date.now().toString(),title,skill,ytId:id,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0});document.getElementById('proofTitle').value='';document.getElementById('proofUrl').value='';sfx.save();saveCloud();renderProofs();toast('🎬 Видео загружено!');checkAutoCompleteChallenge();checkAch();}
-function rateProof(id,stars){
-  if(!currentUser){toast('Войди чтобы оценивать');return;}
-  const p=state.proofs.find(x=>x.id===id);
-  if(!p){toast('Видео не найдено');return;}
-  if(p.author===state.nickname){toast('Нельзя оценивать свои трюки');return;}
-  if(!p.ratings)p.ratings={};
-  const isNew=!p.ratings[currentUser.uid];
-  p.ratings[currentUser.uid]=stars;
-  if(isNew){
-    // +2 XP тому кто оценил (поощряем активность)
-    state.challengeXP=(state.challengeXP||0)+2;
-    sfx.tick();
-    toast('Оценка '+'★'.repeat(stars)+' поставлена! +2 XP');
-  }else{
-    toast('Оценка обновлена: '+'★'.repeat(stars));
-  }
-  saveCloudDebounced();renderProofs();checkAch();
+  const proof={id:Date.now().toString(),title,skill,ytId:ytid,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0};
+  state.proofs.unshift(proof);
+  document.getElementById('proofTitle').value='';
+  document.getElementById('proofUrl').value='';
+  const pv=document.getElementById('proofPrev');if(pv){pv.classList.remove('loaded');pv.innerHTML='';}
+  closeProofModal();
+  sfx.save();saveCloud();
+  pushProofToCloud(proof);
+  loadVideos();
+  toast('🎬 Видео загружено!');checkAutoCompleteChallenge();checkAch();
+  const feed=document.getElementById('proofFeed');if(feed)feed.scrollTop=0;
 }
+function openProofModal(){document.getElementById('proofModal').classList.add('show');const u=document.getElementById('proofUrl');if(u)u.focus();}
+function closeProofModal(){document.getElementById('proofModal').classList.remove('show');}
+document.getElementById('proofModal').addEventListener('click',function(e){if(e.target===this)closeProofModal();});
+document.getElementById('proofUrl').addEventListener('input',function(){
+  const pv=document.getElementById('proofPrev');if(!pv)return;
+  const id=ytId(this.value);
+  if(id){pv.innerHTML='';const img=document.createElement('img');img.src='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg';img.alt='Превью';pv.appendChild(img);pv.classList.add('loaded');}
+  else{pv.classList.remove('loaded');pv.innerHTML='';}
+});
 
-function reactProof(id,type){if(!state.proofReactions)state.proofReactions={};const key=id+'_'+state.nickname;if(!state.proofReactions[key])state.proofReactions[key]=[];if(state.proofReactions[key].includes(type)){state.proofReactions[key]=state.proofReactions[key].filter(t=>t!==type);const p=state.proofs.find(x=>x.id===id);if(p)p[type]=Math.max(0,(p[type]||0)-1);}else{state.proofReactions[key].push(type);const p=state.proofs.find(x=>x.id===id);if(p)p[type]=(p[type]||0)+1;}sfx.tick();saveCloud();renderProofs();}
+function vidFromCloud(d){
+  const ratedBy=d.ratedBy||{};
+  const rc=Object.keys(ratedBy).length;
+  return{
+    key:d.id,ytId:d.ytId,title:d.title||'Без названия',skill:d.skill||'wh',
+    author:d.ownerNick||'Аноним',
+    ts:d.createdAt&&d.createdAt.toDate?d.createdAt.toDate().getTime():Date.now(),
+    likes:d.likes||0,liked:currentUser&&Array.isArray(d.likedBy)&&d.likedBy.includes(currentUser.uid),
+    ratedBy:ratedBy,myRating:currentUser?(ratedBy[currentUser.uid]||0):0,
+    ratingCount:rc,ratingSum:d.ratingSum||0,
+    ratingAvg:rc?Math.round((d.ratingSum||0)/rc*10)/10:null,
+    ownerId:d.ownerId,isOwn:currentUser&&d.ownerId===currentUser.uid,
+    local:false,pid:d.pid||'',vidDocId:d.id
+  };
+}
+function vidFromLocal(p){
+  const ratings=p.ratings||{};
+  const rc=Object.keys(ratings).length;
+  const key=p.id+'_'+state.nickname;
+  const my=state.proofReactions&&state.proofReactions[key]?state.proofReactions[key]:[];
+  const vals=Object.values(ratings);
+  return{
+    key:'local_'+p.id,ytId:p.ytId,title:p.title,skill:p.skill||'wh',
+    author:p.author||'',ts:new Date(p.date||Date.now()).getTime(),
+    likes:p.likes||0,liked:my.includes('likes'),
+    ratedBy:ratings,myRating:currentUser?(ratings[currentUser.uid]||0):0,
+    ratingCount:rc,ratingSum:vals.reduce((a,b)=>a+b,0),
+    ratingAvg:rc?Math.round(vals.reduce((a,b)=>a+b,0)/rc*10)/10:null,
+    ownerId:currentUser?currentUser.uid:'',isOwn:true,
+    local:true,pid:p.id,vidDocId:null
+  };
+}
+async function loadVideos(){
+  const el=document.getElementById('proofFeed');if(!el)return;
+  el.innerHTML='<div style="height:100%;display:grid;place-items:center;color:var(--muted);font-family:var(--fm);font-size:13px;">Загрузка ленты...</div>';
+  let items=[];
+  if(db){
+    try{
+      const snap=await db.collection('videos').orderBy('createdAt','desc').limit(100).get();
+      items=snap.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
+      const cloudPids={};items.forEach(v=>{if(v.pid)cloudPids[v.pid]=1;});
+      (state.proofs||[]).filter(p=>!cloudPids[p.id]).forEach(p=>items.unshift(vidFromLocal(p)));
+    }catch(e){console.warn('loadVideos:',e);items=(state.proofs||[]).map(vidFromLocal);}
+  }else{
+    items=(state.proofs||[]).map(vidFromLocal);
+  }
+  videosCache=items;
+  renderProofs();
+}
+function setVidSeg(seg){
+  vidSeg=seg;
+  document.querySelectorAll('#ttSeg button').forEach(b=>b.classList.toggle('active',b.dataset.vseg===seg));
+  renderProofs();
+}
 function renderProofs(){
   const el=document.getElementById('proofFeed');if(!el)return;
   el.innerHTML='';
-  if(!state.proofs||!state.proofs.length){
-    const p=document.createElement('div');p.className='form-card';
-    p.style.cssText='text-align:center;color:var(--muted);padding:24px;';
-    p.textContent='Нет видео!';el.appendChild(p);return;
+  if(ttObserver){ttObserver.disconnect();ttObserver=null;}
+  let items=videosCache||[];
+  if(vidSeg==='subs')items=items.filter(v=>v.isOwn||isFollowing(v.ownerId));
+  else if(vidSeg==='mine')items=items.filter(v=>v.isOwn);
+  if(!items.length){
+    const box=document.createElement('div');box.className='tt-empty';
+    const h3=document.createElement('h3');
+    const pp=document.createElement('p');
+    let btn=null;
+    if(vidSeg==='subs'){h3.textContent='📌 Нет подписок';pp.textContent='Найди райдеров во вкладке «Для тебя» и загляни в их профиль. Подписка покажет их видео здесь.';btn=document.createElement('button');btn.className='btn btn-ghost btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Показать «Для тебя»';btn.onclick=()=>setVidSeg('all');}
+    else if(vidSeg==='mine'){h3.textContent='🎬 Пока нет видео';pp.textContent='Покажи свои трюки другим райдерам!';btn=document.createElement('button');btn.className='btn btn-primary btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Загрузить первое видео 🎥';btn.onclick=openProofModal;}
+    else{h3.textContent='🎬 Лента пуста';pp.textContent='Покажи свой первый трюк всему сообществу!';btn=document.createElement('button');btn.className='btn btn-primary btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Загрузить первое видео 🎥';btn.onclick=openProofModal;}
+    box.append(h3,pp);if(btn)box.appendChild(btn);el.appendChild(box);return;
   }
-  state.proofs.forEach(p=>{
-    const card=document.createElement('div');card.className='proof-card';
-    // Header
-    const head=document.createElement('div');head.className='proof-head';
-    const info=document.createElement('div');
-    const h4=document.createElement('h4');h4.style.cssText='margin:0 0 2px;font-size:15px;';h4.textContent=p.title;
-    const meta=document.createElement('span');meta.style.cssText='font-size:11px;color:var(--muted);';
-    meta.textContent=p.author+' · '+(SNAMES[p.skill]||p.skill)+' · '+new Date(p.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
-    info.append(h4,meta);head.appendChild(info);
-    if(p.author===state.nickname){
-      const d=document.createElement('button');d.className='btn btn-danger';d.style.cssText='padding:4px 8px;font-size:11px;';d.textContent='✕';
-      d.onclick=()=>confirmAction('Удалить?','',()=>{state.proofs=state.proofs.filter(x=>x.id!==p.id);saveCloud();renderProofs();});
-      head.appendChild(d);
+  items.forEach(v=>{
+    const item=document.createElement('div');item.className='tt-item';item.dataset.ytId=v.ytId;item.dataset.vkey=v.key;
+    const vw=document.createElement('div');vw.className='tt-vid';
+    const iframe=document.createElement('iframe');iframe.title=v.title;iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';iframe.allowFullscreen=true;
+    vw.appendChild(iframe);item.appendChild(vw);
+    // Оверлей
+    const ov=document.createElement('div');ov.className='tt-overlay';
+    const author=document.createElement('button');author.className='tt-author';author.textContent=v.author||'Райдер';
+    if(v.isOwn)author.onclick=()=>gotoTab('profile');
+    else if(v.ownerId)author.onclick=()=>openProfile(v.ownerId,v.author);
+    const t=document.createElement('h4');t.className='tt-title';t.textContent=v.title;
+    const m=document.createElement('div');m.className='tt-meta';
+    m.textContent=(SNAMES[v.skill]||v.skill||'')+' · '+new Date(v.ts).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
+    ov.append(author,t,m);
+    const ovRate=document.createElement('span');ovRate.className='tt-ov-rate';
+    ovRate.style.cssText='font-size:12px;color:#fbbf24;margin-top:4px;display:'+(v.ratingCount?'block':'none')+';';
+    ovRate.textContent=v.ratingCount?('★'+v.ratingAvg+' · '+v.ratingCount):'';
+    ov.appendChild(ovRate);
+    item.appendChild(ov);
+    // Правый рейл
+    const rail=document.createElement('div');rail.className='tt-rail';
+    const likeBtn=document.createElement('button');likeBtn.className='tt-action'+(v.liked?' active':'');likeBtn.title='Нравится';
+    const lIc=document.createElement('span');lIc.className='tt-ic';lIc.textContent=v.liked?'❤️':'👍';
+    const lCnt=document.createElement('span');lCnt.className='tt-cnt';lCnt.textContent=v.likes||0;
+    likeBtn.append(lIc,lCnt);likeBtn.onclick=()=>toggleLike(v,likeBtn,lIc,lCnt);
+    rail.appendChild(likeBtn);
+    if(!v.isOwn&&currentUser){
+      const rb=document.createElement('button');rb.className='tt-action tt-rate-btn';rb.title='Оценить трюк';
+      const rIc=document.createElement('span');rIc.className='tt-ic';rIc.textContent='⭐';
+      const rCnt=document.createElement('span');rCnt.className='tt-rt-cnt';rCnt.textContent=v.myRating?v.myRating+'/5':'';
+      rb.append(rIc,rCnt);
+      rb.onclick=()=>{const pop=item.querySelector('.tt-rate-pop');if(pop){pop.remove();return;}rateProofPrompt(item,v);};
+      rail.appendChild(rb);
     }
-    // Video
-    const vw=document.createElement('div');vw.className='proof-vid';
-    const iframe=document.createElement('iframe');iframe.src='https://www.youtube.com/embed/'+p.ytId;iframe.allowFullscreen=true;vw.appendChild(iframe);
-    // Reactions row
-    const reacts=document.createElement('div');reacts.className='proof-reacts';
-    const key=p.id+'_'+state.nickname;
-    const my=state.proofReactions&&state.proofReactions[key]?state.proofReactions[key]:[];
-    ['likes','fires'].forEach(type=>{
-      const btn=document.createElement('button');btn.className='pr-btn'+(my.includes(type)?' active':'');
-      btn.textContent=(type==='likes'?'👍 ':'🔥 ')+(p[type]||0);
-      btn.onclick=()=>reactProof(p.id,type);reacts.appendChild(btn);
+    if(v.isOwn){
+      const dbBtn=document.createElement('button');dbBtn.className='tt-action';dbBtn.title='Удалить';
+      const dIc=document.createElement('span');dIc.className='tt-ic';dIc.textContent='🗑';
+      const dCnt=document.createElement('span');dCnt.textContent='';
+      dbBtn.append(dIc,dCnt);dbBtn.onclick=()=>deleteProofItem(v);
+      rail.appendChild(dbBtn);
+    }
+    item.appendChild(rail);
+    el.appendChild(item);
+  });
+  // Ленивая загрузка текущего видео
+  ttObserver=new IntersectionObserver(entries=>{
+    entries.forEach(en=>{
+      const ifr=en.target.querySelector('.tt-vid iframe');
+      if(!ifr)return;
+      if(en.isIntersecting){
+        ifr.style.pointerEvents='auto';
+        ifr.src='https://www.youtube.com/embed/'+en.target.dataset.ytId+'?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1';
+      }else{
+        ifr.style.pointerEvents='none';
+        ifr.src='';
+      }
     });
-    // ── Рейтинг трюка (звёзды) ──
-    const isOwn=p.author===state.nickname;
-    const ratings=p.ratings||{};
-    const ratingCount=Object.keys(ratings).length;
-    const avgRating=ratingCount>0
-      ?(Object.values(ratings).reduce((a,b)=>a+b,0)/ratingCount).toFixed(1)
-      :null;
-    const myRating=currentUser?ratings[currentUser.uid]||0:0;
-    if(!isOwn&&currentUser){
-      // Звёздочки для оценки
-      const starWrap=document.createElement('div');
-      starWrap.style.cssText='display:flex;align-items:center;gap:2px;margin-left:6px;border-left:1px solid var(--line);padding-left:10px;';
-      const starLabel=document.createElement('span');starLabel.style.cssText='font-size:11px;color:var(--muted);margin-right:2px;';
-      starLabel.textContent='Оцени:';starWrap.appendChild(starLabel);
-      [1,2,3,4,5].forEach(s=>{
-        const sb=document.createElement('button');
-        sb.className='pr-btn';
-        sb.style.cssText='padding:3px 5px;font-size:14px;border:0;background:none;cursor:pointer;'+(myRating>=s?'color:#fbbf24;':'color:rgba(255,255,255,.2);');
-        sb.textContent='★';
-        sb.onclick=()=>rateProof(p.id,s);
-        starWrap.appendChild(sb);
-      });
-      reacts.appendChild(starWrap);
+  },{threshold:.6});
+  el.querySelectorAll('.tt-item').forEach(it=>ttObserver.observe(it));
+}
+async function toggleLike(v,btn,ic,cnt){
+  if(!currentUser){toast('Войди чтобы лайкать');return;}
+  if(v.isOwn){toast('Нельзя лайкать своё видео');return;}
+  if(btn)btn.disabled=true;
+  try{
+    if(v.local){reactProof(v.pid,'likes');return;}
+    if(v.liked){
+      await db.collection('videos').doc(v.vidDocId).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid),likes:firebase.firestore.FieldValue.increment(-1)});
+      v.liked=false;v.likes=Math.max(0,v.likes-1);
+    }else{
+      await db.collection('videos').doc(v.vidDocId).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid),likes:firebase.firestore.FieldValue.increment(1)});
+      v.liked=true;v.likes=(v.likes||0)+1;
     }
-    // Средний рейтинг (виден всем)
-    if(avgRating){
-      const avgEl=document.createElement('span');
-      avgEl.style.cssText='font-size:12px;color:var(--warn);font-family:var(--fm);margin-left:6px;';
-      avgEl.textContent='★'+avgRating+(ratingCount>0?' ('+ratingCount+')':'');
-      reacts.appendChild(avgEl);
+    sfx.tick();
+    if(btn){btn.disabled=false;btn.className='tt-action'+(v.liked?' active':'');if(ic)ic.textContent=v.liked?'❤️':'👍';if(cnt)cnt.textContent=v.likes;}
+  }catch(e){toast('Ошибка: '+e.message);if(btn)btn.disabled=false;}
+}
+function reactProof(id,type){
+  if(!state.proofReactions)state.proofReactions={};
+  const key=id+'_'+state.nickname;
+  if(!state.proofReactions[key])state.proofReactions[key]=[];
+  if(state.proofReactions[key].includes(type)){
+    state.proofReactions[key]=state.proofReactions[key].filter(t=>t!==type);
+    const p=state.proofs.find(x=>x.id===id);if(p)p[type]=Math.max(0,(p[type]||0)-1);
+  }else{
+    state.proofReactions[key].push(type);
+    const p=state.proofs.find(x=>x.id===id);if(p)p[type]=(p[type]||0)+1;
+  }
+  sfx.tick();saveCloud();renderProofs();
+}
+function rateProof(id,stars){
+  if(!currentUser)return;
+  const p=state.proofs.find(x=>x.id===id);
+  if(!p)return;
+  if(!p.ratings)p.ratings={};
+  const isNew=!p.ratings[currentUser.uid];
+  p.ratings[currentUser.uid]=stars;
+  if(isNew){state.challengeXP=(state.challengeXP||0)+2;sfx.tick();}
+  saveCloudDebounced();renderProofs();checkAch();
+}
+async function rateVideo(v,stars){
+  if(!currentUser){toast('Войди чтобы оценивать');return;}
+  if(v.isOwn){toast('Нельзя оценивать свои трюки');return;}
+  const ratedBy=v.ratedBy||{};
+  const old=ratedBy[currentUser.uid]||0;
+  const isNew=!old;
+  try{
+    await db.collection('videos').doc(v.vidDocId).set({ratedBy:{[currentUser.uid]:stars}},{merge:true});
+    await db.collection('videos').doc(v.vidDocId).update({ratingSum:firebase.firestore.FieldValue.increment(stars-old),ratingCount:firebase.firestore.FieldValue.increment(isNew?1:0)});
+  }catch(e){toast('Ошибка: '+e.message);return;}
+  ratedBy[currentUser.uid]=stars;
+  v.ratingCount=Object.keys(ratedBy).length;
+  v.ratingSum=(v.ratingSum||0)+(stars-old);
+  v.ratingAvg=v.ratingCount?Math.round(v.ratingSum/v.ratingCount*10)/10:null;
+  v.myRating=stars;
+  if(isNew){state.challengeXP=(state.challengeXP||0)+2;saveCloudDebounced();sfx.tick();toast('Оценка '+'★'.repeat(stars)+'! +2 XP');}
+  else toast('Оценка обновлена: '+'★'.repeat(stars));
+  const item=document.querySelector('.tt-item[data-vkey="'+v.key+'"]');
+  if(item){
+    const cnt=item.querySelector('.tt-rt-cnt');if(cnt)cnt.textContent=v.myRating?v.myRating+'/5':'';
+    const ov=item.querySelector('.tt-ov-rate');
+    if(ov){ov.style.display=v.ratingCount?'block':'none';ov.textContent=v.ratingCount?('★'+v.ratingAvg+' · '+v.ratingCount):'';}
+  }
+}
+function rateProofPrompt(item,v){
+  item.querySelector('.tt-rate-pop')?.remove();
+  const pop=document.createElement('div');pop.className='tt-rate-pop';
+  [1,2,3,4,5].forEach(s=>{
+    const b=document.createElement('button');b.textContent='★';b.title=s+' звезд';
+    b.style.cssText='font-size:20px;border:0;background:none;cursor:pointer;padding:4px;color:rgba(255,255,255,.45);';
+    b.onmouseenter=()=>{b.style.color='#fbbf24';};
+    b.onmouseleave=()=>{b.style.color='rgba(255,255,255,.45)';};
+    b.onclick=()=>{v.local?rateProof(v.pid,s):rateVideo(v,s);};
+    pop.appendChild(b);
+  });
+  item.appendChild(pop);
+}
+function deleteProofItem(v){
+  confirmAction('Удалить видео?','Оно исчезнет из ленты и профиля.',async()=>{
+    state.proofs=(state.proofs||[]).filter(p=>p.id!==v.pid);
+    saveCloud();
+    if(db&&v.vidDocId){
+      try{await db.collection('videos').doc(v.vidDocId).delete();}catch(e){console.warn('del vid:',e);}
     }
-    card.append(head,vw,reacts);el.appendChild(card);
+    videosCache=videosCache.filter(x=>x.key!==v.key);
+    sfx.save();renderProofs();toast('Видео удалено');
+    renderProfileIfOpen();
   });
 }
+
+/* ══ ПОДПИСКИ ══ */
+function isFollowing(uid){return Array.isArray(state.following)&&state.following.includes(uid);}
+async function toggleFollow(uid){
+  if(!currentUser){toast('Войди чтобы подписаться');return;}
+  if(uid===currentUser.uid){toast('Это твой профиль');return;}
+  const following=state.following||[];
+  const wasFollowing=following.includes(uid);
+  state.following=wasFollowing?following.filter(u=>u!==uid):[...following,uid];
+  if(db){
+    try{
+      await db.collection('users').doc(currentUser.uid).update({following:wasFollowing?firebase.firestore.FieldValue.arrayRemove(uid):firebase.firestore.FieldValue.arrayUnion(uid)});
+    }catch(e){console.warn('toggleFollow:',e);}
+  }
+  saveCloud();
+  document.querySelectorAll('.pf-follow-btn[data-uid="'+uid+'"]').forEach(b=>refreshFollowBtn(b,uid));
+  const fs=document.querySelector('#profileModal .pf-follow-stat');if(fs)fs.textContent=isFollowing(uid)?'✓':'—';
+  toast(wasFollowing?'Отписался':'Подписался! 💜');
+  renderProfileIfOpen();
+}
+function refreshFollowBtn(b,uid){
+  const f=isFollowing(uid);
+  b.textContent=f?'✓ Подписан':'+ Подписаться';
+  b.classList.toggle('following',f);
+}
+function followBtnFor(uid,nick){
+  const b=document.createElement('button');b.className='pf-follow-btn';b.dataset.uid=uid;
+  b.addEventListener('click',()=>toggleFollow(uid));
+  refreshFollowBtn(b,uid);
+  return b;
+}
+async function renderProfileIfOpen(){
+  const tab=document.getElementById('tab-profile');
+  if(tab&&tab.classList.contains('active'))return renderProfile();
+}
+function calcRankFor(u){
+  const skills=u.skills||[];
+  const pts=skills.reduce((s,x)=>s+(x.lv*100)+(x.pr||0),0)+(u.challengeXP||0);
+  let rank='Старт';
+  if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';
+  return {rank,pts};
+}
+function buildProfileHero(p){
+  const hero=document.createElement('div');hero.className='pf-hero';
+  if(p.photo){const img=document.createElement('img');img.className='pf-avatar';img.src=p.photo;img.alt='';img.onerror=()=>{img.style.display='none';};hero.appendChild(img);}
+  else{const init=document.createElement('div');init.className='pf-avatar-init';init.textContent=((p.nick||'?')[0]||'?').toUpperCase();hero.appendChild(init);}
+  const nick=document.createElement('div');nick.className='pf-nick';nick.textContent=p.nick||'Без имени';
+  hero.appendChild(nick);
+  if(p.rank){const r=document.createElement('div');r.className='pf-rank';r.textContent=p.rank+(p.extra?' · '+p.extra:'');hero.appendChild(r);}
+  const stats=document.createElement('div');stats.className='pf-stats';
+  p.stats.forEach(s=>{
+    const st=document.createElement('div');st.className='pf-stat'+(s.followStat?' pf-follow-stat':'');
+    const v=document.createElement('div');v.className='v';v.textContent=s.v;
+    const l=document.createElement('div');l.className='l';l.textContent=s.l;
+    st.append(v,l);stats.appendChild(st);
+  });
+  hero.appendChild(stats);
+  if(p.followBtn)hero.appendChild(p.followBtn);
+  return hero;
+}
+async function renderProfile(){
+  const root=document.getElementById('profileRoot');if(!root)return;
+  if(!currentUser){root.innerHTML='<div class="panel"><div class="pf-empty">Войди, чтобы открыть профиль</div></div>';return;}
+  const {rank,pts}=calcRankFor(state);
+  let followers=0;
+  if(db){try{const s=await db.collection('users').where('following','array-contains',currentUser.uid).get();followers=s.size;}catch(e){}}
+  root.innerHTML='';
+  const hero=buildProfileHero({
+    nick:state.nickname||'Райдер',
+    photo:currentUser.photoURL||null,
+    sub:currentUser.email||'',
+    rank:rank,
+    extra:pts+' XP',
+    stats:[
+      {v:state.following.length,l:'Подписки'},
+      {v:followers,l:'Подписчики'},
+      {v:(state.proofs||[]).length,l:'Видео'}
+    ]
+  });
+  root.appendChild(hero);
+  const sp=document.createElement('div');sp.className='panel';
+  const sh=document.createElement('div');sh.className='panel-head';
+  const h3=document.createElement('h3');h3.textContent='📌 Мои подписки';sh.appendChild(h3);sp.appendChild(sh);
+  const fl=document.createElement('div');fl.id='myFollowingList';fl.className='pf-list';sp.appendChild(fl);
+  root.appendChild(sp);
+  renderFollowingList();
+  const vp=document.createElement('div');vp.className='panel';
+  const vh=document.createElement('div');vh.className='panel-head';
+  const h32=document.createElement('h3');h32.textContent='🎬 Мои видео';vh.appendChild(h32);vp.appendChild(vh);
+  const g=document.createElement('div');g.id='myVidGrid';g.className='pf-vids';vp.appendChild(g);
+  root.appendChild(vp);
+  renderMyVids();
+}
+async function renderFollowingList(){
+  const el=document.getElementById('myFollowingList');if(!el)return;
+  const following=state.following||[];
+  el.innerHTML='';
+  if(!following.length){const d=document.createElement('div');d.className='pf-empty';d.textContent='Пока ни на кого не подписан. Найди райдеров в ленте видео!';el.appendChild(d);return;}
+  for(const uid of following){
+    const row=document.createElement('div');row.className='pf-row';
+    let nick='Райдер';
+    if(db){try{const d=await db.collection('users').doc(uid).get();if(d.exists&&d.data().nickname)nick=d.data().nickname;}catch(e){}}
+    const av=document.createElement('div');av.className='pf-row-av';av.textContent=(nick[0]||'?').toUpperCase();
+    const info=document.createElement('div');info.className='pf-row-info';
+    const nm=document.createElement('div');nm.className='pf-row-name';nm.textContent=nick;
+    const sb=document.createElement('div');sb.className='pf-row-sub';sb.textContent=uid.substring(0,12);
+    info.append(nm,sb);
+    const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px 12px;font-size:12px;';btn.textContent='Отписаться';
+    btn.onclick=async()=>{await toggleFollow(uid);renderFollowingList();};
+    row.append(av,info,btn);
+    el.appendChild(row);
+  }
+}
+function renderMyVids(){
+  const g=document.getElementById('myVidGrid');if(!g)return;
+  const proofs=state.proofs||[];
+  g.innerHTML='';
+  if(!proofs.length){const d=document.createElement('div');d.className='pf-empty';d.textContent='Пока нет видео. Загрузи первое!';d.style.gridColumn='1/-1';g.appendChild(d);return;}
+  proofs.forEach(p=>{
+    const vd=document.createElement('div');vd.className='pf-vid';vd.title=p.title;
+    const img=document.createElement('img');img.src='https://i.ytimg.com/vi/'+p.ytId+'/hqdefault.jpg';img.alt='';img.loading='lazy';img.onerror=()=>{img.style.display='none';};
+    const t=document.createElement('div');t.className='pf-vid-t';t.textContent=p.title;
+    vd.append(img,t);
+    vd.onclick=()=>playVideo(p.ytId,p.title);
+    g.appendChild(vd);
+  });
+}
+function closeProfileModal(){document.getElementById('profileModal').classList.remove('show');}
+document.getElementById('profileModal').addEventListener('click',function(e){if(e.target===this)closeProfileModal();});
+async function openProfile(uid,nick){
+  if(!db)return toast('Firebase не подключён');
+  if(!currentUser)return toast('Войди чтобы смотреть профили');
+  if(uid===currentUser.uid){gotoTab('profile');return;}
+  const modal=document.getElementById('profileModal');
+  const body=document.getElementById('profileModalBody');
+  modal.classList.add('show');
+  body.innerHTML='<div style="text-align:center;color:var(--muted);padding:30px;font-family:var(--fm);">Загрузка...</div>';
+  try{
+    const doc=await db.collection('users').doc(uid).get();
+    const u=doc.exists?doc.data():{nickname:nick};
+    let followers=0;
+    try{const s=await db.collection('users').where('following','array-contains',uid).get();followers=s.size;}catch(e){}
+    const {rank,pts}=calcRankFor(u);
+    body.innerHTML='';
+    body.appendChild(buildProfileHero({
+      nick:u.nickname||nick||'Райдер',
+      photo:u.photoURL||null,
+      rank:rank,
+      extra:pts+' XP',
+      stats:[
+        {v:isFollowing(uid)?'✓':'—',l:'Подписка',followStat:true},
+        {v:followers,l:'Подписчики'},
+        {v:(u.proofs||[]).length,l:'Видео'}
+      ],
+      followBtn:followBtnFor(uid,u.nickname)
+    }));
+    const vp=document.createElement('div');vp.className='panel';vp.style.cssText='margin-top:12px;';
+    const vh=document.createElement('div');vh.className='panel-head';
+    const h3=document.createElement('h3');h3.textContent='🎬 Видео';vh.appendChild(h3);vp.appendChild(vh);
+    const g=document.createElement('div');g.className='pf-vids';vp.appendChild(g);
+    body.appendChild(vp);
+    try{
+      const snap=await db.collection('videos').where('ownerId','==',uid).limit(12).get();
+      const vids=snap.docs.map(d=>d.data());
+      if(!vids.length){const d=document.createElement('div');d.className='pf-empty';d.textContent='Пока нет видео';d.style.gridColumn='1/-1';g.appendChild(d);}
+      else vids.forEach(v=>{
+        const vd=document.createElement('div');vd.className='pf-vid';vd.title=v.title;
+        const img=document.createElement('img');img.src='https://i.ytimg.com/vi/'+v.ytId+'/hqdefault.jpg';img.alt='';img.loading='lazy';img.onerror=()=>{img.style.display='none';};
+        const t=document.createElement('div');t.className='pf-vid-t';t.textContent=v.title;
+        vd.append(img,t);
+        vd.onclick=()=>playVideo(v.ytId,v.title);
+        g.appendChild(vd);
+      });
+    }catch(e){const d=document.createElement('div');d.className='pf-empty';d.textContent='Ошибка загрузки видео';d.style.gridColumn='1/-1';g.appendChild(d);}
+  }catch(e){body.innerHTML='<div class="pf-empty">Ошибка загрузки профиля</div>';}
+}
+function playVideo(ytId,title){
+  const m=document.getElementById('playerModal');if(!m)return;
+  setT('playerTitle',title||'Видео');
+  const f=document.getElementById('playerFrame');
+  f.src='https://www.youtube.com/embed/'+ytId+'?autoplay=1&rel=0';
+  m.classList.add('show');
+}
+function closePlayer(){
+  const m=document.getElementById('playerModal');if(!m)return;
+  const f=document.getElementById('playerFrame');if(f)f.src='';
+  m.classList.remove('show');
+}
+document.getElementById('playerModal').addEventListener('click',function(e){if(e.target===this)closePlayer();});
+document.getElementById('userInfo').addEventListener('click',()=>gotoTab('profile'));
 
 /* ══ FRIENDS ══ */
 let friendsCurrentSub='received';
