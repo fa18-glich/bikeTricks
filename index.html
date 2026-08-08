@@ -2011,20 +2011,22 @@ function toggleNotif(){
 function scheduleNotif(){
   clearInterval(notifInt);
   notifInt=setInterval(()=>{
-    if(Notification.permission!=='granted'||!state.notif.enabled)return;
+    if(!('Notification' in window)||Notification.permission!=='granted'||!state.notif.enabled)return;
     const now=new Date();
     const dayMap=[7,1,2,3,4,5,6];
     const today=dayMap[now.getDay()];
     const days=state.notif.days||[1,2,3,4,5,6,7];
     if(!days.includes(today))return;
     const[h,m]=(state.notif.time||'17:00').split(':').map(Number);
+    const todayKey=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
     if(now.getHours()===h&&now.getMinutes()===m&&now.getSeconds()<30){
-      new Notification('MTB Skills Pro 🚵‍♂️',{
-        body:'Время тренироваться! ⛑️ Не забудь шлем!',
-        icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png',
-        tag:'mtb-daily',
-        requireInteraction:false
-      });
+      if(localStorage.getItem('mtb_lastNotif')===todayKey.toString())return;
+      localStorage.setItem('mtb_lastNotif',todayKey.toString());
+      if(navigator.serviceWorker&&navigator.serviceWorker.ready){
+        navigator.serviceWorker.ready.then(reg=>{reg.showNotification('MTB Skills Pro 🚵‍♂️',{body:'Время тренироваться! ⛑️ Не забудь шлем!',icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png',badge:'https://i.ibb.co/7xnbTSWB/1774284993874.png',tag:'mtb-daily',requireInteraction:false});}).catch(()=>{});
+      }else{
+        try{new Notification('MTB Skills Pro 🚵‍♂️',{body:'Время тренироваться! ⛑️ Не забудь шлем!',icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png',tag:'mtb-daily',requireInteraction:false});}catch(e){}
+      }
     }
   },20000);
 }
