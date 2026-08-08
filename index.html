@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="MTB Skills"/>
 <link rel="icon" type="image/png" href="image/icon.png"/>
-<link rel="apple-touch-icon" href="image/icon.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="image/icon.png"/>
 <link rel="manifest" id="manifestLink"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -966,6 +966,7 @@ async function handleEmailAuth(){
 
 async function signInWithGoogle(){
   if(!auth){showMsg('Firebase ещё загружается...');return;}
+  if(window.cordova){showMsg('В мобильном приложении Google-вход недоступен. Зарегистрируйся по Email.','ok');return;}
   clearMsg();
   const btn=document.getElementById('googleBtn');
   const ICON=btn.innerHTML;
@@ -1128,7 +1129,7 @@ function initApp(){
   setInterval(updateChTimer,60000);updateChTimer();
   genPWA();
 }
-function genPWA(){const m={name:'MTB Skills Pro',short_name:'MTB Skills',start_url:'.',display:'standalone',background_color:'#090b0f',theme_color:'#090b0f',icons:[{src:'https://i.ibb.co/7xnbTSWB/1774284993874.png',sizes:'192x192',type:'image/png'}]};const blob=new Blob([JSON.stringify(m)],{type:'application/json'});document.getElementById('manifestLink').href=URL.createObjectURL(blob);}
+function genPWA(){const m={name:'MTB Skills Pro',short_name:'MTB Skills',id:'.',start_url:'.',scope:'.',display:'standalone',background_color:'#090b0f',theme_color:'#090b0f',icons:[{src:'image/icon.png',sizes:'192x192',type:'image/png'},{src:'image/icon.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]};const blob=new Blob([JSON.stringify(m)],{type:'application/json'});document.getElementById('manifestLink').href=URL.createObjectURL(blob);const sec=(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1');if('serviceWorker' in navigator&&sec){navigator.serviceWorker.register('sw.js').catch(()=>{});}}
 
 /* ══ TIMER ══ */
 let tInt=null,tRun=false,tStart=0,tEl=0;
@@ -2080,6 +2081,6 @@ document.getElementById('authPass')?.addEventListener('keydown',e=>{if(e.key==='
 /* ══ BOOT ══ */
 initFB();
 </script>
-<script src="cordova.js"></script>
+<script>if(location.protocol==='file:'){document.write('<script src="cordova.js"><\/script>');}</script>
 </body>
 </html>
