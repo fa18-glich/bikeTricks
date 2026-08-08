@@ -16,6 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <style>
 :root{
   --bg:#090b0f;--panel:#13161e;--card:#1c2030;
@@ -267,6 +268,7 @@ select.field{cursor:pointer;}
 .tt-empty h3{font-family:var(--fd);letter-spacing:2px;margin:0;font-size:22px;}
 .tt-empty p{font-size:14px;color:rgba(255,255,255,.7);margin:0;}
 .tt-prev{width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin-top:10px;display:none;position:relative;}
+.tt-vprev{width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin-top:10px;}
 .tt-prev.loaded{display:block;}
 .tt-prev img{width:100%;height:100%;object-fit:cover;}
 .tt-prev::after{content:'▶';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7);}
@@ -313,6 +315,7 @@ select.field{cursor:pointer;}
 .pf-vids{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .pf-vid{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#000;cursor:pointer;}
 .pf-vid img{width:100%;height:100%;object-fit:cover;transition:transform .3s;}
+.pf-vid video{width:100%;height:100%;object-fit:cover;transition:transform .3s;}
 .pf-vid:hover img{transform:scale(1.06);}
 .pf-vid::after{content:'▶';position:absolute;inset:0;display:grid;place-items:center;font-size:26px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7);}
 .pf-vid .pf-vid-t{position:absolute;left:0;right:0;bottom:0;padding:6px 10px;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.8));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -751,10 +754,16 @@ select.field{cursor:pointer;}
     <div class="form-card">
       <input id="proofTitle" class="field" placeholder="Название — напр. «Вилли 50 метров!»"/>
       <select id="proofSkill" class="field" style="cursor:pointer;"><option value="wh">Вилли</option><option value="mn">Мэнуал</option><option value="ts">Трекстенд</option><option value="bh">Банни-хоп</option><option value="st">Стоппи</option></select>
-      <input id="proofUrl" class="field" placeholder="Ссылка на YouTube (watch, share, shorts)"/>
-      <div id="proofPrev" class="tt-prev"></div>
-      <button class="btn btn-primary btn-full" style="margin-top:12px;" onclick="addProof()">Загрузить 🎥</button>
-      <p class="tt-tip">💡 Вставь ссылку с YouTube — превью появится само. Только YouTube-видео.</p>
+      <label class="btn btn-primary btn-full" style="text-align:center;cursor:pointer;display:block;">📁 Выбрать видео из галереи<input type="file" id="proofFile" accept="video/*" style="display:none;"/></label>
+      <div id="proofFileInfo" class="tt-tip" style="display:none;margin-top:8px;"></div>
+      <video id="proofVidPrev" class="tt-vprev" controls playsinline style="display:none;"></video>
+      <div id="proofUrlWrap" style="margin-top:10px;">
+        <input id="proofUrl" class="field" placeholder="…или ссылка на YouTube (необязательно)"/>
+        <div id="proofPrev" class="tt-prev"></div>
+      </div>
+      <button id="proofSubmit" class="btn btn-primary btn-full" style="margin-top:12px;" onclick="addProof()">Загрузить 🎥</button>
+      <div id="proofProgWrap" style="display:none;margin-top:10px;"><div style="height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;"><div id="proofProgBar" style="height:100%;width:0%;background:linear-gradient(90deg,#4cc9f0,#7c5cff);transition:width .2s;"></div></div><p id="proofProgTxt" class="tt-tip">Загрузка…</p></div>
+      <p class="tt-tip">💡 Выбери видео из галереи или вставь ссылку с YouTube. Видео появится в общей ленте.</p>
     </div>
   </div>
 </div>
@@ -769,7 +778,7 @@ select.field{cursor:pointer;}
 <div id="playerModal" class="modal">
   <div class="modal-card" style="max-width:640px;">
     <div class="modal-head"><h2 id="playerTitle">Видео</h2><button class="btn btn-ghost" style="padding:8px 12px;" onclick="closePlayer()">✕</button></div>
-    <div class="vid-box"><iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe></div>
+    <div class="vid-box"><iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" style="display:none;"></iframe><video id="playerVid" src="" controls playsinline style="display:none;width:100%;height:100%;background:#000;"></video></div>
   </div>
 </div>
 
@@ -785,10 +794,11 @@ const FB_CFG={
   apiKey:"AIzaSyDPMX7QYJM2_WnTBDfXGw4W_fN3fFCVF6M",
   authDomain:"mtb-skills-pro-38297.firebaseapp.com",
   projectId:"mtb-skills-pro-38297",
+  storageBucket:"mtb-skills-pro-38297.appspot.com",
   messagingSenderId:"771638572867",
   appId:"1:771638572867:web:524987af3a428dd553e1f6"
 };
-let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false;
+let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st=null;
 
 /* ══ UTILS ══ */
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -950,6 +960,7 @@ async function initFB(){
     firebase.initializeApp(FB_CFG);
     db=firebase.firestore();
     auth=firebase.auth();
+    try{st=firebase.storage&&firebase.storage()?firebase.storage():null;}catch(e){st=null;}
 
     // Таймаут — якщо Firebase не відповідає за 12 секунд, показуємо екран авторизації
     fbTimeout=setTimeout(()=>{
@@ -1715,7 +1726,7 @@ async function pushProofToCloud(proof){
     if(!s.exists){
       await ref.set({
         pid:proof.id,ownerId:currentUser.uid,ownerNick:state.nickname||'Аноним',
-        title:proof.title,skill:proof.skill||'wh',ytId:proof.ytId,
+        title:proof.title,skill:proof.skill||'wh',ytId:proof.ytId||'',vidUrl:proof.vidUrl||'',vidPath:proof.vidPath||'',
         likedBy:[],likes:0,ratedBy:{},ratingSum:0,ratingCount:0,
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -1730,17 +1741,38 @@ async function addProof(){
   const rawTitle=document.getElementById('proofTitle').value.trim();
   const skill=document.getElementById('proofSkill').value;
   const url=document.getElementById('proofUrl').value.trim();
+  const btn=document.getElementById('proofSubmit');
   if(!rawTitle)return toast('Введи название!');
   if(rawTitle.length>100)return toast('Максимум 100 символов в названии');
   const title=rawTitle.replace(/[<>&"]/g,'').slice(0,100);
-  if(!url)return toast('Вставь ссылку!');
-  const ytid=ytId(url);if(!ytid)return toast('Неверная YouTube ссылка!');
+  const ytid=url?ytId(url):null;
+  if(url&&!ytid)return toast('Неверная YouTube ссылка!');
+  if(!proofFile&&!ytid)return toast('Выбери видео из галереи или вставь ссылку!');
   if(!state.proofs)state.proofs=[];
   if(state.proofs.length>=20){toast('Максимум 20 видео. Удали старые.');return;}
-  const proof={id:Date.now().toString(),title,skill,ytId:ytid,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0};
+  const id=Date.now().toString();
+  btn.disabled=true;btn.textContent='⏳ Загружаю…';
+  let vidUrl='',vidPath='';
+  if(proofFile){
+    if(!st){toast('Хранилище недоступно (Firebase Storage)');btn.disabled=false;btn.textContent='Загрузить 🎥';return;}
+    showProg('Загрузка видео…');
+    try{
+      const up=await uploadProofVideo(proofFile,id,onProg);
+      vidUrl=up.url;vidPath=up.path;
+    }catch(e){
+      hideProg();toast('Ошибка загрузки видео: '+e.message);
+      btn.disabled=false;btn.textContent='Загрузить 🎥';return;
+    }
+  }
+  hideProg();
+  const proof={id,title,skill,ytId:ytid||'',vidUrl,vidPath,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0};
   state.proofs.unshift(proof);
   document.getElementById('proofTitle').value='';
   document.getElementById('proofUrl').value='';
+  const fi=document.getElementById('proofFile');if(fi)fi.value='';
+  proofFile=null;
+  const info=document.getElementById('proofFileInfo');if(info)info.style.display='none';
+  const vp=document.getElementById('proofVidPrev');if(vp){vp.pause();vp.removeAttribute('src');vp.load();vp.style.display='none';}
   const pv=document.getElementById('proofPrev');if(pv){pv.classList.remove('loaded');pv.innerHTML='';}
   closeProofModal();
   sfx.save();saveCloud();
@@ -1748,8 +1780,9 @@ async function addProof(){
   loadVideos();
   toast('🎬 Видео загружено!');checkAutoCompleteChallenge();checkAch();
   const feed=document.getElementById('proofFeed');if(feed)feed.scrollTop=0;
+  btn.disabled=false;btn.textContent='Загрузить 🎥';
 }
-function openProofModal(){document.getElementById('proofModal').classList.add('show');const u=document.getElementById('proofUrl');if(u)u.focus();}
+function openProofModal(){document.getElementById('proofModal').classList.add('show');const u=document.getElementById('proofTitle');if(u)u.focus();}
 function closeProofModal(){document.getElementById('proofModal').classList.remove('show');}
 document.getElementById('proofModal').addEventListener('click',function(e){if(e.target===this)closeProofModal();});
 document.getElementById('proofUrl').addEventListener('input',function(){
@@ -1758,12 +1791,50 @@ document.getElementById('proofUrl').addEventListener('input',function(){
   if(id){pv.innerHTML='';const img=document.createElement('img');img.src='https://i.ytimg.com/vi/'+id+'/hqdefault.jpg';img.alt='Превью';pv.appendChild(img);pv.classList.add('loaded');}
   else{pv.classList.remove('loaded');pv.innerHTML='';}
 });
+let proofFile=null;
+function fmtSize(b){if(b<1024)return b+' Б';if(b<1048576)return Math.round(b/1024)+' КБ';return (b/1048576).toFixed(1)+' МБ';}
+document.getElementById('proofFile').addEventListener('change',function(){
+  const f=this.files&&this.files[0];
+  const info=document.getElementById('proofFileInfo');
+  const pv=document.getElementById('proofVidPrev');
+  if(!f){
+    proofFile=null;if(info)info.style.display='none';
+    if(pv){pv.pause();pv.removeAttribute('src');pv.load();pv.style.display='none';}
+    return;
+  }
+  if(!/^video\//i.test(f.type)){toast('Можно загружать только видео');this.value='';if(info)info.style.display='none';return;}
+  if(f.size>150*1024*1024){toast('Видео больше 150 МБ — слишком большой файл');this.value='';if(info)info.style.display='none';return;}
+  proofFile=f;
+  if(info){info.style.display='block';info.textContent='📎 '+f.name+' ('+fmtSize(f.size)+')';}
+  if(pv){pv.src=URL.createObjectURL(f);pv.style.display='block';pv.load();}
+});
+function showProg(txt){
+  const w=document.getElementById('proofProgWrap');if(w)w.style.display='block';
+  const b=document.getElementById('proofProgBar');if(b)b.style.width='0%';
+  const t=document.getElementById('proofProgTxt');if(t)t.textContent=txt||'Загрузка…';
+}
+function onProg(f){
+  const b=document.getElementById('proofProgBar');if(b)b.style.width=Math.round(f*100)+'%';
+  const t=document.getElementById('proofProgTxt');if(t)t.textContent='Загрузка… '+Math.round(f*100)+'%';
+}
+function hideProg(){const w=document.getElementById('proofProgWrap');if(w)w.style.display='none';}
+async function uploadProofVideo(file,id,onProg){
+  const ext=(file.name.split('.').pop()||'mp4').replace(/[^a-zA-Z0-9]/g,'').slice(0,5)||'mp4';
+  const path='videos/'+currentUser.uid+'/'+id+'.'+ext;
+  const ref=st.ref(path);
+  const task=ref.put(file,{contentType:file.type||'video/mp4'});
+  await new Promise((res,rej)=>{
+    task.on('state_changed',snap=>{if(onProg)onProg(snap.bytesTransferred/snap.totalBytes);},rej,res);
+  });
+  const url=await ref.getDownloadURL();
+  return {url,path};
+}
 
 function vidFromCloud(d){
   const ratedBy=d.ratedBy||{};
   const rc=Object.keys(ratedBy).length;
   return{
-    key:d.id,ytId:d.ytId,title:d.title||'Без названия',skill:d.skill||'wh',
+    key:d.id,ytId:d.ytId||'',vidUrl:d.vidUrl||'',vidPath:d.vidPath||'',title:d.title||'Без названия',skill:d.skill||'wh',
     author:d.ownerNick||'Аноним',
     ts:d.createdAt&&d.createdAt.toDate?d.createdAt.toDate().getTime():Date.now(),
     likes:d.likes||0,liked:currentUser&&Array.isArray(d.likedBy)&&d.likedBy.includes(currentUser.uid),
@@ -1781,7 +1852,7 @@ function vidFromLocal(p){
   const my=state.proofReactions&&state.proofReactions[key]?state.proofReactions[key]:[];
   const vals=Object.values(ratings);
   return{
-    key:'local_'+p.id,ytId:p.ytId,title:p.title,skill:p.skill||'wh',
+    key:'local_'+p.id,ytId:p.ytId||'',vidUrl:p.vidUrl||'',vidPath:p.vidPath||'',title:p.title,skill:p.skill||'wh',
     author:p.author||'',ts:new Date(p.date||Date.now()).getTime(),
     likes:p.likes||0,liked:my.includes('likes'),
     ratedBy:ratings,myRating:currentUser?(ratings[currentUser.uid]||0):0,
@@ -1831,10 +1902,16 @@ function renderProofs(){
     box.append(h3,pp);if(btn)box.appendChild(btn);el.appendChild(box);return;
   }
   items.forEach(v=>{
-    const item=document.createElement('div');item.className='tt-item';item.dataset.ytId=v.ytId;item.dataset.vkey=v.key;
+    const item=document.createElement('div');item.className='tt-item';item.dataset.ytId=v.ytId;item.dataset.src=v.vidUrl||'';item.dataset.vkey=v.key;
     const vw=document.createElement('div');vw.className='tt-vid';
-    const iframe=document.createElement('iframe');iframe.title=v.title;iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';iframe.allowFullscreen=true;
-    vw.appendChild(iframe);item.appendChild(vw);
+    let mediaEl;
+    if(v.ytId){
+      mediaEl=document.createElement('iframe');mediaEl.title=v.title;mediaEl.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';mediaEl.allowFullscreen=true;
+    }else{
+      mediaEl=document.createElement('video');mediaEl.muted=true;mediaEl.loop=true;mediaEl.playsInline=true;mediaEl.setAttribute('playsinline','');mediaEl.setAttribute('preload','none');
+      vw.onclick=()=>playVideo(v.ytId,v.title,v.vidUrl);
+    }
+    vw.appendChild(mediaEl);item.appendChild(vw);
     // Оверлей
     const ov=document.createElement('div');ov.className='tt-overlay';
     const author=document.createElement('button');author.className='tt-author';author.textContent=v.author||'Райдер';
@@ -1877,14 +1954,23 @@ function renderProofs(){
   // Ленивая загрузка текущего видео
   ttObserver=new IntersectionObserver(entries=>{
     entries.forEach(en=>{
-      const ifr=en.target.querySelector('.tt-vid iframe');
-      if(!ifr)return;
+      const el=en.target.querySelector('.tt-vid iframe,.tt-vid video');
+      if(!el)return;
       if(en.isIntersecting){
-        ifr.style.pointerEvents='auto';
-        ifr.src='https://www.youtube.com/embed/'+en.target.dataset.ytId+'?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1';
+        el.style.pointerEvents='auto';
+        if(el.tagName==='IFRAME'){
+          el.src='https://www.youtube.com/embed/'+en.target.dataset.ytId+'?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1';
+        }else{
+          el.src=en.target.dataset.src;
+          const p=el.play();if(p&&p.catch)p.catch(()=>{});
+        }
       }else{
-        ifr.style.pointerEvents='none';
-        ifr.src='';
+        el.style.pointerEvents='none';
+        if(el.tagName==='IFRAME'){
+          el.src='';
+        }else{
+          el.pause();el.removeAttribute('src');el.load();
+        }
       }
     });
   },{threshold:.6});
@@ -1973,6 +2059,9 @@ function deleteProofItem(v){
     saveCloud();
     if(db&&v.vidDocId){
       try{await db.collection('videos').doc(v.vidDocId).delete();}catch(e){console.warn('del vid:',e);}
+    }
+    if(st&&v.vidPath){
+      try{await st.ref(v.vidPath).delete();}catch(e){console.warn('del file:',e);}
     }
     videosCache=videosCache.filter(x=>x.key!==v.key);
     sfx.save();renderProofs();toast('Видео удалено');
@@ -2092,6 +2181,14 @@ async function renderFollowingList(){
     el.appendChild(row);
   }
 }
+function pfThumb(p){
+  if(p.ytId){
+    const img=document.createElement('img');img.src='https://i.ytimg.com/vi/'+p.ytId+'/hqdefault.jpg';img.alt='';img.loading='lazy';img.onerror=()=>{img.style.display='none';};
+    return img;
+  }
+  const v=document.createElement('video');v.src=p.vidUrl||'';v.muted=true;v.playsInline=true;v.preload='metadata';v.setAttribute('playsinline','');v.setAttribute('muted','');v.onerror=()=>{v.style.display='none';};
+  return v;
+}
 function renderMyVids(){
   const g=document.getElementById('myVidGrid');if(!g)return;
   const proofs=state.proofs||[];
@@ -2099,10 +2196,9 @@ function renderMyVids(){
   if(!proofs.length){const d=document.createElement('div');d.className='pf-empty';d.textContent='Пока нет видео. Загрузи первое!';d.style.gridColumn='1/-1';g.appendChild(d);return;}
   proofs.forEach(p=>{
     const vd=document.createElement('div');vd.className='pf-vid';vd.title=p.title;
-    const img=document.createElement('img');img.src='https://i.ytimg.com/vi/'+p.ytId+'/hqdefault.jpg';img.alt='';img.loading='lazy';img.onerror=()=>{img.style.display='none';};
     const t=document.createElement('div');t.className='pf-vid-t';t.textContent=p.title;
-    vd.append(img,t);
-    vd.onclick=()=>playVideo(p.ytId,p.title);
+    vd.append(pfThumb(p),t);
+    vd.onclick=()=>playVideo(p.ytId,p.title,p.vidUrl);
     g.appendChild(vd);
   });
 }
@@ -2146,25 +2242,33 @@ async function openProfile(uid,nick){
       if(!vids.length){const d=document.createElement('div');d.className='pf-empty';d.textContent='Пока нет видео';d.style.gridColumn='1/-1';g.appendChild(d);}
       else vids.forEach(v=>{
         const vd=document.createElement('div');vd.className='pf-vid';vd.title=v.title;
-        const img=document.createElement('img');img.src='https://i.ytimg.com/vi/'+v.ytId+'/hqdefault.jpg';img.alt='';img.loading='lazy';img.onerror=()=>{img.style.display='none';};
         const t=document.createElement('div');t.className='pf-vid-t';t.textContent=v.title;
-        vd.append(img,t);
-        vd.onclick=()=>playVideo(v.ytId,v.title);
+        vd.append(pfThumb(v),t);
+        vd.onclick=()=>playVideo(v.ytId,v.title,v.vidUrl);
         g.appendChild(vd);
       });
     }catch(e){const d=document.createElement('div');d.className='pf-empty';d.textContent='Ошибка загрузки видео';d.style.gridColumn='1/-1';g.appendChild(d);}
   }catch(e){body.innerHTML='<div class="pf-empty">Ошибка загрузки профиля</div>';}
 }
-function playVideo(ytId,title){
+function playVideo(ytId,title,vidUrl){
   const m=document.getElementById('playerModal');if(!m)return;
   setT('playerTitle',title||'Видео');
   const f=document.getElementById('playerFrame');
-  f.src='https://www.youtube.com/embed/'+ytId+'?autoplay=1&rel=0';
+  const v=document.getElementById('playerVid');
+  if(ytId){
+    v.pause();v.removeAttribute('src');
+    v.style.display='none';f.style.display='block';
+    f.src='https://www.youtube.com/embed/'+ytId+'?autoplay=1&rel=0';
+  }else if(vidUrl){
+    f.src='';f.style.display='none';v.style.display='block';
+    v.src=vidUrl;const p=v.play();if(p&&p.catch)p.catch(()=>{});
+  }else{return;}
   m.classList.add('show');
 }
 function closePlayer(){
   const m=document.getElementById('playerModal');if(!m)return;
   const f=document.getElementById('playerFrame');if(f)f.src='';
+  const v=document.getElementById('playerVid');if(v){v.pause();v.removeAttribute('src');}
   m.classList.remove('show');
 }
 document.getElementById('playerModal').addEventListener('click',function(e){if(e.target===this)closePlayer();});
