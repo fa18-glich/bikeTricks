@@ -1539,6 +1539,12 @@ async function addBike(){
         console.warn('Photo compress failed, using base64');
       }
     }
+    // Лимит документа Firestore — 1MB. База64 в base64 больше исходника на ~33%.
+    if(photoUrl&&photoUrl.length>900*1024){
+      toast('Фото слишком тяжёлое для базы (лимит ~1MB). Выбери файл поменьше.');
+      btn.disabled=false;btn.textContent='Добавить в гараж 🚲';
+      return;
+    }
 
     await db.collection('bikes').add({
       name,type,photoUrl,
