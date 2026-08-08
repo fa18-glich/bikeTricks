@@ -648,6 +648,7 @@ select.field{cursor:pointer;}
       <div class="form-card" style="margin-top:14px;text-align:center;">
         <p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Вошёл: <strong id="userEmailDisp" style="color:var(--accent);"></strong><br>Ник: <strong id="myNickDisp" style="color:var(--accent);"></strong> <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;margin-left:6px;" onclick="changeNick()">Сменить</button></p>
         <button class="btn btn-danger" onclick="confirmAction('Удалить аккаунт?','Все данные будут удалены. Восстановить невозможно!',deleteAccount)">🗑 Удалить аккаунт</button>
+        <p style="margin:12px 0 0;font-size:12px;color:var(--muted);"><a href="privacy.html" style="color:var(--accent);" target="_blank" rel="noopener">📄 Политика конфиденциальности</a></p>
       </div>
     </div>
   </section>
@@ -1910,30 +1911,43 @@ async function submitDuelResult(id){
   if(isNaN(val)||val<=0)return toast('Неверно!');
   // Определяем роль по UID (надёжнее чем по никнейму — ник можно поменять)
   const isC=d.challengerUid===currentUser.uid;
+  const isO=d.acceptedByUid===currentUser.uid;
+  if(!isC&&!isO){toast('Ты не участник дуэли!');return;}
+  const patch={};
+  if(isC)patch.challengerResult=val;else patch.opponentResult=val;
+  if(db){
+    try{await db.collection('duels').doc(id).update(patch);}catch(e){console.warn('submitDuelResult update:',e);}
+  }
   if(isC)d.challengerResult=val;else d.opponentResult=val;
-  if(d.challengerResult!==null&&d.opponentResult!==null){
+  // Подтягиваем свежие данные из БД — результат соперника мог прийти раньше
+  if(db){
+    try{
+      const s=await db.collection('duels').doc(id).get();
+      if(s.exists){const gd=s.data();d.challengerResult=gd.challengerResult??d.challengerResult;d.opponentResult=gd.opponentResult??d.opponentResult;d.status=gd.status||d.status;d.winner=gd.winner||null;d.winnerUid=gd.winnerUid||null;}
+    }catch(e){}
+  }
+  if(d.challengerResult!=null&&d.opponentResult!=null&&d.status!=='done'){
     d.status='done';
     // Победитель: у кого больше результат
     const challengerWins=d.challengerResult>=d.opponentResult;
     d.winner=challengerWins?d.challenger:d.acceptedBy;
     d.winnerUid=challengerWins?d.challengerUid:d.acceptedByUid;
+    if(db){
+      try{await db.collection('duels').doc(id).update({status:'done',winner:d.winner||null,winnerUid:d.winnerUid||null});}catch(e){console.warn('submitDuelResult done update:',e);}
+    }
     if(d.winnerUid===currentUser.uid){
       state.duelsWon=(state.duelsWon||0)+1;
       sfx.max();showLvlUp('ПОБЕДА!','','⚡',true);confetti(80);
     }else{
       toast('Дуэль завершена. Победил '+d.winner);
     }
-  }else{toast('Результат записан! Ждём соперника.');}
-  if(db){
-    try{
-      await db.collection('duels').doc(id).update({
-        challengerResult:d.challengerResult,
-        opponentResult:d.opponentResult,
-        status:d.status,
-        winner:d.winner||null,
-        winnerUid:d.winnerUid||null
-      });
-    }catch(e){console.warn('submitDuelResult update:',e);}
+  }else if(d.status==='done'&&d.winnerUid===currentUser.uid&&d.winner){
+    state.duelsWon=(state.duelsWon||0)+1;
+    sfx.max();showLvlUp('ПОБЕДА!','','⚡',true);confetti(80);
+  }else if(d.status==='done'){
+    toast('Дуэль завершена. Победил '+d.winner);
+  }else{
+    toast('Результат записан! Ждём соперника.');
   }
   saveCloud();renderDuels();checkAch();
 }
@@ -1950,7 +1964,7 @@ async function cancelDuel(id){
   }
   saveCloud();toast('Дуэль отменена');renderDuels();
 }
-async function renderDuels(){const el=document.getElementById('duelList');if(!el)return;el.innerHTML='';let duels=[...(state.duels||[])];if(db){try{const snap=await db.collection('duels').where('status','in',['open','active']).orderBy('createdAt','desc').limit(20).get();snap.docs.forEach(d=>{const gd={id:d.id,...d.data()};if(!duels.find(x=>x.id===gd.id))duels.unshift(gd);});}catch(e){}}if(!duels.length){const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Нет дуэлей.';el.appendChild(p);return;}duels.slice(0,20).forEach(d=>{const card=document.createElement('div');card.className='duel-card';const h4=document.createElement('h4');h4.textContent='⚡ '+(SNAMES[d.skill]||d.skill)+' — '+d.target;const vs=document.createElement('div');vs.className='duel-vs';const p1=document.createElement('div');p1.className='player';p1.textContent=d.challenger;if(d.challengerResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.challengerResult+' '+SUNITS[d.skill];p1.appendChild(r);}const vb=document.createElement('div');vb.className='vs-badge';vb.textContent='VS';const p2=document.createElement('div');p2.className='player';p2.textContent=d.acceptedBy?d.acceptedBy:(d.opponent?d.opponent:'??? (открытая)');if(d.opponentResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.opponentResult+' '+SUNITS[d.skill];p2.appendChild(r);}vs.append(p1,vb,p2);const meta=document.createElement('p');meta.style.cssText='font-size:12px;color:var(--muted);margin:0 0 10px;';const dl=d.deadline?' · Дедлайн: '+d.deadline:'';meta.textContent=(d.status==='done'?'Победитель: '+(d.winner||'—'):d.status==='active'?'Активна':'Открытая')+dl;card.append(h4,vs,meta);const isC=d.challenger===state.nickname;const isO=d.acceptedBy===state.nickname;const canAc=d.status==='open'&&!isC&&(!d.opponent||d.opponent===state.nickname);const canSu=d.status==='active'&&(isC||isO);if(canAc){const b=document.createElement('button');b.className='btn btn-primary btn-full';b.style.padding='10px';b.textContent='⚡ Принять!';b.onclick=()=>acceptDuel(d.id);card.appendChild(b);}else if(canSu){const b=document.createElement('button');b.className='btn btn-warn';b.style.cssText='padding:10px;font-size:13px;flex:1;';b.textContent='📏 Результат';b.onclick=()=>submitDuelResult(d.id);const cb=document.createElement('button');cb.className='btn btn-danger';cb.style.cssText='padding:10px 14px;font-size:13px;';cb.textContent='✕';cb.title='Отменить дуэль';cb.onclick=()=>{if(d.status==='active'&&!confirm('Дуэль активна! Отменить?'))return;cancelDuel(d.id);};const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px;';btnRow.append(b,cb);card.appendChild(btnRow);}else if(d.status==='done'){const dn=document.createElement('div');dn.style.cssText='text-align:center;font-weight:900;color:var(--good);padding:8px;';dn.textContent='🏆 '+(d.winner||'—')+' победил!';card.appendChild(dn);}else if(d.status==='open'&&isC){const cb=document.createElement('button');cb.className='btn btn-danger';cb.style.cssText='padding:10px;font-size:13px;width:100%;';cb.textContent='✕ Отменить дуэль';cb.onclick=()=>cancelDuel(d.id);card.appendChild(cb);}el.appendChild(card);});}
+async function renderDuels(){const el=document.getElementById('duelList');if(!el)return;el.innerHTML='';let duels=[...(state.duels||[])];if(db){try{const snap=await db.collection('duels').where('status','in',['open','active','done']).orderBy('createdAt','desc').limit(30).get();snap.docs.forEach(d=>{const gd={id:d.id,...d.data()};const i=duels.findIndex(x=>x.id===gd.id);if(i<0)duels.unshift(gd);else duels[i]=gd;});state.duels=duels;}catch(e){}}if(!duels.length){const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Нет дуэлей.';el.appendChild(p);return;}duels.slice(0,20).forEach(d=>{const card=document.createElement('div');card.className='duel-card';const h4=document.createElement('h4');h4.textContent='⚡ '+(SNAMES[d.skill]||d.skill)+' — '+d.target;const vs=document.createElement('div');vs.className='duel-vs';const p1=document.createElement('div');p1.className='player';p1.textContent=d.challenger;if(d.challengerResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.challengerResult+' '+SUNITS[d.skill];p1.appendChild(r);}const vb=document.createElement('div');vb.className='vs-badge';vb.textContent='VS';const p2=document.createElement('div');p2.className='player';p2.textContent=d.acceptedBy?d.acceptedBy:(d.opponent?d.opponent:'??? (открытая)');if(d.opponentResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.opponentResult+' '+SUNITS[d.skill];p2.appendChild(r);}vs.append(p1,vb,p2);const meta=document.createElement('p');meta.style.cssText='font-size:12px;color:var(--muted);margin:0 0 10px;';const dl=d.deadline?' · Дедлайн: '+d.deadline:'';meta.textContent=(d.status==='done'?'Победитель: '+(d.winner||'—'):d.status==='active'?'Активна':'Открытая')+dl;card.append(h4,vs,meta);const isC=d.challenger===state.nickname;const isO=d.acceptedBy===state.nickname;const canAc=d.status==='open'&&!isC&&(!d.opponent||d.opponent===state.nickname);const canSu=d.status==='active'&&(isC||isO);if(canAc){const b=document.createElement('button');b.className='btn btn-primary btn-full';b.style.padding='10px';b.textContent='⚡ Принять!';b.onclick=()=>acceptDuel(d.id);card.appendChild(b);}else if(canSu){const b=document.createElement('button');b.className='btn btn-warn';b.style.cssText='padding:10px;font-size:13px;flex:1;';b.textContent='📏 Результат';b.onclick=()=>submitDuelResult(d.id);const cb=document.createElement('button');cb.className='btn btn-danger';cb.style.cssText='padding:10px 14px;font-size:13px;';cb.textContent='✕';cb.title='Отменить дуэль';cb.onclick=()=>{if(d.status==='active'&&!confirm('Дуэль активна! Отменить?'))return;cancelDuel(d.id);};const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px;';btnRow.append(b,cb);card.appendChild(btnRow);}else if(d.status==='done'){const dn=document.createElement('div');dn.style.cssText='text-align:center;font-weight:900;color:var(--good);padding:8px;';dn.textContent='🏆 '+(d.winner||'—')+' победил!';card.appendChild(dn);}else if(d.status==='open'&&isC){const cb=document.createElement('button');cb.className='btn btn-danger';cb.style.cssText='padding:10px;font-size:13px;width:100%;';cb.textContent='✕ Отменить дуэль';cb.onclick=()=>cancelDuel(d.id);card.appendChild(cb);}el.appendChild(card);});}
 
 /* ══════════════════════════════
    УВЕДОМЛЕНИЯ — исправленная версия
