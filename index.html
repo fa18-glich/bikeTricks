@@ -763,7 +763,7 @@ select.field{cursor:pointer;}
       </div>
       <button id="proofSubmit" class="btn btn-primary btn-full" style="margin-top:12px;" onclick="addProof()">Загрузить 🎥</button>
       <div id="proofProgWrap" style="display:none;margin-top:10px;"><div style="height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;"><div id="proofProgBar" style="height:100%;width:0%;background:linear-gradient(90deg,#4cc9f0,#7c5cff);transition:width .2s;"></div></div><p id="proofProgTxt" class="tt-tip">Загрузка…</p></div>
-      <p class="tt-tip">💡 Выбери видео из галереи или вставь ссылку с YouTube. Видео появится в общей ленте.</p>
+      <p class="tt-tip">💡 Видео из галереи хранится только на твоём устройстве и видно только тебе. Вставь ссылку YouTube, чтобы видео увидели все райдеры.</p>
     </div>
   </div>
 </div>
@@ -1155,6 +1155,8 @@ async function deleteAccount(){
     for(const fd of friendsSnap.docs){try{await fd.ref.delete();}catch(e1){}}
     const bsnap=await db.collection('bikes').where('ownerId','==',uid).get();
     for(const bd of bsnap.docs){try{await bd.ref.delete();}catch(e2){}}
+    const vsnap=await db.collection('videos').where('ownerId','==',uid).get();
+    for(const vd of vsnap.docs){try{await vd.ref.delete();}catch(e8){}}
     const likedSnap=await db.collection('bikes').where('likedBy','array-contains',uid).get();
     for(const bd of likedSnap.docs){try{await bd.ref.update({likedBy:firebase.firestore.FieldValue.arrayRemove(uid),likes:firebase.firestore.FieldValue.increment(-1)});}catch(e3){}}
     const duelsOwn=await db.collection('duels').where('challengerUid','==',uid).get();
@@ -1172,6 +1174,7 @@ async function deleteAccount(){
   localStorage.removeItem(SK);
   localStorage.removeItem('mtb_dts');
   localStorage.removeItem('mtb_wts');
+  try{await idbClear();}catch(e){}
   location.reload();
 }
 async function doSignOut(){
@@ -1711,6 +1714,32 @@ async function deleteBike(id){
 
 /* ══ PROOFS (TikTok-лента) ══ */
 let videosCache=[],vidSeg='all',ttObserver=null;
+let vidURLMap={};
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('mtb-videos',1);
+    r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('files'))r.result.createObjectStore('files');};
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
+async function idbPut(key,blob){const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put(blob,key);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+async function idbGet(key){if(!key)return null;const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction('files','readonly');const rq=tx.objectStore('files').get(key);rq.onsuccess=()=>res(rq.result||null);rq.onerror=()=>rej(rq.error);});}
+async function idbDel(key){if(!key)return;const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(key);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+async function idbClear(){const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').clear();tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+function isElVisible(el){
+  if(!el)return false;
+  const r=el.getBoundingClientRect();
+  const vh=window.innerHeight||document.documentElement.clientHeight;
+  const vis=Math.min(r.bottom,vh)-Math.max(r.top,0);
+  return vis>0&&vis>=r.height*0.5;
+}
+async function localVidUrl(pid){
+  if(!pid)return'';
+  if(vidURLMap[pid])return vidURLMap[pid];
+  try{const blob=await idbGet(pid);if(blob){vidURLMap[pid]=URL.createObjectURL(blob);return vidURLMap[pid];}}catch(e){}
+  return'';
+}
 function ytId(url){
   if(!url||typeof url!=='string')return null;
   const u=url.trim();
@@ -1720,6 +1749,7 @@ function ytId(url){
 }
 async function pushProofToCloud(proof){
   if(!db||!currentUser)return;
+  if(!proof.ytId&&!proof.vidUrl)return;
   try{
     const ref=db.collection('videos').doc(currentUser.uid+'_'+proof.id);
     const s=await ref.get();
@@ -1752,20 +1782,20 @@ async function addProof(){
   if(state.proofs.length>=20){toast('Максимум 20 видео. Удали старые.');return;}
   const id=Date.now().toString();
   btn.disabled=true;btn.textContent='⏳ Загружаю…';
-  let vidUrl='',vidPath='';
+  let vidUrl='',vidPath='',localVid=false;
   if(proofFile){
-    if(!st){toast('Хранилище недоступно (Firebase Storage)');btn.disabled=false;btn.textContent='Загрузить 🎥';return;}
-    showProg('Загрузка видео…');
+    showProg('Сохраняю видео на устройстве…');
     try{
-      const up=await uploadProofVideo(proofFile,id,onProg);
-      vidUrl=up.url;vidPath=up.path;
+      await idbPut(id,proofFile);
+      vidURLMap[id]=URL.createObjectURL(proofFile);
+      localVid=true;
     }catch(e){
-      hideProg();toast('Ошибка загрузки видео: '+e.message);
+      hideProg();toast('Ошибка сохранения видео: '+e.message);
       btn.disabled=false;btn.textContent='Загрузить 🎥';return;
     }
   }
   hideProg();
-  const proof={id,title,skill,ytId:ytid||'',vidUrl,vidPath,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0};
+  const proof={id,title,skill,ytId:ytid||'',vidUrl,vidPath,localVid,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0};
   state.proofs.unshift(proof);
   document.getElementById('proofTitle').value='';
   document.getElementById('proofUrl').value='';
@@ -1813,22 +1843,7 @@ function showProg(txt){
   const b=document.getElementById('proofProgBar');if(b)b.style.width='0%';
   const t=document.getElementById('proofProgTxt');if(t)t.textContent=txt||'Загрузка…';
 }
-function onProg(f){
-  const b=document.getElementById('proofProgBar');if(b)b.style.width=Math.round(f*100)+'%';
-  const t=document.getElementById('proofProgTxt');if(t)t.textContent='Загрузка… '+Math.round(f*100)+'%';
-}
 function hideProg(){const w=document.getElementById('proofProgWrap');if(w)w.style.display='none';}
-async function uploadProofVideo(file,id,onProg){
-  const ext=(file.name.split('.').pop()||'mp4').replace(/[^a-zA-Z0-9]/g,'').slice(0,5)||'mp4';
-  const path='videos/'+currentUser.uid+'/'+id+'.'+ext;
-  const ref=st.ref(path);
-  const task=ref.put(file,{contentType:file.type||'video/mp4'});
-  await new Promise((res,rej)=>{
-    task.on('state_changed',snap=>{if(onProg)onProg(snap.bytesTransferred/snap.totalBytes);},rej,res);
-  });
-  const url=await ref.getDownloadURL();
-  return {url,path};
-}
 
 function vidFromCloud(d){
   const ratedBy=d.ratedBy||{};
@@ -1852,7 +1867,7 @@ function vidFromLocal(p){
   const my=state.proofReactions&&state.proofReactions[key]?state.proofReactions[key]:[];
   const vals=Object.values(ratings);
   return{
-    key:'local_'+p.id,ytId:p.ytId||'',vidUrl:p.vidUrl||'',vidPath:p.vidPath||'',title:p.title,skill:p.skill||'wh',
+    key:'local_'+p.id,ytId:p.ytId||'',vidUrl:p.vidUrl||(p.localVid?(vidURLMap[p.id]||''):'')||'',vidPath:p.vidPath||'',localVid:!!p.localVid,title:p.title,skill:p.skill||'wh',
     author:p.author||'',ts:new Date(p.date||Date.now()).getTime(),
     likes:p.likes||0,liked:my.includes('likes'),
     ratedBy:ratings,myRating:currentUser?(ratings[currentUser.uid]||0):0,
@@ -1909,9 +1924,28 @@ function renderProofs(){
       mediaEl=document.createElement('iframe');mediaEl.title=v.title;mediaEl.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';mediaEl.allowFullscreen=true;
     }else{
       mediaEl=document.createElement('video');mediaEl.muted=true;mediaEl.loop=true;mediaEl.playsInline=true;mediaEl.setAttribute('playsinline','');mediaEl.setAttribute('preload','none');
-      vw.onclick=()=>playVideo(v.ytId,v.title,v.vidUrl);
+      vw.onclick=()=>{
+        if(v.localVid&&!item.dataset.src){
+          localVidUrl(v.pid).then(url=>{
+            if(!url)return;
+            item.dataset.src=url;
+            const me=item.querySelector('.tt-vid video');if(me){me.src=url;const p=me.play();if(p&&p.catch)p.catch(()=>{});}
+            playVideo(v.ytId,v.title,url);
+          });
+        }else{
+          playVideo(v.ytId,v.title,item.dataset.src||v.vidUrl);
+        }
+      };
     }
     vw.appendChild(mediaEl);item.appendChild(vw);
+    if(v.localVid&&!v.vidUrl){
+      localVidUrl(v.pid).then(url=>{
+        if(!url||!item.isConnected)return;
+        item.dataset.src=url;
+        const me=item.querySelector('.tt-vid video');
+        if(me&&isElVisible(item)){me.src=url;const p=me.play();if(p&&p.catch)p.catch(()=>{});}
+      });
+    }
     // Оверлей
     const ov=document.createElement('div');ov.className='tt-overlay';
     const author=document.createElement('button');author.className='tt-author';author.textContent=v.author||'Райдер';
@@ -2060,8 +2094,9 @@ function deleteProofItem(v){
     if(db&&v.vidDocId){
       try{await db.collection('videos').doc(v.vidDocId).delete();}catch(e){console.warn('del vid:',e);}
     }
-    if(st&&v.vidPath){
-      try{await st.ref(v.vidPath).delete();}catch(e){console.warn('del file:',e);}
+    if(v.localVid){
+      try{await idbDel(v.pid);}catch(e){console.warn('del local:',e);}
+      if(vidURLMap[v.pid]){try{URL.revokeObjectURL(vidURLMap[v.pid]);}catch(e){}delete vidURLMap[v.pid];}
     }
     videosCache=videosCache.filter(x=>x.key!==v.key);
     sfx.save();renderProofs();toast('Видео удалено');
@@ -2186,7 +2221,12 @@ function pfThumb(p){
     const img=document.createElement('img');img.src='https://i.ytimg.com/vi/'+p.ytId+'/hqdefault.jpg';img.alt='';img.loading='lazy';img.onerror=()=>{img.style.display='none';};
     return img;
   }
-  const v=document.createElement('video');v.src=p.vidUrl||'';v.muted=true;v.playsInline=true;v.preload='metadata';v.setAttribute('playsinline','');v.setAttribute('muted','');v.onerror=()=>{v.style.display='none';};
+  const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='metadata';v.setAttribute('playsinline','');v.setAttribute('muted','');v.onerror=()=>{v.style.display='none';};
+  const src=p.vidUrl||(p.localVid?vidURLMap[p.pid||p.id]:'')||'';
+  if(src){v.src=src;}
+  else if(p.localVid){
+    localVidUrl(p.pid||p.id).then(url=>{if(url)v.src=url;});
+  }
   return v;
 }
 function renderMyVids(){
@@ -2198,7 +2238,13 @@ function renderMyVids(){
     const vd=document.createElement('div');vd.className='pf-vid';vd.title=p.title;
     const t=document.createElement('div');t.className='pf-vid-t';t.textContent=p.title;
     vd.append(pfThumb(p),t);
-    vd.onclick=()=>playVideo(p.ytId,p.title,p.vidUrl);
+    vd.onclick=()=>{
+      const src=p.vidUrl||(p.localVid?vidURLMap[p.id]:'')||'';
+      if(src){playVideo(p.ytId,p.title,src);return;}
+      if(p.localVid){
+        localVidUrl(p.id).then(url=>{if(url)playVideo(p.ytId,p.title,url);});
+      }
+    };
     g.appendChild(vd);
   });
 }
@@ -2708,7 +2754,7 @@ function updateNotifStatus(){
 
 /* ══ EXPORT / RESET ══ */
 function exportData(){const a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(state));a.download='mtb_backup.json';a.click();}
-async function resetAll(){localStorage.removeItem(SK);localStorage.removeItem('mtb_dts');localStorage.removeItem('mtb_wts');if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();await db.collection('leaderboard').doc(currentUser.uid).delete();}catch(e){}}location.reload();}
+async function resetAll(){localStorage.removeItem(SK);localStorage.removeItem('mtb_dts');localStorage.removeItem('mtb_wts');try{await idbClear();}catch(e){}if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();await db.collection('leaderboard').doc(currentUser.uid).delete();}catch(e){}}location.reload();}
 
 /* ══ EVENTS ══ */
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
