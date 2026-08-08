@@ -1,0 +1,13 @@
+{
+  "name": "bike-tricks",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MTB Skills Pro — admin scripts for Firebase",
+  "scripts": {
+    "get-user": "node scripts/getUser.js",
+    "list-users": "node scripts/listUsers.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}
