@@ -8,7 +8,7 @@ Built as a single-file HTML app on vanilla JavaScript with a Firebase backend (A
 
 ## ✨ Features
 
-- **Skills** — 5 tricks (Wheelie, Manual, Trackstand, Bunny-hop, Stoppie) × 4 levels each. Every training set adds +10% progress; complete a level to unlock the next one.
+- **Skills** — 5 tricks (Wheelie, Manual, Trackstand, Bunny-hop, Stoppie) × 4 levels each. Every training set adds +10% progress; complete a level to unlock the next one. Daily anti-farm limit: up to 30 sets per trick per day.
   - Built-in stopwatch, tutorial video, and step-by-step instructions for each trick.
 - **Records** — log your best results per trick (distance / height / time) with history charts.
 - **Challenges** — auto-generated daily and weekly challenges:
@@ -38,7 +38,7 @@ Bike_Tricks/
 ├── index.html      # Single-file app: HTML + styles + all JavaScript
 ├── manifest.json   # Static PWA manifest
 ├── sw.js           # Service Worker
-├── image/          # App icons (icon.png, icon-192.png, icon-512.png)
+├── image/          # App icons (icon.png, icon-180.png, icon-192.png, icon-512.png)
 ├── firestore.rules # Firestore security rules
 ├── firestore.indexes.json # Composite indexes (friends/duels queries)
 ├── scripts/        # Dev/admin scripts (firebase.js, listUsers.js...)
@@ -122,7 +122,7 @@ Free and open source. Do whatever you want with this code — use, modify, redis
 
 ## ✨ Возможности
 
-- **Навыки** — 5 трюков (Вилли, Мэнуал, Трекстенд, Банни-хоп, Стоппи) × 4 уровня. Каждый подход добавляет +10% к прогрессу; заверши уровень — откроется следующий.
+- **Навыки** — 5 трюков (Вилли, Мэнуал, Трекстенд, Банни-хоп, Стоппи) × 4 уровня. Каждый подход добавляет +10% к прогрессу; заверши уровень — откроется следующий. Анти-фарм: до 30 подходов в день на один трюк.
   - Встроенный секундомер, обучающее видео и пошаговые инструкции для каждого трюка.
 - **Рекорды** — записывай лучшие результаты по каждому трюку (дистанция / высота / время) с графиками истории.
 - **Челленджи** — автоматически генерируются дневные и недельные задания:
@@ -152,7 +152,7 @@ Bike_Tricks/
 ├── index.html      # Одностраничное приложение: HTML + стили + весь JavaScript
 ├── manifest.json   # Статический PWA-манифест
 ├── sw.js           # Service Worker
-├── image/          # Иконки (icon.png, icon-192.png, icon-512.png)
+├── image/          # Иконки (icon.png, icon-180.png, icon-192.png, icon-512.png)
 ├── firestore.rules # Правила безопасности Firestore
 ├── firestore.indexes.json # Составные индексы (запросы друзей/дуэлей)
 ├── scripts/        # Dev/admin-скрипты (firebase.js, listUsers.js...)

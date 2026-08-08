@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="MTB Skills"/>
 <link rel="icon" type="image/png" href="image/icon.png"/>
-<link rel="apple-touch-icon" sizes="180x180" href="image/icon.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="image/icon-180.png"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -664,6 +664,7 @@ select.field{cursor:pointer;}
       <div class="timer-btns"><button class="btn btn-success" id="timerStartBtn" onclick="timerStart()">▶ Старт</button><button class="btn btn-warn" onclick="timerStop()">⏹ Стоп</button><button class="btn btn-ghost" onclick="timerReset()">↺ Сброс</button></div>
     </div>
     <div class="goal-box"><span class="goal-lbl">ТЕКУЩАЯ ЦЕЛЬ:</span><div id="modalGoal"></div></div>
+    <div id="modalDaily" style="display:none;text-align:center;font-size:12px;color:var(--muted);margin:8px 0 0;font-family:var(--fm);"></div>
     <div id="modalSteps"></div>
     <button id="modalTrainBtn" class="btn btn-primary btn-full" style="margin-top:12px;padding:16px;font-size:16px;" onclick="trainCurrent()">💪 ВЫПОЛНИТЬ ПОДХОД (+10%)</button>
   </div>
@@ -674,6 +675,8 @@ select.field{cursor:pointer;}
 
 <script>
 'use strict';
+
+const MAX_APPROACHES_PER_DAY = 30; // Анти-фарм: подходов в день на один навык
 
 const FB_CFG={
   apiKey:"AIzaSyDPMX7QYJM2_WnTBDfXGw4W_fN3fFCVF6M",
@@ -1168,15 +1171,25 @@ function renderAch(){const el=document.getElementById('achList');if(!el)return;e
 function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);body.append(tit,p1,p2,pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();}
 
 /* ══ MODAL ══ */
-function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);document.getElementById('modalVideo').src=base.video;const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});const btn=document.getElementById('modalTrainBtn');btn.textContent=isMax?'✅ МАКСИМУМ ДОСТИГНУТ':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';btn.disabled=isMax;document.getElementById('modal').classList.add('show');}
+function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);document.getElementById('modalVideo').src=base.video;const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});const btn=document.getElementById('modalTrainBtn');btn.textContent=isMax?'✅ МАКСИМУМ ДОСТИГНУТ':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';btn.disabled=isMax;updateModalDaily();document.getElementById('modal').classList.add('show');}
 function closeModal(){timerReset();document.getElementById('modal').classList.remove('show');document.getElementById('modalVideo').src='';}
+
+function updateModalDaily(){
+  const el=document.getElementById('modalDaily');if(!el)return;
+  const user=state.skills.find(s=>s.id===activeSkillId);if(!user){el.style.display='none';return;}
+  const used=user.trToday||0;const left=Math.max(0,MAX_APPROACHES_PER_DAY-used);
+  el.style.display='block';
+  el.textContent='Сегодня: '+used+' / '+MAX_APPROACHES_PER_DAY+' подходов'+(left?' — осталось '+left:'');
+  el.style.color=left<=3?'var(--warn)':left<=0?'var(--danger)':'var(--muted)';
+}
 
 let _lastTrainTs=0;
 function trainCurrent(){
+  const user=state.skills.find(s=>s.id===activeSkillId);
+  if(user&&(user.trToday||0)>=MAX_APPROACHES_PER_DAY){toast('Лимит на сегодня исчерпан, отдохни! 😴');return;}
   const now=Date.now();
   if(now-_lastTrainTs<2000){toast('Подожди секунду...');return;}
   _lastTrainTs=now;
-  const user=state.skills.find(s=>s.id===activeSkillId);
   const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
   if(!user||!base)return;
   user.tr++;
@@ -1193,7 +1206,8 @@ function trainCurrent(){
   const isMax=user.lv>=base.levels.length-1&&user.pr>=100;
   const goals=LVL_GOALS[base.id];const lvIdx=Math.min(user.lv,base.levels.length-1);
   setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));
-  const btn=document.getElementById('modalTrainBtn');btn.textContent=isMax?'✅ МАКСИМУМ ДОСТИГНУТ':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';btn.disabled=isMax;
+  const dayDone=(user.trToday||0)>=MAX_APPROACHES_PER_DAY;
+  const btn=document.getElementById('modalTrainBtn');btn.textContent=isMax?'✅ МАКСИМУМ ДОСТИГНУТ':dayDone?'😴 ЛИМИТ ДНЯ':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';btn.disabled=isMax||dayDone;updateModalDaily();
   ['totalPoints','totalTrainings','openLevels','avgProgress'].forEach(popSt);
 
   // Проверяем и автозасчитываем AUTO-челленджи
