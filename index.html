@@ -689,7 +689,7 @@ const FB_CFG={
 let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false;
 
 /* ══ UTILS ══ */
-function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function setT(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
 function setLoadText(t){setT('loadText',t);}
 function showMsg(msg,type){const e=document.getElementById('authMsg');e.textContent=msg;e.className='auth-msg '+(type||'err');}
@@ -806,7 +806,7 @@ function loadLS(){
     DEF_SKILLS.forEach(ds=>{
       const sk=s.skills.find(x=>x.id===ds.id);
       if(!sk)s.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0});
-      else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;}
+              else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;}
     });
     return s;
   }}catch(e){}return defState();
@@ -880,7 +880,7 @@ async function initFB(){
             DEF_SKILLS.forEach(ds=>{
               const sk=state.skills.find(x=>x.id===ds.id);
               if(!sk)state.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0});
-              else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;}
+      else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;}
             });
             saveLS();setSyncDot('synced');
           }else{await saveCloud();}
@@ -1038,9 +1038,19 @@ async function deleteAccount(){
       await db.collection('nicknames').doc(state.nickname.toLowerCase()).delete().catch(()=>{});
     }
     const friendsSnap=await db.collection('friends').where('uids','array-contains',uid).get();
-    for(const fd of friendsSnap.docs)await fd.ref.delete();
+    for(const fd of friendsSnap.docs){try{await fd.ref.delete();}catch(e1){}}
     const bsnap=await db.collection('bikes').where('ownerId','==',uid).get();
-    for(const bd of bsnap.docs)await bd.ref.delete();
+    for(const bd of bsnap.docs){try{await bd.ref.delete();}catch(e2){}}
+    const likedSnap=await db.collection('bikes').where('likedBy','array-contains',uid).get();
+    for(const bd of likedSnap.docs){try{await bd.ref.update({likedBy:firebase.firestore.FieldValue.arrayRemove(uid),likes:firebase.firestore.FieldValue.increment(-1)});}catch(e3){}}
+    const duelsOwn=await db.collection('duels').where('challengerUid','==',uid).get();
+    for(const dd of duelsOwn.docs){try{await dd.ref.delete();}catch(e4){}}
+    const duelsPart=await db.collection('duels').where('participants','array-contains',uid).get();
+    for(const dd of duelsPart.docs){try{await dd.ref.update({participants:firebase.firestore.FieldValue.arrayRemove(uid)});}catch(e5){}}
+    const req1=await db.collection('friend_requests').where('fromUid','==',uid).get();
+    for(const r of req1.docs){try{await r.ref.delete();}catch(e6){}}
+    const req2=await db.collection('friend_requests').where('toUid','==',uid).get();
+    for(const r of req2.docs){try{await r.ref.delete();}catch(e7){}}
     await auth.currentUser.delete();
   }catch(e){
     console.warn('deleteAccount:',e);
@@ -1070,8 +1080,9 @@ function updateUserUI(){
 }
 
 async function setNickname(){
-  const v=document.getElementById('nickInput').value.trim();
+  const v=document.getElementById('nickInput').value.trim().replace(/[<>&"']/g,'');
   if(!v||v.length<2){toast('Мин. 2 символа!');return;}
+  if(v.length>24){toast('Никнейм максимум 24 символа');return;}
   const normalized=v.toLowerCase();
   if(db){
     try{
@@ -1114,7 +1125,7 @@ async function changeNick(){
       await db.collection('nicknames').doc(normalized).set({uid:currentUser.uid,nickname:v});
     }catch(e){console.error('nickname update:',e);}
   }
-  state.nickname=v;state.nicknameChangedAt=Date.now();saveCloud();setT('myNickDisp',state.nickname);setT('welcomeText','Привет, '+state.nickname+' 👋');toast('Ник обновлён! Зменить можно через неделю.');
+  state.nickname=v;state.nicknameChangedAt=Date.now();saveCloud();setT('myNickDisp',state.nickname);setT('welcomeText','Привет, '+state.nickname+' 👋');toast('Ник обновлён! Изменить можно через неделю.');
 }
 
 function initApp(){
@@ -1801,7 +1812,18 @@ async function renderFriendsTab(){
       pendingRec.forEach(req=>{
         const card=document.createElement('div');card.className='req-card';
         const fromCode=req.fromUid?req.fromUid.substring(0,12):'';
-        card.innerHTML='<div class="req-card-icon">👤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.fromNick||'???')+'</div><div class="req-card-code">'+formatCode(fromCode)+'</div></div><div class="req-card-btns"><button class="btn btn-success" style="padding:8px 12px;font-size:12px;" onclick="acceptFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\',\''+esc(req.fromNick||'')+'\')">✓</button><button class="btn btn-danger" style="padding:8px 12px;font-size:12px;" onclick="declineFriendRequest(\''+req.id+'\',\''+esc(req.fromUid)+'\')">✕</button></div>';
+        const icon=document.createElement('div');icon.className='req-card-icon';icon.textContent='👤';
+        const info=document.createElement('div');info.className='req-card-info';
+        const nm=document.createElement('div');nm.className='req-card-name';nm.textContent=req.fromNick||'???';
+        const cd=document.createElement('div');cd.className='req-card-code';cd.textContent=formatCode(fromCode);
+        info.append(nm,cd);
+        const btns=document.createElement('div');btns.className='req-card-btns';
+        const bA=document.createElement('button');bA.className='btn btn-success';bA.style.cssText='padding:8px 12px;font-size:12px;';bA.textContent='✓';
+        bA.addEventListener('click',()=>acceptFriendRequest(req.id,req.fromUid,req.fromNick||''));
+        const bD=document.createElement('button');bD.className='btn btn-danger';bD.style.cssText='padding:8px 12px;font-size:12px;';bD.textContent='✕';
+        bD.addEventListener('click',()=>declineFriendRequest(req.id,req.fromUid));
+        btns.append(bA,bD);
+        card.append(icon,info,btns);
         recEl.appendChild(card);
       });
     }
@@ -1812,7 +1834,16 @@ async function renderFriendsTab(){
       sentPending.forEach(req=>{
         const card=document.createElement('div');card.className='req-card';
         const toCode=req.toUid?req.toUid.substring(0,12):'';
-        card.innerHTML='<div class="req-card-icon">📤</div><div class="req-card-info"><div class="req-card-name">'+esc(req.toNick||'???')+'</div><div class="req-card-code">'+formatCode(toCode)+'</div></div><div class="req-card-btns"><button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="cancelFriendRequest(\''+req.id+'\',\''+esc(req.toUid)+'\')">✕ Отменить</button></div>';
+        const icon=document.createElement('div');icon.className='req-card-icon';icon.textContent='📤';
+        const info=document.createElement('div');info.className='req-card-info';
+        const nm=document.createElement('div');nm.className='req-card-name';nm.textContent=req.toNick||'???';
+        const cd=document.createElement('div');cd.className='req-card-code';cd.textContent=formatCode(toCode);
+        info.append(nm,cd);
+        const btns=document.createElement('div');btns.className='req-card-btns';
+        const bC=document.createElement('button');bC.className='btn btn-ghost';bC.style.cssText='padding:8px 12px;font-size:12px;';bC.textContent='✕ Отменить';
+        bC.addEventListener('click',()=>cancelFriendRequest(req.id,req.toUid));
+        btns.append(bC);
+        card.append(icon,info,btns);
         sentEl.appendChild(card);
       });
     }
@@ -1836,7 +1867,15 @@ async function renderFriendsTab(){
       friendData.sort((a,b)=>a.nickname.localeCompare(b.nickname));
       friendData.forEach(f=>{
         const row=document.createElement('div');row.className='friend-row';
-        row.innerHTML='<div class="friend-row-icon">👤</div><div class="friend-row-info"><div class="friend-row-name">'+esc(f.nickname)+'</div><div class="friend-row-status offline">⚫ Офлайн</div></div><div class="friend-row-xp"></div><button class="btn btn-danger" style="padding:8px 10px;font-size:11px;" onclick="removeFriend(\''+esc(f.uid)+'\',\''+esc(f.nickname)+'\')">✕</button>';
+        const icon=document.createElement('div');icon.className='friend-row-icon';icon.textContent='👤';
+        const info=document.createElement('div');info.className='friend-row-info';
+        const nm=document.createElement('div');nm.className='friend-row-name';nm.textContent=f.nickname;
+        const st=document.createElement('div');st.className='friend-row-status offline';st.textContent='⚫ Офлайн';
+        info.append(nm,st);
+        const xp=document.createElement('div');xp.className='friend-row-xp';
+        const bR=document.createElement('button');bR.className='btn btn-danger';bR.style.cssText='padding:8px 10px;font-size:11px;';bR.textContent='✕';
+        bR.addEventListener('click',()=>removeFriend(f.uid,f.nickname));
+        row.append(icon,info,xp,bR);
         frEl.appendChild(row);
       });
     }

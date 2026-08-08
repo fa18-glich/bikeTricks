@@ -1,4 +1,4 @@
-const CACHE = 'mtb-skills-v2';
+const CACHE = 'mtb-skills-v3';
 const PRECACHE = ['./', './index.html', './manifest.json', './image/icon-192.png', './image/icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -37,7 +37,7 @@ self.addEventListener('fetch', (e) => {
       fetch(e.request)
         .then((res) => {
           const clone = res.clone();
-          caches.open(CACHE).then((c) => c.put('./index.html', clone));
+          caches.open(CACHE).then((c) => c.put(new URL(e.request.url).pathname, clone));
           return res;
         })
         .catch(() => caches.match('./index.html'))
