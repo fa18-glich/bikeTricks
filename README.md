@@ -2,7 +2,7 @@
 
 A mobile-first PWA / Cordova app for training mountain bike tricks. Your pocket coach for mastering the classic flat-ground tricks — track progress, beat records, take on challenges, and compete with friends.
 
-Built as a single-file HTML app on vanilla JavaScript with a Firebase backend (Auth + Firestore + Storage). No build step, no dependencies to install.
+Built as a single-file HTML app on vanilla JavaScript with a Firebase backend (Auth + Firestore). No build step, no dependencies to install.
 
 ---
 
@@ -36,17 +36,16 @@ Built as a single-file HTML app on vanilla JavaScript with a Firebase backend (A
 ```
 Bike_Tricks/
 ├── index.html      # Single-file app: HTML + styles + all JavaScript
-├── css/styles.css  # Standalone copy of the styles (not loaded from index.html)
-├── js/             # WIP refactor split into modules (NOT wired into index.html)
-│   ├── app.js      #     Firebase, state, cloud sync
-│   ├── skills.js   #     Tabs, timer, streak, achievements, training
-│   ├── records.js  #     Record keeping
-│   └── challenges.js #   Challenge generation & progress
-├── image/icon.png  # App icon
+├── manifest.json   # Static PWA manifest
+├── sw.js           # Service Worker
+├── image/          # App icons (icon.png, icon-192.png, icon-512.png)
+├── firestore.rules # Firestore security rules
+├── firestore.indexes.json # Composite indexes (friends/duels queries)
+├── scripts/        # Dev/admin scripts (firebase.js, listUsers.js...)
 └── README.md
 ```
 
-> **Note:** `index.html` is the real working application. The `js/*.js` files are an in-progress refactoring of the same logic and are currently **not** included by any `<script>` tag. `css/styles.css` mirrors the inline `<style>` block.
+> **Note:** `index.html` is the real working application — everything is inlined (HTML, styles, JavaScript).
 
 ## ▶️ Run Locally
 
@@ -74,16 +73,16 @@ The Firebase config (`FB_CFG`) is hardcoded in the inline script of `index.html`
 | `users` | Per-user state (skills, records, proofs, challenges, achievements...) |
 | `leaderboard` | Rider scores for the top list |
 | `nicknames` | Unique nickname registry |
-| `bikes` | Community bike feed |
+| `bikes` | Community bike feed (photos stored as base64) |
 | `friends` | Friend pairs (`uids` array) |
 | `friend_requests` | Pending friend requests |
 | `duels` | Duel challenges |
 
-- **Cloud Storage** — bike photo uploads (compressed client-side, falls back to base64 if Storage is unavailable).
+- **Composite indexes** — `firestore.indexes.json` (deploy with `firebase deploy --only firestore:indexes`). Needed for friend requests (`toUid`+`status`, `fromUid`+`status`) and duels (`status`+`createdAt`) queries.
 
 > If you enable *App Check enforcement*, requests will be blocked — the app shows a warning pointing to Firebase Console → App Check.
 >
-> **Security rules:** the repo ships with `firestore.rules` and `storage.rules`. Deploy them to your Firebase project (Firestore → Rules, Storage → Rules) before going live — they restrict writes to the document owner while keeping public features (leaderboard, bike feed, nickname lookup) working.
+> **Security rules:** the repo ships with `firestore.rules`. Deploy it to your Firebase project (Firestore → Rules) before going live — it restricts writes to the document owner while keeping public features (leaderboard, bike feed, nickname lookup) working.
 
 ## 💾 Data Model
 
@@ -117,7 +116,7 @@ Free and open source. Do whatever you want with this code — use, modify, redis
 
 Мобильный-first PWA / Cordova-приложение для тренировки трюков на горном велосипеде. Твой карманный тренер для освоения классических трюков — отслеживай прогресс, бей рекорды, выполняй челленджи и соревнуйся с друзьями.
 
-Собрано как одностраничное HTML-приложение на чистом JavaScript с бэкендом Firebase (Auth + Firestore + Storage). Без сборки, без установки зависимостей.
+Собрано как одностраничное HTML-приложение на чистом JavaScript с бэкендом Firebase (Auth + Firestore). Без сборки, без установки зависимостей.
 
 ---
 
@@ -142,26 +141,25 @@ Free and open source. Do whatever you want with this code — use, modify, redis
 | Слой | Технология |
 |-------|-----------|
 | Фронтенд | Чистый HTML / CSS / JS (вся логика внутри `index.html`) |
-| Бэкенд | Firebase — Authentication, Cloud Firestore, Cloud Storage |
+| Бэкенд | Firebase — Authentication, Cloud Firestore |
 | SDK | Firebase compat SDK `10.12.2` (подключается с CDN) |
-| Мобильные | Cordova WebView (`cordova.js`) + PWA (манифест генерируется на лету) |
+| Мобильные | Cordova WebView (`cordova.js`) + PWA (статический `manifest.json`) |
 
 ## 📁 Структура проекта
 
 ```
 Bike_Tricks/
 ├── index.html      # Одностраничное приложение: HTML + стили + весь JavaScript
-├── css/styles.css  # Отдельная копия стилей (не подключается из index.html)
-├── js/             # Рефакторинг в процессе — разбито на модули (НЕ подключено)
-│   ├── app.js      #     Firebase, состояние, синхронизация
-│   ├── skills.js   #     Вкладки, таймер, серия, ачивки, тренировки
-│   ├── records.js  #     Ведение рекордов
-│   └── challenges.js #   Генерация челленджей и прогресс
-├── image/icon.png  # Иконка приложения
+├── manifest.json   # Статический PWA-манифест
+├── sw.js           # Service Worker
+├── image/          # Иконки (icon.png, icon-192.png, icon-512.png)
+├── firestore.rules # Правила безопасности Firestore
+├── firestore.indexes.json # Составные индексы (запросы друзей/дуэлей)
+├── scripts/        # Dev/admin-скрипты (firebase.js, listUsers.js...)
 └── README.md
 ```
 
-> **Примечание:** рабочее приложение — это `index.html`. Файлы `js/*.js` — незавершённый рефакторинг той же логики и сейчас **не** подключаются ни одним `<script>`. `css/styles.css` повторяет inline-блок `<style>`.
+> **Примечание:** рабочее приложение — это `index.html`, всё инлайнится (HTML, стили, JavaScript).
 
 ## ▶️ Запуск локально
 
@@ -189,16 +187,16 @@ npx serve .
 | `users` | Состояние пользователя (навыки, рекорды, доказательства, челленджи, ачивки...) |
 | `leaderboard` | Очки райдеров для топа |
 | `nicknames` | Реестр уникальных никнеймов |
-| `bikes` | Лента байков райдеров |
+| `bikes` | Лента байков райдеров (фото хранятся как base64) |
 | `friends` | Пары друзей (массив `uids`) |
 | `friend_requests` | Входящие заявки в друзья |
 | `duels` | Дуэльные вызовы |
 
-- **Cloud Storage** — загрузка фото байков (сжимается на клиенте, при недоступности Storage — fallback на base64).
+- **Составные индексы** — `firestore.indexes.json` (деплой: `firebase deploy --only firestore:indexes`). Нужны для запросов заявок в друзья (`toUid`+`status`, `fromUid`+`status`) и дуэлей (`status`+`createdAt`).
 
 > Если включён *App Check enforcement*, запросы будут блокироваться — приложение покажет предупреждение со ссылкой на Firebase Console → App Check.
 >
-> **Правила безопасности:** в репозитории есть `firestore.rules` и `storage.rules`. Разверни их в своём проекте (Firestore → Rules, Storage → Rules) перед запуском — они ограничивают запись только владельцем документа, сохраняя публичные функции (лидерборд, лента байков, поиск по коду).
+> **Правила безопасности:** в репозитории есть `firestore.rules`. Разверни их в своём проекте (Firestore → Rules) перед запуском — они ограничивают запись только владельцем документа, сохраняя публичные функции (лидерборд, лента байков, поиск по коду).
 
 ## 💾 Модель данных
 

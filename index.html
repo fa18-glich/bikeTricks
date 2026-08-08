@@ -9,14 +9,13 @@
 <meta name="apple-mobile-web-app-title" content="MTB Skills"/>
 <link rel="icon" type="image/png" href="image/icon.png"/>
 <link rel="apple-touch-icon" sizes="180x180" href="image/icon.png"/>
-<link rel="manifest" id="manifestLink"/>
+<link rel="manifest" href="manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <style>
 :root{
   --bg:#090b0f;--panel:#13161e;--card:#1c2030;
@@ -530,7 +529,6 @@ select.field{cursor:pointer;}
           <div style="font-size:12px;color:var(--muted);">Из галереи или камеры</div>
         </div>
         <input type="file" id="bikeFileInput" accept="image/*" style="display:none;" onchange="handleBikePhoto(this)"/>
-        <div class="upload-progress" id="uploadProgress"><div id="uploadProgressBar" style="width:0%"></div></div>
         <p style="font-size:11px;color:var(--muted);margin:0 0 14px;">Или вставь ссылку:</p>
         <input id="bikePhotoUrl" class="field" type="url" placeholder="https://example.com/bike.jpg (необязательно если выбрал фото)"/>
         <button class="btn btn-primary btn-full" id="bikeSubmitBtn" onclick="addBike()">Добавить в гараж 🚲</button>
@@ -681,11 +679,10 @@ const FB_CFG={
   apiKey:"AIzaSyDPMX7QYJM2_WnTBDfXGw4W_fN3fFCVF6M",
   authDomain:"mtb-skills-pro-38297.firebaseapp.com",
   projectId:"mtb-skills-pro-38297",
-  storageBucket:"mtb-skills-pro-38297.firebasestorage.app",
   messagingSenderId:"771638572867",
   appId:"1:771638572867:web:524987af3a428dd553e1f6"
 };
-let db=null,auth=null,storage=null,currentUser=null,authMode='login',redirectHandled=false;
+let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false;
 
 /* ══ UTILS ══ */
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -846,7 +843,6 @@ async function initFB(){
     firebase.initializeApp(FB_CFG);
     db=firebase.firestore();
     auth=firebase.auth();
-    storage=firebase.storage();
 
     // Таймаут — якщо Firebase не відповідає за 12 секунд, показуємо екран авторизації
     fbTimeout=setTimeout(()=>{
@@ -1129,7 +1125,7 @@ function initApp(){
   setInterval(updateChTimer,60000);updateChTimer();
   genPWA();
 }
-function genPWA(){const m={name:'MTB Skills Pro',short_name:'MTB Skills',id:'.',start_url:'.',scope:'.',display:'standalone',background_color:'#090b0f',theme_color:'#090b0f',icons:[{src:'image/icon.png',sizes:'192x192',type:'image/png'},{src:'image/icon.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]};const blob=new Blob([JSON.stringify(m)],{type:'application/json'});document.getElementById('manifestLink').href=URL.createObjectURL(blob);const sec=(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1');if('serviceWorker' in navigator&&sec){navigator.serviceWorker.register('sw.js').catch(()=>{});}}
+function genPWA(){const sec=(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1');if('serviceWorker' in navigator&&sec){navigator.serviceWorker.register('sw.js').catch(()=>{});}}
 
 /* ══ TIMER ══ */
 let tInt=null,tRun=false,tStart=0,tEl=0;
@@ -1411,7 +1407,6 @@ function handleBikePhoto(input){
 }
 
 async function uploadBikePhoto(file){
-  if(!storage)throw new Error('Storage не инициализирован');
   // Сжимаем изображение перед загрузкой если > 1MB
   let uploadFile=file;
   if(file.size>1024*1024){
@@ -1427,19 +1422,7 @@ async function uploadBikePhoto(file){
       };img.src=url;
     });
   }
-  const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-  const ref=storage.ref(`bikes/${currentUser.uid}/${Date.now()}_${safeName}`);
-  const progressEl=document.getElementById('uploadProgress');
-  const barEl=document.getElementById('uploadProgressBar');
-  progressEl.style.display='block';barEl.style.width='0%';
-  return new Promise((resolve,reject)=>{
-    const task=ref.put(uploadFile,{contentType:'image/jpeg'});
-    task.on('state_changed',
-      snap=>{const pct=Math.round(snap.bytesTransferred/snap.totalBytes*100);barEl.style.width=pct+'%';},
-      err=>reject(err),
-      async()=>{const url=await task.snapshot.ref.getDownloadURL();progressEl.style.display='none';resolve(url);}
-    );
-  });
+  return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(uploadFile);});
 }
 
 let bikesCache=[];
@@ -1521,14 +1504,13 @@ async function addBike(){
 
   try{
     let photoUrl=urlInput;
-    // Если выбрали файл — загружаем в Storage
+    // Если выбрали файл — сжимаем и конвертируем в base64
     if(bikePhotoFile){
       try{
         photoUrl=await uploadBikePhoto(bikePhotoFile);
       }catch(e){
-        // Если Storage недоступен — конвертируем в base64 (резервный вариант)
         photoUrl=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(bikePhotoFile);});
-        console.warn('Storage failed, using base64');
+        console.warn('Photo compress failed, using base64');
       }
     }
 
@@ -1559,11 +1541,6 @@ async function addBike(){
 async function deleteBike(id){
   if(!currentUser||!db)return;
   try{
-    // Пробуем удалить фото из Storage если это Storage URL
-    const bike=bikesCache.find(b=>b.id===id);
-    if(bike&&bike.photoUrl&&bike.photoUrl.includes('firebasestorage')&&storage){
-      try{await storage.refFromURL(bike.photoUrl).delete();}catch(e){console.warn('Storage photo delete:',e);}
-    }
     await db.collection('bikes').doc(id).delete();
     bikesCache=bikesCache.filter(b=>b.id!==id);
     sfx.save();renderBikes();toast('Байк удалён');

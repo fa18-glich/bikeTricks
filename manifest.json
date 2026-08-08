@@ -1,0 +1,15 @@
+{
+  "name": "MTB Skills Pro",
+  "short_name": "MTB Skills",
+  "id": ".",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#090b0f",
+  "theme_color": "#090b0f",
+  "icons": [
+    { "src": "image/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "image/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "image/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

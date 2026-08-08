@@ -10,7 +10,14 @@
       "**/*.md",
       "firestore.rules",
       "storage.rules",
-      "sw.js.map"
+      "firestore.indexes.json",
+      "sw.js.map",
+      "**/*firebase-adminsdk*.json",
+      "package.json",
+      "package-lock.json",
+      "scripts/**",
+      "css/**",
+      "js/**"
     ],
     "rewrites": [
       { "source": "**", "destination": "/index.html" }

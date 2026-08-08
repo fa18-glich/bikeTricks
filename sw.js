@@ -1,5 +1,5 @@
-const CACHE = 'mtb-skills-v1';
-const PRECACHE = ['./', './index.html', './image/icon.png'];
+const CACHE = 'mtb-skills-v2';
+const PRECACHE = ['./', './index.html', './manifest.json', './image/icon-192.png', './image/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
