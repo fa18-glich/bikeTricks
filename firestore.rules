@@ -14,7 +14,12 @@ service cloud.firestore {
     }
     function validSkills() {
       return request.resource.data.skills is list
-        && request.resource.data.skills.all(validSkill);
+        && request.resource.data.skills.size() == 5
+        && validSkill(request.resource.data.skills[0])
+        && validSkill(request.resource.data.skills[1])
+        && validSkill(request.resource.data.skills[2])
+        && validSkill(request.resource.data.skills[3])
+        && validSkill(request.resource.data.skills[4]);
     }
     function validNickname(n) {
       return n is string && (n.size() == 0 || (n.size() >= 2 && n.size() <= 24));
