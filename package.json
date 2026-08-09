@@ -9,5 +9,11 @@
   },
   "dependencies": {
     "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "13.35.1"
+  },
+  "overrides": {
+    "uuid": "9.0.1"
   }
 }

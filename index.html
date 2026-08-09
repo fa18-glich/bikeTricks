@@ -1167,6 +1167,8 @@ async function deleteAccount(){
     for(const r of req1.docs){try{await r.ref.delete();}catch(e6){}}
     const req2=await db.collection('friend_requests').where('toUid','==',uid).get();
     for(const r of req2.docs){try{await r.ref.delete();}catch(e7){}}
+    try{await db.collection('presence').doc(uid).delete();}catch(e9){}
+    stopFriendListeners();
     await auth.currentUser.delete();
   }catch(e){
     console.warn('deleteAccount:',e);
@@ -1178,6 +1180,12 @@ async function deleteAccount(){
   location.reload();
 }
 async function doSignOut(){
+  if(db&&currentUser){
+    try{
+      await db.collection('presence').doc(currentUser.uid).set({online:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }catch(e){}
+  }
+  stopFriendListeners();
   if(auth)await auth.signOut();
   localStorage.removeItem(SK);
   localStorage.removeItem('mtb_dts');
@@ -1257,6 +1265,8 @@ function initApp(){
   setInterval(updateChTimer,60000);updateChTimer();
   genPWA();
   syncProofs();
+  startFriendListeners();
+  setupPresence();
 }
 function genPWA(){const sec=(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1');if('serviceWorker' in navigator&&sec){navigator.serviceWorker.register('sw.js').catch(()=>{});}}
 
@@ -2322,6 +2332,99 @@ document.getElementById('userInfo').addEventListener('click',()=>gotoTab('profil
 
 /* ══ FRIENDS ══ */
 let friendsCurrentSub='received';
+let friendReqInCache=[],friendReqOutCache=[],friendsCache=[];
+let friendMainUnsubs=[],friendPresenceUnsubs={},presenceCache={},friendXpCache={};
+let friendListenersStarted=false,presenceSet=false;
+function startFriendListeners(){
+  if(!db||!currentUser||friendListenersStarted)return;
+  friendListenersStarted=true;
+  const uid=currentUser.uid;
+  const onErr=e=>console.warn('friend listener:',e);
+  friendMainUnsubs.push(
+    db.collection('friend_requests').where('toUid','==',uid).where('status','==','pending')
+      .onSnapshot(snap=>{
+        friendReqInCache=snap.docs.map(d=>({id:d.id,...d.data()}));
+        updateInCount();renderFriendsTab();
+      },onErr),
+    db.collection('friend_requests').where('fromUid','==',uid).where('status','==','pending')
+      .onSnapshot(snap=>{
+        friendReqOutCache=snap.docs.map(d=>({id:d.id,...d.data()}));
+        state.friendRequestsSent=friendReqOutCache;
+        renderFriendsTab();
+      },onErr),
+    db.collection('friends').where('uids','array-contains',uid)
+      .onSnapshot(snap=>{
+        friendsCache=snap.docs.map(d=>d.data());
+        renderFriendsTab();
+      },onErr)
+  );
+}
+function stopFriendListeners(){
+  friendMainUnsubs.forEach(u=>{try{u();}catch(e){}});friendMainUnsubs=[];
+  Object.values(friendPresenceUnsubs).forEach(u=>{try{u();}catch(e){}});friendPresenceUnsubs={};
+  presenceCache={};friendXpCache={};friendReqInCache=[];friendReqOutCache=[];friendsCache=[];
+  friendListenersStarted=false;
+}
+function updateInCount(){
+  const frInp=document.getElementById('frInpCount');
+  if(frInp)frInp.textContent=friendReqInCache.length?' ('+friendReqInCache.length+')':'';
+}
+function setupPresence(){
+  if(!db||!currentUser||presenceSet)return;
+  presenceSet=true;
+  const uid=currentUser.uid;
+  const ref=db.collection('presence').doc(uid);
+  const online={uid:uid,online:true,lastSeen:firebase.firestore.FieldValue.serverTimestamp()};
+  const offline={uid:uid,online:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()};
+  window.addEventListener('pagehide',()=>{try{ref.set(offline,{merge:true});}catch(e){}});
+  window.addEventListener('beforeunload',()=>{try{ref.set(offline,{merge:true});}catch(e){}});
+  document.addEventListener('visibilitychange',()=>{
+    try{ref.set(document.visibilityState==='hidden'?offline:online,{merge:true});}catch(e){}
+  });
+  ref.set(online,{merge:true}).catch(e=>console.warn('presence set:',e));
+  setInterval(()=>{
+    try{
+      if(!document.hidden)ref.set(online,{merge:true});
+      Object.keys(presenceCache).forEach(u=>updateFriendStatus(u));
+    }catch(e){}
+  },30000);
+}
+function watchPresence(uid){
+  if(!db||!uid||friendPresenceUnsubs[uid])return;
+  friendPresenceUnsubs[uid]=db.collection('presence').doc(uid).onSnapshot(snap=>{
+    if(snap.exists)presenceCache[uid]=snap.data();
+    else delete presenceCache[uid];
+    updateFriendStatus(uid);
+  },e=>console.warn('presence '+uid+':',e));
+}
+function timeAgo(ms){
+  if(!ms)return '';
+  const d=Date.now()-ms;
+  if(d<60000)return ' · только что';
+  if(d<3600000)return ' · был(а) '+Math.floor(d/60000)+' мин назад';
+  if(d<86400000)return ' · был(а) '+Math.floor(d/3600000)+' ч назад';
+  return ' · был(а) '+Math.floor(d/86400000)+' дн назад';
+}
+function updateFriendStatus(uid){
+  const st=document.getElementById('fst-'+uid);
+  if(!st)return;
+  const p=presenceCache[uid];
+  const ms=p&&p.lastSeen?(p.lastSeen.toMillis?p.lastSeen.toMillis():p.lastSeen):0;
+  const fresh=p&&p.online&&ms&&(Date.now()-ms<180000);
+  if(fresh){st.className='friend-row-status online';st.textContent='🟢 Онлайн';return;}
+  st.className='friend-row-status offline';
+  st.textContent='⚫ Офлайн'+timeAgo(ms);
+}
+function ensureFriendXp(uid,el){
+  if(friendXpCache[uid]!=null){el.textContent=friendXpCache[uid]+' XP';return;}
+  if(!db){el.textContent='';return;}
+  db.collection('leaderboard').doc(uid).get().then(snap=>{
+    friendXpCache[uid]=snap.exists?(snap.data().pts||0):0;
+    const row=document.querySelector('.friend-row[data-uid="'+uid+'"]');
+    const xe=row&&row.querySelector('.friend-row-xp');
+    if(xe)xe.textContent=friendXpCache[uid]+' XP';
+  }).catch(()=>{});
+}
 function formatCode(c){
   if(!c)return'——————';
   return c;
@@ -2422,102 +2525,85 @@ function switchFriendsSub(sub){
   document.getElementById('friendsList').style.display=sub==='friends'?'block':'none';
   document.getElementById('friendsSent').style.display=sub==='sent'?'block':'none';
 }
-async function renderFriendsTab(){
+function renderFriendsTab(){
   if(!currentUser)return;
   const myCode=currentUser.uid.substring(0,12);
   document.getElementById('myCodeNum').textContent=formatCode(myCode);
   const recEl=document.getElementById('friendsReceived');
   const frEl=document.getElementById('friendsList');
   const sentEl=document.getElementById('friendsSent');
-  recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px;">Загрузка...</div>';
-  frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px;">Загрузка...</div>';
-  sentEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px;">Загрузка...</div>';
-  try{
-    const [recSnap,sentSnap]=await Promise.all([
-      db.collection('friend_requests').where('toUid','==',currentUser.uid).where('status','==','pending').get(),
-      db.collection('friend_requests').where('fromUid','==',currentUser.uid).where('status','==','pending').get()
-    ]);
-    const pendingRec=recSnap.docs.map(d=>({id:d.id,...d.data()}));
-    const sentPending=sentSnap.docs.map(d=>({id:d.id,...d.data()}));
-    state.friendRequestsSent=sentPending;
-    const inpCount=pendingRec.length;
-    const frInp=document.getElementById('frInpCount');
-    if(frInp)frInp.textContent=inpCount?' ('+inpCount+')':'';
-    if(!pendingRec.length){
-      recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет входящих запросов</div>';
-    }else{
-      recEl.innerHTML='';
-      pendingRec.forEach(req=>{
-        const card=document.createElement('div');card.className='req-card';
-        const fromCode=req.fromUid?req.fromUid.substring(0,12):'';
-        const icon=document.createElement('div');icon.className='req-card-icon';icon.textContent='👤';
-        const info=document.createElement('div');info.className='req-card-info';
-        const nm=document.createElement('div');nm.className='req-card-name';nm.textContent=req.fromNick||'???';
-        const cd=document.createElement('div');cd.className='req-card-code';cd.textContent=formatCode(fromCode);
-        info.append(nm,cd);
-        const btns=document.createElement('div');btns.className='req-card-btns';
-        const bA=document.createElement('button');bA.className='btn btn-success';bA.style.cssText='padding:8px 12px;font-size:12px;';bA.textContent='✓';
-        bA.addEventListener('click',()=>acceptFriendRequest(req.id,req.fromUid,req.fromNick||''));
-        const bD=document.createElement('button');bD.className='btn btn-danger';bD.style.cssText='padding:8px 12px;font-size:12px;';bD.textContent='✕';
-        bD.addEventListener('click',()=>declineFriendRequest(req.id,req.fromUid));
-        btns.append(bA,bD);
-        card.append(icon,info,btns);
-        recEl.appendChild(card);
-      });
-    }
-    if(!sentPending.length){
-      sentEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет исходящих запросов</div>';
-    }else{
-      sentEl.innerHTML='';
-      sentPending.forEach(req=>{
-        const card=document.createElement('div');card.className='req-card';
-        const toCode=req.toUid?req.toUid.substring(0,12):'';
-        const icon=document.createElement('div');icon.className='req-card-icon';icon.textContent='📤';
-        const info=document.createElement('div');info.className='req-card-info';
-        const nm=document.createElement('div');nm.className='req-card-name';nm.textContent=req.toNick||'???';
-        const cd=document.createElement('div');cd.className='req-card-code';cd.textContent=formatCode(toCode);
-        info.append(nm,cd);
-        const btns=document.createElement('div');btns.className='req-card-btns';
-        const bC=document.createElement('button');bC.className='btn btn-ghost';bC.style.cssText='padding:8px 12px;font-size:12px;';bC.textContent='✕ Отменить';
-        bC.addEventListener('click',()=>cancelFriendRequest(req.id,req.toUid));
-        btns.append(bC);
-        card.append(icon,info,btns);
-        sentEl.appendChild(card);
-      });
-    }
-  }catch(e){recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Ошибка загрузки</div>';sentEl.innerHTML='';}
-  try{
-    const friendsSnap=await db.collection('friends').where('uids','array-contains',currentUser.uid).get();
-    const friends=friendsSnap.docs.map(d=>d.data());
-    const frCount=document.getElementById('frFriendsCount');
-    if(frCount)frCount.textContent=friends.length?' ('+friends.length+')':'';
-    if(!friends.length){
-      frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Пока нет друзей. Пригласи друга по коду!</div>';
-    }else{
-      frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">Загрузка...</div>';
-      const friendData=[];
-      for(const f of friends){
-        const otherUid=f.uids.find(u=>u!==currentUser.uid);
-        const otherNick=f.nicknames[otherUid]||'???';
-        friendData.push({uid:otherUid,nickname:otherNick,docId:f.uids.sort().join('_')});
-      }
-      frEl.innerHTML='';
-      friendData.sort((a,b)=>a.nickname.localeCompare(b.nickname));
-      friendData.forEach(f=>{
-        const row=document.createElement('div');row.className='friend-row';
-        const icon=document.createElement('div');icon.className='friend-row-icon';icon.textContent='👤';
-        const info=document.createElement('div');info.className='friend-row-info';
-        const nm=document.createElement('div');nm.className='friend-row-name';nm.textContent=f.nickname;
-        const st=document.createElement('div');st.className='friend-row-status offline';st.textContent='⚫ Офлайн';
-        info.append(nm,st);
-        const xp=document.createElement('div');xp.className='friend-row-xp';
-        const bR=document.createElement('button');bR.className='btn btn-danger';bR.style.cssText='padding:8px 10px;font-size:11px;';bR.textContent='✕';
-        bR.addEventListener('click',()=>removeFriend(f.uid,f.nickname));
-        row.append(icon,info,xp,bR);
-        frEl.appendChild(row);
-      });
-    }
-  }catch(e){frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Ошибка загрузки</div>';}
+  updateInCount();
+  if(!friendReqInCache.length){
+    recEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет входящих запросов</div>';
+  }else{
+    recEl.innerHTML='';
+    friendReqInCache.forEach(req=>{
+      const card=document.createElement('div');card.className='req-card';
+      const fromCode=req.fromUid?req.fromUid.substring(0,12):'';
+      const icon=document.createElement('div');icon.className='req-card-icon';icon.textContent='👤';
+      const info=document.createElement('div');info.className='req-card-info';
+      const nm=document.createElement('div');nm.className='req-card-name';nm.textContent=req.fromNick||'???';
+      const cd=document.createElement('div');cd.className='req-card-code';cd.textContent=formatCode(fromCode);
+      info.append(nm,cd);
+      const btns=document.createElement('div');btns.className='req-card-btns';
+      const bA=document.createElement('button');bA.className='btn btn-success';bA.style.cssText='padding:8px 12px;font-size:12px;';bA.textContent='✓';
+      bA.addEventListener('click',()=>acceptFriendRequest(req.id,req.fromUid,req.fromNick||''));
+      const bD=document.createElement('button');bD.className='btn btn-danger';bD.style.cssText='padding:8px 12px;font-size:12px;';bD.textContent='✕';
+      bD.addEventListener('click',()=>declineFriendRequest(req.id,req.fromUid));
+      btns.append(bA,bD);
+      card.append(icon,info,btns);
+      recEl.appendChild(card);
+    });
+  }
+  if(!friendReqOutCache.length){
+    sentEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Нет исходящих запросов</div>';
+  }else{
+    sentEl.innerHTML='';
+    friendReqOutCache.forEach(req=>{
+      const card=document.createElement('div');card.className='req-card';
+      const toCode=req.toUid?req.toUid.substring(0,12):'';
+      const icon=document.createElement('div');icon.className='req-card-icon';icon.textContent='📤';
+      const info=document.createElement('div');info.className='req-card-info';
+      const nm=document.createElement('div');nm.className='req-card-name';nm.textContent=req.toNick||'???';
+      const cd=document.createElement('div');cd.className='req-card-code';cd.textContent=formatCode(toCode);
+      info.append(nm,cd);
+      const btns=document.createElement('div');btns.className='req-card-btns';
+      const bC=document.createElement('button');bC.className='btn btn-ghost';bC.style.cssText='padding:8px 12px;font-size:12px;';bC.textContent='✕ Отменить';
+      bC.addEventListener('click',()=>cancelFriendRequest(req.id,req.toUid));
+      btns.append(bC);
+      card.append(icon,info,btns);
+      sentEl.appendChild(card);
+    });
+  }
+  const frCount=document.getElementById('frFriendsCount');
+  if(frCount)frCount.textContent=friendsCache.length?' ('+friendsCache.length+')':'';
+  if(!friendsCache.length){
+    frEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">Пока нет друзей. Пригласи друга по коду!</div>';
+  }else{
+    frEl.innerHTML='';
+    const friendData=friendsCache.map(f=>{
+      const otherUid=f.uids.find(u=>u!==currentUser.uid);
+      const otherNick=f.nicknames?f.nicknames[otherUid]:null;
+      return {uid:otherUid,nickname:otherNick||'???',docId:f.uids.sort().join('_')};
+    });
+    friendData.sort((a,b)=>a.nickname.localeCompare(b.nickname));
+    friendData.forEach(f=>{
+      watchPresence(f.uid);
+      const row=document.createElement('div');row.className='friend-row';row.dataset.uid=f.uid;
+      const icon=document.createElement('div');icon.className='friend-row-icon';icon.textContent='👤';
+      const info=document.createElement('div');info.className='friend-row-info';
+      const nm=document.createElement('div');nm.className='friend-row-name';nm.textContent=f.nickname;
+      const st=document.createElement('div');st.className='friend-row-status offline';st.id='fst-'+f.uid;st.textContent='⚫ Офлайн';
+      info.append(nm,st);
+      const xp=document.createElement('div');xp.className='friend-row-xp';
+      ensureFriendXp(f.uid,xp);
+      const bR=document.createElement('button');bR.className='btn btn-danger';bR.style.cssText='padding:8px 10px;font-size:11px;';bR.textContent='✕';
+      bR.addEventListener('click',()=>removeFriend(f.uid,f.nickname));
+      row.append(icon,info,xp,bR);
+      frEl.appendChild(row);
+      updateFriendStatus(f.uid);
+    });
+  }
   switchFriendsSub(friendsCurrentSub);
 }
 async function renderFriends(){const el=document.getElementById('friendFeed');if(!el)return;el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>';const myPts=calcXP();const filterText=(document.getElementById('friendFilter')?.value||'').toLowerCase();const sortBy=document.getElementById('friendSort')?.value||'pts';let all=[{id:'_me',name:(state.nickname||'Я')+' 👈',pts:myPts,isMe:true}];if(db&&currentUser){try{const snap=await db.collection('leaderboard').orderBy('pts','desc').limit(50).get();snap.docs.forEach(d=>{const u=d.data();if(u.uid!==currentUser.uid&&u.nickname)all.push({id:d.id,name:u.nickname,pts:u.pts||0});});}catch(e){}}if(filterText)all=all.filter(f=>f.name.toLowerCase().includes(filterText));if(sortBy==='name')all.sort((a,b)=>a.name.localeCompare(b.name));else all.sort((a,b)=>b.pts-a.pts);el.innerHTML='';const medals=['🥇','🥈','🥉'];all.forEach((f,i)=>{const row=document.createElement('div');row.className='lb-row';row.style.animationDelay=i*.04+'s';if(f.isMe)row.style.cssText+='border-color:rgba(76,201,240,.4);background:linear-gradient(160deg,rgba(76,201,240,.06),rgba(124,92,255,.04));';const pl=document.createElement('div');pl.className='lb-place';pl.textContent=i<3?medals[i]:'#'+(i+1);const info=document.createElement('div');info.className='lb-info';const h4=document.createElement('h4');h4.textContent=f.name;const sub=document.createElement('span');sub.textContent=f.pts+' XP';info.append(h4,sub);const pts=document.createElement('div');pts.className='lb-pts';pts.textContent=f.pts;row.append(pl,info,pts);el.appendChild(row);});}
