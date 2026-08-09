@@ -1,4 +1,4 @@
-const CACHE = 'mtb-skills-v3';
+const CACHE = 'mtb-skills-v4';
 const PRECACHE = ['./', './index.html', './manifest.json', './image/icon-192.png', './image/icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -47,14 +47,16 @@ self.addEventListener('fetch', (e) => {
 
   e.respondWith(
     caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request).then((res) => {
+      // stale-while-revalidate: отдаём кэш мгновенно, фоном обновляем его с сети,
+      // при офлайне и отсутствии кэша — запрос проваливается
+      const network = fetch(e.request).then((res) => {
         if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE).then((c) => c.put(e.request, clone));
         }
         return res;
-      });
+      }).catch(() => cached);
+      return cached || network;
     })
   );
 });

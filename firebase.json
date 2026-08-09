@@ -13,6 +13,7 @@
       "firestore.indexes.json",
       "sw.js.map",
       "**/*firebase-adminsdk*.json",
+      "**/*.bak",
       "package.json",
       "package-lock.json",
       "scripts/**",

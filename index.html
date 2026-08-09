@@ -1008,13 +1008,18 @@ const DEF_SKILLS=[
 
 /* ══ STATE ══ */
 const SK='mtb_v16';
+// Локальное хранилище привязываем к аккаунту, чтобы данные одного пользователя
+// не вмерживались в облако другого при входе на том же устройстве.
+function lsKey(){return SK+(currentUser?('_'+currentUser.uid):'_anon');}
+function lsDayKey(k){return k+(currentUser?('_'+currentUser.uid):'_anon');}
+function clearLSPrefix(){try{Object.keys(localStorage).filter(k=>k===SK||k.startsWith(SK+'_')||k==='mtb_dts'||k.startsWith('mtb_dts_')||k==='mtb_wts'||k.startsWith('mtb_wts_')).forEach(k=>localStorage.removeItem(k));}catch(e){}}
 function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[]};}
 let state=loadLS();
 let activeSkillId=null;
 let bikePhotoFile=null;
 
 function loadLS(){
-  try{const s=JSON.parse(localStorage.getItem(SK));if(s&&s.skills){
+  try{const s=JSON.parse(localStorage.getItem(lsKey())||localStorage.getItem(SK));if(s&&s.skills){
     ['records','challenges','completedChallenges','proofs','proofReactions','unlockedAchievements','duels'].forEach(k=>{if(!s[k])s[k]=k==='records'?{}:[];});
     if(!s.challengeXP)s.challengeXP=0;if(!s.duelsWon)s.duelsWon=0;
     if(!s.weeklyXpStart)s.weeklyXpStart=0;if(!s.weeklyXpStartTs)s.weeklyXpStartTs=0;if(!s.nicknameChangedAt)s.nicknameChangedAt=0;
@@ -1027,7 +1032,7 @@ function loadLS(){
     return s;
   }}catch(e){}return defState();
 }
-function saveLS(){localStorage.setItem(SK,JSON.stringify(state));}
+function saveLS(){localStorage.setItem(lsKey(),JSON.stringify(state));}
 function mergeCloudState(c,l){
   // Облако — база, но локальный прогресс не теряем: по каждому полю берём максимум,
   // списки объединяем. Никнейм/настройки/челленджи — из облака (канон).
@@ -1130,8 +1135,11 @@ async function initFB(){
         try{
           const doc=await db.collection('users').doc(user.uid).get();
           if(doc.exists){
-            const ls=JSON.parse(localStorage.getItem(SK)||'{}');
-            // Мерж: облако — база, но локальный оффлайн-прогресс не теряем
+          const ls=JSON.parse(localStorage.getItem(lsKey())||localStorage.getItem(SK)||'{}');
+          // Одноразовая миграция со старого общего ключа: переносим и удаляем его,
+          // чтобы данные одного аккаунта не перетекали в другой при входе
+          if(localStorage.getItem(SK))localStorage.removeItem(SK);
+          // Мерж: облако — база, но локальный оффлайн-прогресс не теряем
             state=Array.isArray(ls.skills)?mergeCloudState(doc.data(),ls):{...defState(),...doc.data()};
             if(Array.isArray(ls.duels))state.duels=ls.duels;
             DEF_SKILLS.forEach(ds=>{
@@ -1317,9 +1325,7 @@ async function deleteAccount(){
   }catch(e){
     console.warn('deleteAccount:',e);
   }
-  localStorage.removeItem(SK);
-  localStorage.removeItem('mtb_dts');
-  localStorage.removeItem('mtb_wts');
+  clearLSPrefix();
   try{await idbClear();}catch(e){}
   location.reload();
 }
@@ -1331,9 +1337,7 @@ async function doSignOut(){
   }
   stopFriendListeners();
   if(auth)await auth.signOut();
-  localStorage.removeItem(SK);
-  localStorage.removeItem('mtb_dts');
-  localStorage.removeItem('mtb_wts');
+  clearLSPrefix();
   location.reload();
 }
 function hideLoad(){const el=document.getElementById('loadingScreen');el.classList.add('hidden');setTimeout(()=>el.style.display='none',600);}
@@ -1407,6 +1411,8 @@ function initApp(){
   renderSkills();renderRecords();
   initNotifUI();updateStreak();genChallengesIfNeeded();
   initDuelListener();
+  expireStaleDuels();
+  syncLocalDuels();
   setInterval(updateChTimer,60000);updateChTimer();
   genPWA();
   syncProofs();
@@ -1590,30 +1596,32 @@ function weekMonday(){const d=new Date();d.setHours(0,0,0,0);const day=d.getDay(
 
 function genChallengesIfNeeded(){
   const todayTs=todayMidnight();const weekTs=weekMonday();
-  const dTs=parseInt(localStorage.getItem('mtb_dts')||'0');
-  const wTs=parseInt(localStorage.getItem('mtb_wts')||'0');
+  const dTs=parseInt(localStorage.getItem(lsDayKey('mtb_dts'))||'0');
+  const wTs=parseInt(localStorage.getItem(lsDayKey('mtb_wts'))||'0');
   const needD=dTs<todayTs;const needW=wTs<weekTs;
-  if(!needD&&!needW&&state.challenges&&state.challenges.length>0)return;
+  // Новые задания генерируем ТОЛЬКО при смене дня/недели — иначе выполнив все,
+  // можно перезагрузкой бесконечно набивать XP
+  if(!needD&&!needW)return;
 
   const keep=(state.challenges||[]).filter(c=>c.completed).slice(-10);
   const sh=a=>[...a].sort(()=>Math.random()-.5);
 
-  if(needD||!state.challenges.some(c=>!c.completed&&c.type==='daily')){
+  if(needD){
     // Сбрасываем сессионные счётчики при новом дне
     state.skills.forEach(s=>s.trSession=0);
     sh(CH_TMPL.filter(t=>t.type==='daily')).slice(0,3).forEach(t=>{
       keep.push({id:Date.now().toString()+Math.random(),text:t.text,xp:t.xp,type:t.type,auto:t.auto,trackType:t.trackType,trackSkill:t.trackSkill||null,target:t.target||0,completed:false,created:new Date().toISOString()});
     });
-    localStorage.setItem('mtb_dts',todayTs.toString());
+    localStorage.setItem(lsDayKey('mtb_dts'),todayTs.toString());
   }else{(state.challenges||[]).filter(c=>!c.completed&&c.type==='daily').forEach(c=>keep.push(c));}
 
-  if(needW||!state.challenges.some(c=>!c.completed&&c.type==='weekly')){
+  if(needW){
     // Запоминаем стартовый XP один раз при начале новой недели
     state.weeklyXpStart=calcXP();state.weeklyXpStartTs=weekTs;
     sh(CH_TMPL.filter(t=>t.type==='weekly')).slice(0,2).forEach(t=>{
       keep.push({id:Date.now().toString()+Math.random(),text:t.text,xp:t.xp,type:t.type,auto:t.auto,trackType:t.trackType,trackSkill:t.trackSkill||null,target:t.target||0,completed:false,created:new Date().toISOString()});
     });
-    localStorage.setItem('mtb_wts',weekTs.toString());
+    localStorage.setItem(lsDayKey('mtb_wts'),weekTs.toString());
   }else{(state.challenges||[]).filter(c=>!c.completed&&c.type==='weekly').forEach(c=>keep.push(c));}
 
   state.challenges=keep;saveCloud();
@@ -1804,10 +1812,7 @@ async function loadBikes(){
   if(!db){feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;">Firebase не подключён</div>';return;}
   try{
     const sortBy=document.getElementById('bikeSortF')?.value||'newest';
-    let q=db.collection('bikes').limit(50);
-    if(sortBy==='rating')q=q.orderBy('likes','desc');
-    else if(sortBy==='name')q=q.orderBy('name');
-    else q=q.orderBy('createdAt','desc');
+    let q=db.collection('bikes').orderBy('createdAt','desc').limit(50);
     const snap=await q.get();
     bikesCache=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderBikes();
@@ -1824,6 +1829,12 @@ function renderBikes(){
   let bikes=[...bikesCache];
   if(filterText)bikes=bikes.filter(b=>(b.name||'').toLowerCase().includes(filterText)||(b.type||'').toLowerCase().includes(filterText));
   if(filterType)bikes=bikes.filter(b=>b.type===filterType);
+  // Сортировка на клиенте: поле likes в базе больше не пишется, считаем из likedBy.length
+  const sortBy=document.getElementById('bikeSortF')?.value||'newest';
+  const ts=x=>{const v=x.createdAt||x.created;const t=v?new Date(v).getTime():0;return isNaN(t)?0:t;};
+  if(sortBy==='rating')bikes.sort((a,b)=>(Array.isArray(b.likedBy)?b.likedBy.length:0)-(Array.isArray(a.likedBy)?a.likedBy.length:0));
+  else if(sortBy==='name')bikes.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ru'));
+  else bikes.sort((a,b)=>ts(b)-ts(a));
   feed.innerHTML='';
   if(!bikes.length){const p=document.createElement('div');p.style.cssText='text-align:center;color:var(--muted);padding:28px;';p.textContent=bikesCache.length?'Ничего не найдено':'Байков пока нет — добавь первый! 🚲';feed.appendChild(p);return;}
   bikes.forEach(b=>{
@@ -1855,7 +1866,7 @@ async function likeBike(id,btn){
   if(b&&b.ownerId===currentUser.uid){toast('Нельзя лайкать свой байк');return;}
   if(b&&Array.isArray(b.likedBy)&&b.likedBy.includes(currentUser.uid)){toast('Уже лайкнул');return;}
   btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});const b=bikesCache.find(x=>x.id===id);if(b){if(!Array.isArray(b.likedBy))b.likedBy=[];if(!b.likedBy.includes(currentUser.uid))b.likedBy.push(currentUser.uid);}sfx.tick();btn.className='like-btn liked';btn.innerHTML='❤️ '+(b&&b.likedBy?b.likedBy.length:0);btn.onclick=()=>unlikeBike(id,btn);btn.disabled=false;toast('❤️');}catch(e){btn.disabled=false;toast('Ошибка: '+e.message);}}
-  async function unlikeBike(id,btn){if(!currentUser||!db)return;btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});const b=bikesCache.find(x=>x.id===id);if(b)b.likedBy=(Array.isArray(b.likedBy)?b.likedBy:[]).filter(u=>u!==currentUser.uid);btn.className='like-btn';btn.innerHTML='🤍 '+(b&&b.likedBy?b.likedBy.length:0);btn.onclick=()=>likeBike(id,btn);btn.disabled=false;}catch(e){btn.disabled=false;}}
+  async function unlikeBike(id,btn){if(!currentUser||!db)return;btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});const b=bikesCache.find(x=>x.id===id);if(b)b.likedBy=(Array.isArray(b.likedBy)?b.likedBy:[]).filter(u=>u!==currentUser.uid);btn.className='like-btn';btn.innerHTML='🤍 '+(b&&b.likedBy?b.likedBy.length:0);btn.onclick=()=>likeBike(id,btn);btn.disabled=false;}catch(e){btn.disabled=false;toast('Ошибка: '+e.message);}}
 
 async function addBike(){
   if(!currentUser){toast('Сначала войди!');return;}
@@ -2088,8 +2099,8 @@ function hideProg(){const w=document.getElementById('proofProgWrap');if(w)w.styl
 
 function vidFromCloud(d){
   const ratedBy=d.ratedBy||{};
-  const rc=Object.keys(ratedBy).length;
   const vals=Object.values(ratedBy).filter(v=>typeof v==='number');
+  const rc=vals.length;
   return{
     key:d.id,ytId:d.ytId||'',vidUrl:d.vidUrl||'',vidPath:d.vidPath||'',title:d.title||'Без названия',skill:d.skill||'wh',
     author:d.ownerNick||'Аноним',
@@ -2104,10 +2115,10 @@ function vidFromCloud(d){
 }
 function vidFromLocal(p){
   const ratings=p.ratings||{};
-  const rc=Object.keys(ratings).length;
   const key=p.id+'_'+state.nickname;
   const my=state.proofReactions&&state.proofReactions[key]?state.proofReactions[key]:[];
-  const vals=Object.values(ratings);
+  const vals=Object.values(ratings).filter(v=>typeof v==='number');
+  const rc=vals.length;
   return{
     key:'local_'+p.id,ytId:p.ytId||'',vidUrl:p.vidUrl||(p.localVid?(vidURLMap[p.id]||''):'')||'',vidPath:p.vidPath||'',localVid:!!p.localVid,title:p.title,skill:p.skill||'wh',
     author:p.author||'',ts:new Date(p.date||Date.now()).getTime(),
@@ -2798,7 +2809,8 @@ async function acceptFriendRequest(reqId,fromUid,fromNick){
       uids:[currentUser.uid,fromUid],
       nicknames:{[currentUser.uid]:state.nickname,[fromUid]:fromNick},
       createdAt:Date.now(),
-      createdBy:currentUser.uid
+      createdBy:currentUser.uid,
+      requestId:reqId
     },{merge:true});
     toast(fromNick+' теперь твой друг! 🎉');
     renderFriendsTab();
@@ -2921,13 +2933,17 @@ function renderFriendsTab(){
   }
   switchFriendsSub(friendsCurrentSub);
 }
-async function renderFriends(){const el=document.getElementById('friendFeed');if(!el)return;el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>';const myPts=calcXP();const filterText=(document.getElementById('friendFilter')?.value||'').toLowerCase();const sortBy=document.getElementById('friendSort')?.value||'pts';let all=[{id:'_me',name:(state.nickname||'Я')+' 👈',pts:myPts,isMe:true}];if(db&&currentUser){try{const snap=await db.collection('leaderboard').orderBy('pts','desc').limit(50).get();snap.docs.forEach(d=>{const u=d.data();if(u.uid!==currentUser.uid&&u.nickname)all.push({id:d.id,name:u.nickname,pts:u.pts||0});});}catch(e){}}if(filterText)all=all.filter(f=>f.name.toLowerCase().includes(filterText));if(sortBy==='name')all.sort((a,b)=>a.name.localeCompare(b.name));else all.sort((a,b)=>b.pts-a.pts);el.innerHTML='';const medals=['🥇','🥈','🥉'];all.forEach((f,i)=>{const row=document.createElement('div');row.className='lb-row';row.style.animationDelay=i*.04+'s';if(f.isMe)row.style.cssText+='border-color:rgba(76,201,240,.4);background:linear-gradient(160deg,rgba(76,201,240,.06),rgba(124,92,255,.04));';const pl=document.createElement('div');pl.className='lb-place';pl.textContent=i<3?medals[i]:'#'+(i+1);const info=document.createElement('div');info.className='lb-info';const h4=document.createElement('h4');h4.textContent=f.name;const sub=document.createElement('span');sub.textContent=f.pts+' XP';info.append(h4,sub);const pts=document.createElement('div');pts.className='lb-pts';pts.textContent=f.pts;row.append(pl,info,pts);el.appendChild(row);});}
-document.getElementById('friendFilter')?.addEventListener('input',renderFriends);
+async function renderFriends(){const el=document.getElementById('friendFeed');if(!el)return;el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>';const myPts=calcXP();const filterText=(document.getElementById('friendFilter')?.value||'').toLowerCase();const sortBy=document.getElementById('friendSort')?.value||'pts';let all=[{id:'_me',name:(state.nickname||'Я')+' 👈',pts:myPts,isMe:true}];if(db&&currentUser){try{const snap=await db.collection('leaderboard').orderBy('pts','desc').limit(50).get();snap.docs.forEach(d=>{const u=d.data();if(u.uid!==currentUser.uid&&u.nickname)all.push({id:d.id,name:u.nickname,pts:u.pts||0});});}catch(e){console.warn('renderFriends:',e);}}if(filterText)all=all.filter(f=>f.name.toLowerCase().includes(filterText));if(sortBy==='name')all.sort((a,b)=>a.name.localeCompare(b.name));else all.sort((a,b)=>b.pts-a.pts);el.innerHTML='';const medals=['🥇','🥈','🥉'];all.forEach((f,i)=>{const row=document.createElement('div');row.className='lb-row';row.style.animationDelay=i*.04+'s';if(f.isMe)row.style.cssText+='border-color:rgba(76,201,240,.4);background:linear-gradient(160deg,rgba(76,201,240,.06),rgba(124,92,255,.04));';const pl=document.createElement('div');pl.className='lb-place';pl.textContent=i<3?medals[i]:'#'+(i+1);const info=document.createElement('div');info.className='lb-info';const h4=document.createElement('h4');h4.textContent=f.name;const sub=document.createElement('span');sub.textContent=f.pts+' XP';info.append(h4,sub);const pts=document.createElement('div');pts.className='lb-pts';pts.textContent=f.pts;row.append(pl,info,pts);el.appendChild(row);});}
+let _friendFilterTimer=null;
+document.getElementById('friendFilter')?.addEventListener('input',()=>{clearTimeout(_friendFilterTimer);_friendFilterTimer=setTimeout(renderFriends,250);});
 document.getElementById('friendSort')?.addEventListener('change',renderFriends);
 
 /* ══ DUELS ══ */
 let duelUnsub=null;
 let _lastLocalDuelDone=0;
+// Дедуп начисления duelsWon за сессию — чтобы победу не засчитали дважды
+// (локальный путь submitDuelResult + слушатель Firestore)
+const _creditedDuelWins=new Set();
 
 function updateDuelHint(){
   const el=document.getElementById('duelHint');if(!el)return;
@@ -2953,13 +2969,14 @@ async function createDuel(){
   if(!state.duels)state.duels=[];
   const myActive=state.duels.filter(d=>duelIsMine(d)&&(d.status==='open'||d.status==='active'));
   if(myActive.length>=1){toast('⚠️ У тебя уже есть дуэль! Заверши или отмени её.');return;}
-  const duel={id:Date.now().toString(),skill,target:String(Math.floor(target)),opponent:opponent||null,challenger:state.nickname,challengerUid:currentUser.uid,participants:[currentUser.uid],status:'open',created:new Date().toISOString(),challengerResult:null,opponentResult:null,acceptedBy:null,acceptedByUid:null,winner:null};
+  const duel={id:Date.now().toString(),skill,target:String(Math.floor(target)),opponent:opponent||null,challenger:state.nickname,challengerUid:currentUser.uid,participants:[currentUser.uid],status:'open',created:new Date().toISOString(),challengerResult:null,opponentResult:null,acceptedBy:null,acceptedByUid:null,winner:null,local:true};
   state.duels.unshift(duel);
   if(db){
     try{
       await db.collection('duels').doc(duel.id).set({...duel,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      duel.local=false;
       toast('Дуэль создана! ⚡');
-    }catch(e){toast('Создано локально: '+e.message);}
+    }catch(e){toast('Создано локально (досинхронизируем при подключении)');}
   }
   document.getElementById('duelTarget').value='';
   document.getElementById('duelOpponent').value='';
@@ -3020,13 +3037,13 @@ async function submitDuelResult(id,val){
       try{await db.collection('duels').doc(id).update({status:'done',winner:d.winner||null,winnerUid:d.winnerUid||null});}catch(e){console.warn('submitDuelResult done update:',e);}
     }
     if(d.winnerUid===currentUser.uid){
-      state.duelsWon=(state.duelsWon||0)+1;
+      if(!_creditedDuelWins.has(id)){_creditedDuelWins.add(id);state.duelsWon=(state.duelsWon||0)+1;}
       sfx.max();showLvlUp('ПОБЕДА!','','⚡',true);confetti(80);
     }else{
       toast('Дуэль завершена. Победил '+d.winner);
     }
   }else if(d.status==='done'&&d.winnerUid===currentUser.uid&&d.winner){
-    state.duelsWon=(state.duelsWon||0)+1;
+    if(!_creditedDuelWins.has(id)){_creditedDuelWins.add(id);state.duelsWon=(state.duelsWon||0)+1;}
     sfx.max();showLvlUp('ПОБЕДА!','','⚡',true);confetti(80);
   }else if(d.status==='done'){
     toast('Дуэль завершена. Победил '+d.winner);
@@ -3046,10 +3063,27 @@ async function cancelDuel(id){
   }
   saveCloud();toast('Дуэль отменена');renderDuels();
 }
+// Висячие дуэли (без ответа соперника) истекают через 7 дней,
+// чтобы они не блокировали создание новых и не висели вечно
+function expireStaleDuels(){
+  const now=Date.now();
+  const STALE=7*86400000;
+  const expired=(state.duels||[]).filter(d=>{
+    if(d.status==='done'||d.status==='void')return false;
+    const created=d.created?new Date(d.created).getTime():0;
+    return now-created>STALE;
+  });
+  if(!expired.length)return;
+  expired.forEach(d=>{if(db){try{db.collection('duels').doc(d.id).update({status:'void'});}catch(e){}}});
+  state.duels=(state.duels||[]).filter(d=>!expired.includes(d));
+  toast('Устаревшие дуэли удалены ('+expired.length+')');
+  saveCloud();renderDuels();
+}
 function duelStatusText(d){
   const isM=duelIsMine(d);
   const isC=duelIsChallenger(d);
   if(d.status==='done')return '🏆 Победил: '+(d.winner||'—');
+  if(d.status==='void')return '⏳ Дуэль просрочена (7 дней без завершения)';
   if(d.status==='active'){
     if(isC){
       if(d.challengerResult!=null&&d.opponentResult==null)return '✅ Твой результат записан. Ждём результат '+(d.acceptedBy||'соперника')+'…';
@@ -3175,17 +3209,39 @@ function initDuelListener(){
           }
         }
         if(old.status==='active'&&gd.status==='done'&&gd.winner&&now-_lastLocalDuelDone>4000){
-          if(gd.winnerUid===currentUser.uid){toast('🏆 Ты победил в дуэли!');sfx.max();confetti(80);}
+          if(gd.winnerUid===currentUser.uid){
+            // Победителю, который не подавал результат последним, победу засчитывает только слушатель
+            if(!_creditedDuelWins.has(gd.id)){
+              _creditedDuelWins.add(gd.id);
+              state.duelsWon=(state.duelsWon||0)+1;
+              saveCloud();checkAch();
+            }
+            toast('🏆 Ты победил в дуэли!');sfx.max();confetti(80);
+          }
           else{toast('Дуэль завершена. Победил '+gd.winner);}
         }
       });
       state.duels=merged;
       saveLS();
       renderDuels();
+      syncLocalDuels();
     },e=>{console.warn('duel listener:',e);});
   }catch(e){console.warn('initDuelListener:',e);}
 }
 function stopDuelListener(){if(duelUnsub){duelUnsub();duelUnsub=null;}}
+// Локально созданные офлайн-дуэли досинхронизируем в облако при появлении сети
+async function syncLocalDuels(){
+  if(!db||!currentUser)return;
+  const locals=(state.duels||[]).filter(d=>d.local&&(d.status==='open'||d.status==='active'));
+  if(!locals.length)return;
+  for(const d of locals){
+    try{
+      await db.collection('duels').doc(d.id).set({...d,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      d.local=false;
+    }catch(e){console.warn('syncLocalDuels:',e);}
+  }
+  saveCloud();renderDuels();
+}
 /* ══════════════════════════════
    УВЕДОМЛЕНИЯ — исправленная версия
    Проблема была: Notification API работает только на HTTPS или localhost.
@@ -3297,7 +3353,7 @@ function updateNotifStatus(){
 
 /* ══ EXPORT / RESET ══ */
 function exportData(){const a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(state));a.download='mtb_backup.json';a.click();}
-async function resetAll(){localStorage.removeItem(SK);localStorage.removeItem('mtb_dts');localStorage.removeItem('mtb_wts');try{await idbClear();}catch(e){}if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();await db.collection('leaderboard').doc(currentUser.uid).delete();}catch(e){}}location.reload();}
+async function resetAll(){clearLSPrefix();try{await idbClear();}catch(e){}if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();await db.collection('leaderboard').doc(currentUser.uid).delete();}catch(e){}}location.reload();}
 
 /* ══ EVENTS ══ */
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
