@@ -192,7 +192,7 @@ select.field{cursor:pointer;}
 /* Зелёный фоновый прогресс */
 .ch-card .ch-progress-bg{
   position:absolute;inset:0;
-  background:linear-gradient(90deg,rgba(50,215,75,.12),rgba(50,215,75,.04));
+  background:linear-gradient(90deg,rgba(76,201,240,.10),rgba(124,92,255,.04));
   border-radius:20px;
   width:0%;transition:width .8s cubic-bezier(.4,0,.2,1);
   pointer-events:none;
@@ -210,7 +210,7 @@ select.field{cursor:pointer;}
 
 .ch-desc{font-size:15px;font-weight:600;margin:0 0 10px;position:relative;}
 .ch-progress-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.08);margin:8px 0;overflow:hidden;position:relative;}
-.ch-progress-bar>div{height:100%;background:linear-gradient(90deg,var(--good),#28a745);border-radius:999px;transition:width .5s;}
+.ch-progress-bar>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .5s;}
 .ch-progress-label{font-size:11px;color:var(--muted);font-family:var(--fm);margin-bottom:8px;position:relative;}
 .ch-complete-btn{width:100%;padding:10px;border-radius:12px;font-size:14px;font-weight:800;font-family:var(--fb);border:0;cursor:pointer;transition:.2s;position:relative;}
 .ch-complete-btn:disabled{opacity:.4;cursor:not-allowed;}
@@ -288,6 +288,26 @@ select.field{cursor:pointer;}
 .tt-feed .tt-item{border-radius:20px;margin:0 0 8px;}
 .tt-feed .tt-item:first-child{margin-top:0;}
 
+/* Фото-доказательства в ленте */
+.tt-photos{position:absolute;inset:0;overflow:hidden;touch-action:pan-y;}
+.tt-photos .tp-track{display:flex;height:100%;transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.tt-photos .tp-slide{flex:0 0 100%;height:100%;}
+.tt-photos .tp-slide img{width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none;-webkit-user-drag:none;}
+.tt-photos .tp-dots{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;z-index:3;}
+.tt-photos .tp-dot{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.35);transition:.2s;}
+.tt-photos .tp-dot.on{background:#fff;width:18px;}
+.tt-photos .tp-count{position:absolute;top:10px;right:12px;z-index:3;font-size:12px;font-weight:800;color:#fff;background:rgba(0,0,0,.45);padding:4px 10px;border-radius:99px;font-family:var(--fm);}
+.tt-photos .tp-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,.4);z-index:3;pointer-events:none;font-family:var(--fm);}
+
+/* Сезонные ивенты */
+.event-banner{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(251,191,36,.14),rgba(255,69,58,.10));border:1px solid rgba(251,191,36,.35);border-radius:16px;padding:12px 14px;margin-bottom:12px;font-size:13px;font-weight:700;animation:cardIn .3s ease both;}
+.event-banner .eb-ic{font-size:22px;flex-shrink:0;}
+.event-banner small{display:block;font-size:11px;color:var(--muted);font-weight:500;font-family:var(--fm);}
+
+/* Превью фото в модалке загрузки */
+.pp-thumbs{display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:4px;}
+.pp-thumbs img{width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid var(--line);flex-shrink:0;}
+
 /* ПРОФИЛЬ */
 .pf-hero{position:relative;overflow:hidden;background:linear-gradient(160deg,rgba(32,38,56,.97),rgba(18,22,34,.97));border:1px solid var(--line);border-radius:24px;padding:22px 18px;margin-bottom:14px;text-align:center;}
 .pf-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% -10%,rgba(76,201,240,.16),transparent 55%);pointer-events:none;}
@@ -334,6 +354,13 @@ select.field{cursor:pointer;}
 .duel-vs{display:flex;align-items:center;gap:12px;margin:10px 0;}
 .duel-vs .player{flex:1;text-align:center;font-weight:700;}
 .vs-badge{font-size:20px;font-weight:900;color:var(--danger);font-family:var(--fm);}
+.dp-nick{font-size:14px;font-weight:900;color:var(--text);word-break:break-word;}
+.dp-res{font-size:12px;font-weight:800;color:var(--accent);margin-top:4px;}
+.duel-status{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.5;text-align:center;}
+.duel-form{display:flex;gap:8px;}
+.duel-form .field{margin:0;flex:1;min-width:0;}
+.duel-wait{text-align:center;font-size:13px;font-weight:700;color:var(--warn);padding:8px;}
+.duel-done{text-align:center;font-weight:900;color:var(--good);padding:8px;font-size:14px;}
 
 /* WHY */
 .why-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -404,6 +431,11 @@ select.field{cursor:pointer;}
 .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
 .modal-head h2{font-size:24px;font-family:var(--fd);letter-spacing:2px;}
 .vid-box{width:100%;aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden;margin-bottom:14px;}
+#playerImg{width:100%;height:100%;object-fit:contain;display:none;background:#000;}
+#playerImgNav{position:absolute;top:50%;transform:translateY(-50%);z-index:5;display:none;gap:0;}
+#playerImgNav button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:rgba(10,12,18,.7);color:#fff;font-size:18px;cursor:pointer;display:grid;place-items:center;margin:0 4px;}
+#playerImgNav button:active{transform:scale(.92);}
+#playerImgCounter{position:absolute;top:56px;left:50%;transform:translateX(-50%);z-index:5;font-size:12px;font-weight:800;color:#fff;background:rgba(0,0,0,.5);padding:4px 12px;border-radius:99px;font-family:var(--fm);}
 .vid-box iframe{width:100%;height:100%;border:0;}
 .timer-wrap{background:linear-gradient(135deg,rgba(76,201,240,.07),rgba(124,92,255,.07));border:1px solid rgba(76,201,240,.18);border-radius:18px;padding:16px;margin-bottom:14px;text-align:center;}
 .timer-disp{font-size:50px;font-weight:900;font-family:var(--fm);color:var(--accent);line-height:1;margin-bottom:12px;}
@@ -523,7 +555,7 @@ select.field{cursor:pointer;}
     <button class="tab-btn active" data-tab="skills">🎯<span>Навыки</span></button>
     <button class="tab-btn" data-tab="records">📊<span>Рекорды</span></button>
     <button class="tab-btn" data-tab="challenges">⚔️<span>Челленджи</span></button>
-    <button class="tab-btn" data-tab="bikes">🚲<span>Гараж</span></button>
+    <button class="tab-btn" data-tab="bikes">🚲<span>Байки</span></button>
     <button class="tab-btn" data-tab="videos">🎬<span>Видео</span></button>
     <button class="tab-btn" data-tab="friends">🏆<span>Топ</span></button>
     <button class="tab-btn" data-tab="friends2">👥<span>Друзья</span></button>
@@ -566,7 +598,7 @@ select.field{cursor:pointer;}
         <span class="ch-badge bd-d">Дневной</span>
         <span class="ch-badge bd-w">Недельный</span>
         <span class="ch-badge bd-t">На доверии</span>
-        <span style="font-size:11px;color:var(--muted);align-self:center;">— зелёный фон = прогресс по навыкам</span>
+        <span style="font-size:11px;color:var(--muted);align-self:center;">— полоса = прогресс по навыкам</span>
       </div>
       <div id="challengesList"></div>
     </div>
@@ -643,6 +675,7 @@ select.field{cursor:pointer;}
         <div class="my-code-num" id="myCodeNum">——————</div>
         <button class="btn btn-ghost copy-btn" onclick="copyMyCode()">📋</button>
       </div>
+      <button class="btn btn-ghost btn-full" style="margin:8px 0 12px;" onclick="shareApp()">📤 Поделиться приложением</button>
       <div class="friends-add-row">
         <input id="friendCodeInput" class="field" type="text" placeholder="Введи код друга (12 цифр)" maxlength="12"/>
         <button class="btn btn-primary" onclick="sendFriendRequest()">Отправить</button>
@@ -664,8 +697,9 @@ select.field{cursor:pointer;}
     <div class="panel">
       <div class="panel-head"><div><h3>⚡ Дуэли</h3></div></div>
       <div class="form-card" style="margin-bottom:14px;">
-        <select id="duelSkill" class="field" style="cursor:pointer;"><option value="wh">Вилли (метры)</option><option value="mn">Мэнуал (метры)</option><option value="ts">Трекстенд (секунды)</option><option value="bh">Банни-хоп (см)</option><option value="st">Стоппи (метры)</option></select>
-        <input id="duelTarget" class="field" placeholder="Цель — напр. 30 метров"/>
+        <select id="duelSkill" class="field" style="cursor:pointer;" onchange="updateDuelHint()"><option value="wh">Вилли (метры)</option><option value="mn">Мэнуал (метры)</option><option value="ts">Трекстенд (секунды)</option><option value="bh">Банни-хоп (см)</option><option value="st">Стоппи (метры)</option></select>
+        <input id="duelTarget" class="field" type="number" min="1" step="1" placeholder="Цель — напр. 30 метров"/>
+        <div id="duelHint" class="tt-tip" style="margin:4px 0 0;"></div>
         <input id="duelOpponent" class="field" placeholder="Никнейм соперника (необязательно)"/>
         <button class="btn btn-primary btn-full" onclick="createDuel()">Бросить вызов! ⚡</button>
       </div>
@@ -757,6 +791,9 @@ select.field{cursor:pointer;}
       <label class="btn btn-primary btn-full" style="text-align:center;cursor:pointer;display:block;">📁 Выбрать видео из галереи<input type="file" id="proofFile" accept="video/*" style="display:none;"/></label>
       <div id="proofFileInfo" class="tt-tip" style="display:none;margin-top:8px;"></div>
       <video id="proofVidPrev" class="tt-vprev" controls playsinline style="display:none;"></video>
+      <label class="btn btn-ghost btn-full" style="text-align:center;cursor:pointer;display:block;margin-top:8px;">🖼 Добавить фото трюка (до 6)<input type="file" id="proofPhotos" accept="image/*" multiple style="display:none;"/></label>
+      <div id="proofPhotoPrev" class="pp-thumbs"></div>
+      <div id="proofPhotoInfo" class="tt-tip" style="display:none;margin-top:8px;">💡 Фото хранятся на твоём устройстве и видны только тебе (пока нет облачного хранилища).</div>
       <div id="proofUrlWrap" style="margin-top:10px;">
         <input id="proofUrl" class="field" placeholder="…или ссылка на YouTube (необязательно)"/>
         <div id="proofPrev" class="tt-prev"></div>
@@ -778,7 +815,16 @@ select.field{cursor:pointer;}
 <div id="playerModal" class="modal">
   <div class="modal-card" style="max-width:640px;">
     <div class="modal-head"><h2 id="playerTitle">Видео</h2><button class="btn btn-ghost" style="padding:8px 12px;" onclick="closePlayer()">✕</button></div>
-    <div class="vid-box"><iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" style="display:none;"></iframe><video id="playerVid" src="" controls playsinline style="display:none;width:100%;height:100%;background:#000;"></video></div>
+    <div class="vid-box">
+      <iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" style="display:none;"></iframe>
+      <video id="playerVid" src="" controls playsinline style="display:none;width:100%;height:100%;background:#000;"></video>
+      <img id="playerImg" src="" alt="Фото" style="display:none;width:100%;height:100%;object-fit:contain;background:#000;">
+      <div id="playerImgNav">
+        <button id="playerImgPrev" onclick="navPlayerImg(-1)">◀</button>
+        <button id="playerImgNext" onclick="navPlayerImg(1)">▶</button>
+      </div>
+      <div id="playerImgCounter"></div>
+    </div>
   </div>
 </div>
 
@@ -848,12 +894,14 @@ function popSt(id){const el=document.getElementById(id);if(!el)return;el.classLi
 const LVL_GOALS={wh:['Подними переднее колесо хотя бы на 5 см','Удержи вилли на 10 метров','Вилли на 30 метров — контролируй тормозом','Вилли на 100 метров — уровень Red Bull'],mn:['Выброси вес назад без педалирования','Мэнуал на 10 метров, руки прямые','Мэнуал на 20 метров — баланс коленями','Мэнуал на 50 метров — про-стрит'],ts:['Простой неподвижно 5 секунд','Трекстенд 15 секунд','Трекстенд 30 секунд с закрытыми глазами','100 секунд — уровень триал-про'],bh:['Отработай фазу фронт-лифта','Скуп — оба колеса отрываются','Полноценный прыжок','Высокий чистый хоп'],st:['Наклон вперёд — заднее отрывается','Стоппи 45°','Стоппи 90°','Full Control — удержание на переднем']};
 // max — физически достижимый предел
 const REC_SKILLS=[
-  {id:'wh',name:'Вилли',unit:'метров',icon:'🚴',max:500,hint:'макс. 500м'},
-  {id:'mn',name:'Мэнуал',unit:'метров',icon:'🏄',max:300,hint:'макс. 300м'},
-  {id:'ts',name:'Трекстенд',unit:'секунд',icon:'⏱️',max:3600,hint:'макс. 3600с'},
-  {id:'bh',name:'Банни-хоп',unit:'см высота',icon:'🦘',max:200,hint:'макс. 200см'},
-  {id:'st',name:'Стоппи',unit:'метров',icon:'🎯',max:100,hint:'макс. 100м'},
+  {id:'wh',name:'Вилли',unit:'метров',icon:'🚴',max:200000,hint:'макс. 200км'},
+  {id:'mn',name:'Мэнуал',unit:'метров',icon:'🏄',max:1500,hint:'макс. 1.5км'},
+  {id:'ts',name:'Трекстенд',unit:'секунд',icon:'⏱️',max:86400,hint:'макс. 24ч'},
+  {id:'bh',name:'Банни-хоп',unit:'см высота',icon:'🦘',max:250,hint:'макс. 250см'},
+  {id:'st',name:'Стоппи',unit:'метров',icon:'🎯',max:500,hint:'макс. 500м'},
 ];
+// Максимум цели в дуэлях — реалистичный потолок (меньше чем рекорды)
+const DUEL_MAX={wh:1000,mn:500,ts:600,bh:150,st:300};
 const SNAMES={wh:'Вилли',mn:'Мэнуал',ts:'Трекстенд',bh:'Банни-хоп',st:'Стоппи'};
 const SUNITS={wh:'метров',mn:'метров',ts:'секунд',bh:'см',st:'метров'};
 const ACHIEVEMENTS=[
@@ -894,6 +942,48 @@ const CH_TMPL=[
   {text:'Трекстенд → сразу Вилли (комбо!)',xp:70,type:'weekly',auto:false,trackType:'trust'},
   {text:'Побей любой свой рекорд',xp:50,type:'weekly',auto:false,trackType:'trust'},
 ];
+
+/* ══ СЕЗОННЫЕ ИВЕНТЫ (ротация по неделям, бесплатно) ══
+   xp2 — двойной XP на один трюк весь день
+   boostAll — +50% ко всем трюкам
+*/
+const EVENTS=[
+  {id:'wh2x',emoji:'🛞',title:'Неделя вилли',desc:'Вилли дают ДВОЙНОЙ XP до полуночи',skill:'wh',xp2:true},
+  {id:'bh2x',emoji:'🐇',title:'Неделя банни-хопа',desc:'Банни-хоп даёт ДВОЙНОЙ XP до полуночи',skill:'bh',xp2:true},
+  {id:'mn2x',emoji:'📏',title:'Неделя мэнуала',desc:'Мэнуал даёт ДВОЙНОЙ XP до полуночи',skill:'mn',xp2:true},
+  {id:'ts2x',emoji:'🧘',title:'Неделя трекстенда',desc:'Трекстенд даёт ДВОЙНОЙ XP до полуночи',skill:'ts',xp2:true},
+  {id:'st2x',emoji:'🛑',title:'Неделя стоппи',desc:'Стоппи даёт ДВОЙНОЙ XP до полуночи',skill:'st',xp2:true},
+  {id:'we',emoji:'🎉',title:'Выходной буст',desc:'+50% XP ко всем трюкам (сб-вс)',all:true},
+];
+function getWeekNumber(d){
+  const date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const dayNum=date.getUTCDay()||7;
+  date.setUTCDate(date.getUTCDate()+4-dayNum);
+  const yearStart=new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  return Math.ceil((((date-yearStart)/86400000)+1)/7);
+}
+function getActiveEvent(){
+  const d=new Date();
+  const dow=d.getDay();
+  if(dow===0||dow===6)return EVENTS[EVENTS.length-1]; // выходной буст
+  return EVENTS[getWeekNumber(d)%(EVENTS.length-1)];
+}
+function eventMultFor(skillId){
+  const ev=getActiveEvent();if(!ev)return 1;
+  if(ev.all)return 1.5;
+  if(ev.xp2&&ev.skill===skillId)return 2;
+  return 1;
+}
+function eventForSkill(skillId){
+  const ev=getActiveEvent();if(!ev)return null;
+  if(ev.all)return ev;
+  if(ev.xp2&&ev.skill===skillId)return ev;
+  return null;
+}
+function eventBannerHTML(){
+  const ev=getActiveEvent();if(!ev)return '';
+  return '<div class="event-banner"><div class="eb-ic">'+ev.emoji+'</div><div>'+ev.title+'<small>'+esc(ev.desc)+'</small></div></div>';
+}
 
 const DEF_SKILLS=[
   {id:'wh',name:'Вилли',image:'https://i.ibb.co/7xnbTSWB/1774284993874.png',levels:['Изи левл (подъем)','Уровень 2 (10 м)','Уровень 3 (30 м)','Босс Red Bull (100 м)'],video:'https://www.youtube.com/embed/xhYGbGGrNuU',steps:[{title:'Подъём',text:'Резко перенеси вес назад и нажми на педаль. Палец всегда на тормозе!',img:'https://i.ibb.co/Pz4P4gJT/Danny-Mac-Askil-Five-Ten-Do-A-Wheelie-Release-Group-Dave-Mackinson-scaled.jpg'},{title:'Баланс',text:'Если падаешь назад — жми задний тормоз. Если вперёд — подкручивай педали.',img:'https://i.ibb.co/PsLH4d0f/1774216418820.png'}]},
@@ -1004,6 +1094,7 @@ async function initFB(){
         if(!state.nickname)showNickScr();else initApp();
       }else{
         currentUser=null;
+        stopDuelListener();
         hideLoad();showAuthScr();
       }
     });
@@ -1262,6 +1353,7 @@ function initApp(){
   setSyncDot('synced');
   renderSkills();renderRecords();
   initNotifUI();updateStreak();genChallengesIfNeeded();
+  initDuelListener();
   setInterval(updateChTimer,60000);updateChTimer();
   genPWA();
   syncProofs();
@@ -1288,12 +1380,14 @@ function resetDailyCountersIfNeeded(){
     saveLS();
   }
 }
-function updateStreak(){const today=new Date().toDateString();const yest=new Date(Date.now()-86400000).toDateString();if(state.lastTrainDate&&state.lastTrainDate!==today&&state.lastTrainDate!==yest){state.streak=0;saveCloud();}renderStreak();}
+function updateStreak(){const today=new Date().toDateString();const yest=new Date(Date.now()-86400000).toDateString();const twoDays=new Date(Date.now()-2*86400000).toDateString();if(state.lastTrainDate&&state.lastTrainDate!==today&&state.lastTrainDate!==yest&&state.lastTrainDate!==twoDays){state.streak=0;saveCloud();}renderStreak();}
 function recordTrainToday(){
   const today=new Date().toDateString();
   const yest=new Date(Date.now()-86400000).toDateString();
+  const twoDays=new Date(Date.now()-2*86400000).toDateString();
   if(state.lastTrainDate===today)return; // уже записано сегодня
-  state.streak=(state.lastTrainDate===yest?(state.streak||0)+1:1);
+  if(state.lastTrainDate===yest||state.lastTrainDate===twoDays){state.streak=(state.streak||0)+1;}
+  else{state.streak=1;}
   state.lastTrainDate=today;
   saveCloud();renderStreak();
 }
@@ -1312,7 +1406,7 @@ function gotoTab(t){
   if(t==='videos'){const b=document.getElementById('ttAdd');if(b)b.style.display='flex';setVidSeg(vidSeg);loadVideos();}
   if(t==='friends')renderFriends();
   if(t==='friends2')renderFriendsTab();
-  if(t==='duel')renderDuels();
+  if(t==='duel'){updateDuelHint();renderDuels();}
   if(t==='profile')renderProfile();
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>gotoTab(btn.dataset.tab)));
@@ -1326,15 +1420,22 @@ function renderAch(){const el=document.getElementById('achList');if(!el)return;e
 function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);body.append(tit,p1,p2,pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();}
 
 /* ══ MODAL ══ */
-function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);document.getElementById('modalVideo').src=base.video;const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});const btn=document.getElementById('modalTrainBtn');btn.textContent=isMax?'✅ МАКСИМУМ ДОСТИГНУТ':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';btn.disabled=isMax;updateModalDaily();document.getElementById('modal').classList.add('show');}
+function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);document.getElementById('modalVideo').src=base.video;const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,false);btn.disabled=isMax;updateModalDaily();document.getElementById('modal').classList.add('show');}
 function closeModal(){timerReset();document.getElementById('modal').classList.remove('show');document.getElementById('modalVideo').src='';}
 
+function trainBtnLabel(isMax,dayDone){
+  if(isMax)return '✅ МАКСИМУМ ДОСТИГНУТ';
+  if(dayDone)return '😴 ЛИМИТ ДНЯ';
+  const em=eventMultFor(activeSkillId);
+  return em>1?'💪 ВЫПОЛНИТЬ ПОДХОД (+'+Math.round(10*em)+'% ×'+em+')':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';
+}
 function updateModalDaily(){
   const el=document.getElementById('modalDaily');if(!el)return;
   const user=state.skills.find(s=>s.id===activeSkillId);if(!user){el.style.display='none';return;}
   const used=user.trToday||0;const left=Math.max(0,MAX_APPROACHES_PER_DAY-used);
+  const ev=eventForSkill(activeSkillId);
   el.style.display='block';
-  el.textContent='Сегодня: '+used+' / '+MAX_APPROACHES_PER_DAY+' подходов'+(left?' — осталось '+left:'');
+  el.textContent=(ev?ev.emoji+' '+ev.title+'! ':'')+'Сегодня: '+used+' / '+MAX_APPROACHES_PER_DAY+' подходов'+(left?' — осталось '+left:'');
   el.style.color=left<=3?'var(--warn)':left<=0?'var(--danger)':'var(--muted)';
 }
 
@@ -1350,19 +1451,21 @@ function trainCurrent(){
   user.tr++;
   user.trToday=(user.trToday||0)+1;
   user.trSession=(user.trSession||0)+1;
-  user.pr+=10;
+  const em=eventMultFor(activeSkillId);
+  const gain=Math.round(10*em);
+  user.pr+=gain;
   recordTrainToday();
 
   if(user.pr>=100){
     if(user.lv<base.levels.length-1){user.lv++;user.pr=0;sfx.levelUp();showLvlUp('НОВЫЙ УРОВЕНЬ!',base.levels[user.lv],'🔥');toast('🔥 Новый уровень!');}
     else{user.pr=100;sfx.max();showLvlUp('ТРЮК ОСВОЕН!',base.name+' — ты мастер!','🏆',true);toast('🏆 Трюк освоен!');}
-  }else{sfx.tick();toast('+10% 💪');}
+  }else{sfx.tick();toast(em>1?'+'+gain+'% '+getActiveEvent().emoji+' XP ×'+em:'+10% 💪');}
 
   const isMax=user.lv>=base.levels.length-1&&user.pr>=100;
   const goals=LVL_GOALS[base.id];const lvIdx=Math.min(user.lv,base.levels.length-1);
   setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));
   const dayDone=(user.trToday||0)>=MAX_APPROACHES_PER_DAY;
-  const btn=document.getElementById('modalTrainBtn');btn.textContent=isMax?'✅ МАКСИМУМ ДОСТИГНУТ':dayDone?'😴 ЛИМИТ ДНЯ':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';btn.disabled=isMax||dayDone;updateModalDaily();
+  const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,dayDone);btn.disabled=isMax||dayDone;updateModalDaily();
   ['totalPoints','totalTrainings','openLevels','avgProgress'].forEach(popSt);
 
   // Проверяем и автозасчитываем AUTO-челленджи
@@ -1481,6 +1584,7 @@ function updateChTimer(){const el=document.getElementById('chTimer');if(!el)retu
 
 function renderChallenges(){
   const el=document.getElementById('challengesList');if(!el)return;el.innerHTML='';
+  el.insertAdjacentHTML('afterbegin',eventBannerHTML());
   const active=(state.challenges||[]).filter(c=>!c.completed);
   const done=(state.challenges||[]).filter(c=>c.completed).slice(-5);
 
@@ -1498,7 +1602,12 @@ function renderChallenges(){
     const head=document.createElement('div');head.className='ch-head';
     const badge=document.createElement('span');
     badge.className='ch-badge '+(ch.type==='weekly'?'bd-w':ch.auto===false?'bd-t':'bd-d');
-    badge.textContent=ch.type==='weekly'?'Недельный':ch.auto===false?'На доверии':'Дневной';
+    if(ch.type==='daily'){
+      const dayNum=Math.floor((todayMidnight()-(ch.created?new Date(ch.created).getTime():Date.now()))/86400000)+1;
+      badge.textContent='День '+Math.max(1,dayNum)+' · Дневной';
+    }else{
+      badge.textContent=ch.type==='weekly'?'Недельный':ch.auto===false?'На доверии':'Дневной';
+    }
     const xp=document.createElement('span');xp.className='ch-xp';xp.textContent='+'+ch.xp+' XP';
     head.append(badge,xp);
 
@@ -1588,7 +1697,9 @@ async function uploadBikePhoto(file){
         canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
         URL.revokeObjectURL(url);
         canvas.toBlob(b=>res(new File([b],file.name,{type:'image/jpeg'})),'image/jpeg',0.82);
-      };img.src=url;
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);res(file);};
+      img.src=url;
     });
   }
   return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(uploadFile);});
@@ -1628,7 +1739,7 @@ function renderBikes(){
   if(filterText)bikes=bikes.filter(b=>(b.name||'').toLowerCase().includes(filterText)||(b.type||'').toLowerCase().includes(filterText));
   if(filterType)bikes=bikes.filter(b=>b.type===filterType);
   feed.innerHTML='';
-  if(!bikes.length){const p=document.createElement('div');p.style.cssText='text-align:center;color:var(--muted);padding:28px;';p.textContent=bikesCache.length?'Ничего не найдено':'Гараж пуст — добавь первый байк! 🚲';feed.appendChild(p);return;}
+  if(!bikes.length){const p=document.createElement('div');p.style.cssText='text-align:center;color:var(--muted);padding:28px;';p.textContent=bikesCache.length?'Ничего не найдено':'Байков пока нет — добавь первый! 🚲';feed.appendChild(p);return;}
   bikes.forEach(b=>{
     const card=document.createElement('div');card.className='bike-card';
     let thumb;
@@ -1787,12 +1898,12 @@ async function addProof(){
   const title=rawTitle.replace(/[<>&"]/g,'').slice(0,100);
   const ytid=url?ytId(url):null;
   if(url&&!ytid)return toast('Неверная YouTube ссылка!');
-  if(!proofFile&&!ytid)return toast('Выбери видео из галереи или вставь ссылку!');
+  if(!proofFile&&!ytid&&!photoFiles.length)return toast('Выбери видео, фото или вставь ссылку!');
   if(!state.proofs)state.proofs=[];
-  if(state.proofs.length>=20){toast('Максимум 20 видео. Удали старые.');return;}
+  if(state.proofs.length>=20){toast('Максимум 20 записей. Удали старые.');return;}
   const id=Date.now().toString();
   btn.disabled=true;btn.textContent='⏳ Загружаю…';
-  let vidUrl='',vidPath='',localVid=false;
+  let vidUrl='',vidPath='',localVid=false,photos=[];
   if(proofFile){
     showProg('Сохраняю видео на устройстве…');
     try{
@@ -1803,22 +1914,36 @@ async function addProof(){
       hideProg();toast('Ошибка сохранения видео: '+e.message);
       btn.disabled=false;btn.textContent='Загрузить 🎥';return;
     }
+  }else if(photoFiles.length){
+    showProg('Сохраняю фото на устройстве…');
+    try{
+      for(let i=0;i<photoFiles.length;i++){
+        const k='photo_'+id+'_'+i;
+        await idbPut(k,photoFiles[i]);
+        photos.push(k);
+      }
+    }catch(e){
+      hideProg();toast('Ошибка сохранения фото: '+e.message);
+      btn.disabled=false;btn.textContent='Загрузить 🎥';return;
+    }
   }
   hideProg();
-  const proof={id,title,skill,ytId:ytid||'',vidUrl,vidPath,localVid,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0};
+  const proof={id,title,skill,ytId:ytid||'',vidUrl,vidPath,localVid,photos,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0};
   state.proofs.unshift(proof);
   document.getElementById('proofTitle').value='';
   document.getElementById('proofUrl').value='';
   const fi=document.getElementById('proofFile');if(fi)fi.value='';
-  proofFile=null;
+  proofFile=null;photoFiles=[];
   const info=document.getElementById('proofFileInfo');if(info)info.style.display='none';
+  const pip=document.getElementById('proofPhotoInfo');if(pip)pip.style.display='none';
+  const ppv=document.getElementById('proofPhotoPrev');if(ppv)ppv.innerHTML='';
   const vp=document.getElementById('proofVidPrev');if(vp){vp.pause();vp.removeAttribute('src');vp.load();vp.style.display='none';}
   const pv=document.getElementById('proofPrev');if(pv){pv.classList.remove('loaded');pv.innerHTML='';}
   closeProofModal();
   sfx.save();saveCloud();
   pushProofToCloud(proof);
   loadVideos();
-  toast('🎬 Видео загружено!');checkAutoCompleteChallenge();checkAch();
+  toast(photos.length?'🖼 Фото загружено!':'🎬 Видео загружено!');checkAutoCompleteChallenge();checkAch();
   const feed=document.getElementById('proofFeed');if(feed)feed.scrollTop=0;
   btn.disabled=false;btn.textContent='Загрузить 🎥';
 }
@@ -1847,6 +1972,26 @@ document.getElementById('proofFile').addEventListener('change',function(){
   proofFile=f;
   if(info){info.style.display='block';info.textContent='📎 '+f.name+' ('+fmtSize(f.size)+')';}
   if(pv){pv.src=URL.createObjectURL(f);pv.style.display='block';pv.load();}
+});
+let photoFiles=[];
+document.getElementById('proofPhotos').addEventListener('change',function(){
+  const files=this.files?Array.from(this.files):[];
+  const info=document.getElementById('proofPhotoInfo');
+  const prev=document.getElementById('proofPhotoPrev');
+  if(!files.length){photoFiles=[];if(info)info.style.display='none';if(prev)prev.innerHTML='';return;}
+  const imgs=files.filter(f=>/^image\//i.test(f.type));
+  if(!imgs.length){toast('Можно загружать только изображения');this.value='';if(info)info.style.display='none';return;}
+  if(imgs.length>6){imgs.length=6;toast('Максимум 6 фото — беру первые 6');}
+  imgs.forEach(f=>{if(f.size>10*1024*1024)toast('Фото «'+f.name+'» больше 10 МБ — может не сохраниться');});
+  photoFiles=imgs;
+  prev.innerHTML='';
+  imgs.forEach((f,i)=>{
+    const u=URL.createObjectURL(f);
+    const im=document.createElement('img');im.src=u;im.alt='Фото '+(i+1);
+    im.onclick=()=>{const u2=URL.createObjectURL(f);showPlayerImg([u2],0,'Фото');};
+    prev.appendChild(im);
+  });
+  if(info){info.style.display='block';info.textContent='🖼 Выбрано фото: '+imgs.length;}
 });
 function showProg(txt){
   const w=document.getElementById('proofProgWrap');if(w)w.style.display='block';
@@ -1880,6 +2025,7 @@ function vidFromLocal(p){
     key:'local_'+p.id,ytId:p.ytId||'',vidUrl:p.vidUrl||(p.localVid?(vidURLMap[p.id]||''):'')||'',vidPath:p.vidPath||'',localVid:!!p.localVid,title:p.title,skill:p.skill||'wh',
     author:p.author||'',ts:new Date(p.date||Date.now()).getTime(),
     likes:p.likes||0,liked:my.includes('likes'),
+    photos:(p.photos||[]).map(k=>({key:k,url:''})),
     ratedBy:ratings,myRating:currentUser?(ratings[currentUser.uid]||0):0,
     ratingCount:rc,ratingSum:vals.reduce((a,b)=>a+b,0),
     ratingAvg:rc?Math.round(vals.reduce((a,b)=>a+b,0)/rc*10)/10:null,
@@ -1922,15 +2068,45 @@ function renderProofs(){
     const pp=document.createElement('p');
     let btn=null;
     if(vidSeg==='subs'){h3.textContent='📌 Нет подписок';pp.textContent='Найди райдеров во вкладке «Для тебя» и загляни в их профиль. Подписка покажет их видео здесь.';btn=document.createElement('button');btn.className='btn btn-ghost btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Показать «Для тебя»';btn.onclick=()=>setVidSeg('all');}
-    else if(vidSeg==='mine'){h3.textContent='🎬 Пока нет видео';pp.textContent='Покажи свои трюки другим райдерам!';btn=document.createElement('button');btn.className='btn btn-primary btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Загрузить первое видео 🎥';btn.onclick=openProofModal;}
-    else{h3.textContent='🎬 Лента пуста';pp.textContent='Покажи свой первый трюк всему сообществу!';btn=document.createElement('button');btn.className='btn btn-primary btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Загрузить первое видео 🎥';btn.onclick=openProofModal;}
+    else if(vidSeg==='mine'){h3.textContent='🎬 Пока нет видео';pp.textContent='Покажи свои трюки другим райдерам — видео или фото!';btn=document.createElement('button');btn.className='btn btn-primary btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Загрузить первое 🎥';btn.onclick=openProofModal;}
+    else{h3.textContent='🎬 Лента пуста';pp.textContent='Покажи свой первый трюк всему сообществу!';btn=document.createElement('button');btn.className='btn btn-primary btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Загрузить первое 🎥';btn.onclick=openProofModal;}
     box.append(h3,pp);if(btn)box.appendChild(btn);el.appendChild(box);return;
   }
   items.forEach(v=>{
     const item=document.createElement('div');item.className='tt-item';item.dataset.ytId=v.ytId;item.dataset.src=v.vidUrl||'';item.dataset.vkey=v.key;
     const vw=document.createElement('div');vw.className='tt-vid';
-    let mediaEl;
-    if(v.ytId){
+    let mediaEl=null;
+    if(v.photos&&v.photos.length){
+      // 🖼 Фото-карусель (хранится на устройстве)
+      const pc=document.createElement('div');pc.className='tt-photos';
+      const track=document.createElement('div');track.className='tp-track';
+      const urls=[];
+      v.photos.forEach((ph,i)=>{
+        const sl=document.createElement('div');sl.className='tp-slide';
+        const img=document.createElement('img');img.alt='Фото '+(i+1);img.loading='lazy';
+        sl.appendChild(img);track.appendChild(sl);
+        idbGet(ph.key).then(blob=>{if(blob&&sl.isConnected){const u=URL.createObjectURL(blob);urls[i]=u;img.src=u;}}).catch(()=>{});
+      });
+      pc.appendChild(track);
+      const dots=document.createElement('div');dots.className='tp-dots';
+      v.photos.forEach((p,i)=>{const d=document.createElement('div');d.className='tp-dot'+(i===0?' on':'');dots.appendChild(d);});
+      pc.appendChild(dots);
+      const cnt=document.createElement('div');cnt.className='tp-count';cnt.textContent='1 / '+v.photos.length;
+      pc.appendChild(cnt);
+      if(v.photos.length>1){const hint=document.createElement('div');hint.className='tp-hint';hint.textContent='← листай →';pc.appendChild(hint);}
+      let pi=0;
+      const goto=function(n){
+        pi=Math.max(0,Math.min(n,v.photos.length-1));
+        track.style.transform='translateX(-'+(pi*100)+'%)';
+        dots.querySelectorAll('.tp-dot').forEach((d,ii)=>d.classList.toggle('on',ii===pi));
+        cnt.textContent=(pi+1)+' / '+v.photos.length;
+      };
+      let sx=null;
+      pc.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{passive:true});
+      pc.addEventListener('touchend',e=>{if(sx===null)return;const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>40)goto(dx<0?pi+1:pi-1);sx=null;},{passive:true});
+      pc.addEventListener('click',()=>{const filled=urls.filter(Boolean);if(filled.length)showPlayerImg(filled,pi,v.title);});
+      vw.appendChild(pc);
+    }else if(v.ytId){
       mediaEl=document.createElement('iframe');mediaEl.title=v.title;mediaEl.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';mediaEl.allowFullscreen=true;
     }else{
       mediaEl=document.createElement('video');mediaEl.muted=true;mediaEl.loop=true;mediaEl.playsInline=true;mediaEl.setAttribute('playsinline','');mediaEl.setAttribute('preload','none');
@@ -1947,7 +2123,7 @@ function renderProofs(){
         }
       };
     }
-    vw.appendChild(mediaEl);item.appendChild(vw);
+    if(mediaEl)vw.appendChild(mediaEl);item.appendChild(vw);
     if(v.localVid&&!v.vidUrl){
       localVidUrl(v.pid).then(url=>{
         if(!url||!item.isConnected)return;
@@ -2189,7 +2365,7 @@ async function renderProfile(){
     stats:[
       {v:state.following.length,l:'Подписки'},
       {v:followers,l:'Подписчики'},
-      {v:(state.proofs||[]).length,l:'Видео'}
+      {v:(state.proofs||[]).length,l:'Доказательства'}
     ]
   });
   root.appendChild(hero);
@@ -2227,6 +2403,11 @@ async function renderFollowingList(){
   }
 }
 function pfThumb(p){
+  if(p.photos&&p.photos.length){
+    const img=document.createElement('img');img.alt='';img.loading='lazy';
+    idbGet(p.photos[0]).then(blob=>{if(blob)img.src=URL.createObjectURL(blob);});
+    return img;
+  }
   if(p.ytId){
     const img=document.createElement('img');img.src='https://i.ytimg.com/vi/'+p.ytId+'/hqdefault.jpg';img.alt='';img.loading='lazy';img.onerror=()=>{img.style.display='none';};
     return img;
@@ -2243,12 +2424,17 @@ function renderMyVids(){
   const g=document.getElementById('myVidGrid');if(!g)return;
   const proofs=state.proofs||[];
   g.innerHTML='';
-  if(!proofs.length){const d=document.createElement('div');d.className='pf-empty';d.textContent='Пока нет видео. Загрузи первое!';d.style.gridColumn='1/-1';g.appendChild(d);return;}
+  if(!proofs.length){const d=document.createElement('div');d.className='pf-empty';d.textContent='Пока нет доказательств. Загрузи первое!';d.style.gridColumn='1/-1';g.appendChild(d);return;}
   proofs.forEach(p=>{
     const vd=document.createElement('div');vd.className='pf-vid';vd.title=p.title;
     const t=document.createElement('div');t.className='pf-vid-t';t.textContent=p.title;
     vd.append(pfThumb(p),t);
     vd.onclick=()=>{
+      if(p.photos&&p.photos.length){
+        const urls=[];let ready=0;
+        p.photos.forEach((k,i)=>idbGet(k).then(blob=>{if(blob){urls[i]=URL.createObjectURL(blob);}ready++;if(ready===p.photos.length){const f=urls.filter(Boolean);if(f.length)showPlayerImg(f,0,p.title);}}).catch(()=>{ready++;}));
+        return;
+      }
       const src=p.vidUrl||(p.localVid?vidURLMap[p.id]:'')||'';
       if(src){playVideo(p.ytId,p.title,src);return;}
       if(p.localVid){
@@ -2306,25 +2492,55 @@ async function openProfile(uid,nick){
     }catch(e){const d=document.createElement('div');d.className='pf-empty';d.textContent='Ошибка загрузки видео';d.style.gridColumn='1/-1';g.appendChild(d);}
   }catch(e){body.innerHTML='<div class="pf-empty">Ошибка загрузки профиля</div>';}
 }
+let playerImgList=[],playerImgIdx=0;
 function playVideo(ytId,title,vidUrl){
   const m=document.getElementById('playerModal');if(!m)return;
   setT('playerTitle',title||'Видео');
   const f=document.getElementById('playerFrame');
   const v=document.getElementById('playerVid');
+  const im=document.getElementById('playerImg');
+  const nav=document.getElementById('playerImgNav');
+  const cnt=document.getElementById('playerImgCounter');
+  playerImgList=[];playerImgIdx=0;
   if(ytId){
     v.pause();v.removeAttribute('src');
     v.style.display='none';f.style.display='block';
+    im.style.display='none';if(nav)nav.style.display='none';if(cnt)cnt.textContent='';
     f.src='https://www.youtube.com/embed/'+ytId+'?autoplay=1&rel=0';
   }else if(vidUrl){
     f.src='';f.style.display='none';v.style.display='block';
+    im.style.display='none';if(nav)nav.style.display='none';if(cnt)cnt.textContent='';
     v.src=vidUrl;const p=v.play();if(p&&p.catch)p.catch(()=>{});
   }else{return;}
   m.classList.add('show');
+}
+function showPlayerImg(list,idx,title){
+  const m=document.getElementById('playerModal');if(!m)return;
+  setT('playerTitle',title||'Фото');
+  const f=document.getElementById('playerFrame');
+  const v=document.getElementById('playerVid');
+  const im=document.getElementById('playerImg');
+  const nav=document.getElementById('playerImgNav');
+  const cnt=document.getElementById('playerImgCounter');
+  f.src='';f.style.display='none';v.pause();v.removeAttribute('src');v.style.display='none';
+  playerImgList=list||[];playerImgIdx=Math.max(0,Math.min((idx||0),playerImgList.length-1));
+  im.style.display='block';
+  im.src=playerImgList[playerImgIdx];
+  if(nav)nav.style.display=(playerImgList.length>1)?'flex':'none';
+  if(cnt)cnt.textContent=(playerImgList.length>1)?(playerImgIdx+1)+' / '+playerImgList.length:'';
+  m.classList.add('show');
+}
+function navPlayerImg(d){
+  if(!playerImgList.length)return;
+  playerImgIdx=(playerImgIdx+d+playerImgList.length)%playerImgList.length;
+  const im=document.getElementById('playerImg');if(im)im.src=playerImgList[playerImgIdx];
+  const cnt=document.getElementById('playerImgCounter');if(cnt)cnt.textContent=(playerImgIdx+1)+' / '+playerImgList.length;
 }
 function closePlayer(){
   const m=document.getElementById('playerModal');if(!m)return;
   const f=document.getElementById('playerFrame');if(f)f.src='';
   const v=document.getElementById('playerVid');if(v){v.pause();v.removeAttribute('src');}
+  const im=document.getElementById('playerImg');if(im){im.style.display='none';im.removeAttribute('src');}
   m.classList.remove('show');
 }
 document.getElementById('playerModal').addEventListener('click',function(e){if(e.target===this)closePlayer();});
@@ -2433,6 +2649,19 @@ function copyMyCode(){
   if(!currentUser){toast('Firebase не подключён');return;}
   const code=currentUser.uid.substring(0,12);
   navigator.clipboard.writeText(code).then(()=>toast('Код скопирован!')).catch(()=>toast('Не удалось скопировать'));
+}
+async function shareApp(){
+  const url=location.origin+location.pathname;
+  const text='🚵‍♂️ MTB Skills Pro — тренируй вилли, мэнуал и банни-хоп! Прогресс, челленджи, дуэли и друзья. Заходи: '+url;
+  try{
+    if(navigator.share){await navigator.share({title:'MTB Skills Pro 🚵‍♂️',text,url});return;}
+  }catch(e){if(e.name==='AbortError')return;}
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('Ссылка скопирована! 📤');
+  }catch(e2){
+    window.prompt('Скопируй ссылку:',url);
+  }
 }
 
 async function sendFriendRequest(){
@@ -2611,27 +2840,34 @@ document.getElementById('friendFilter')?.addEventListener('input',renderFriends)
 document.getElementById('friendSort')?.addEventListener('change',renderFriends);
 
 /* ══ DUELS ══ */
+let duelUnsub=null;
+let _lastLocalDuelDone=0;
+
+function updateDuelHint(){
+  const el=document.getElementById('duelHint');if(!el)return;
+  const skill=document.getElementById('duelSkill').value;
+  const mx=DUEL_MAX[skill]||1000;
+  el.textContent='Максимум цели: '+mx+' '+(SUNITS[skill]||'');
+}
+function duelIsChallenger(d){
+  return (d.challengerUid&&currentUser&&d.challengerUid===currentUser.uid)||(!d.challengerUid&&d.challenger===state.nickname);
+}
+function duelIsMine(d){
+  if(!currentUser)return false;
+  return (d.challengerUid&&d.challengerUid===currentUser.uid)||(d.acceptedByUid&&d.acceptedByUid===currentUser.uid)||(!d.challengerUid&&d.challenger===state.nickname)||(!d.acceptedByUid&&d.acceptedBy===state.nickname);
+}
 async function createDuel(){
   if(!currentUser){toast('Сначала войди!');return;}
   const skill=document.getElementById('duelSkill').value;
-  const target=document.getElementById('duelTarget').value.trim();
+  const target=parseFloat(document.getElementById('duelTarget').value);
   const opponent=document.getElementById('duelOpponent').value.trim();
-  if(!target)return toast('Укажи цель!');
+  if(!target||isNaN(target)||target<1)return toast('Укажи цель!');
+  const mx=DUEL_MAX[skill]||1000;
+  if(target>mx)return toast('Максимум цели: '+mx+' '+(SUNITS[skill]||''));
   if(!state.duels)state.duels=[];
-  const myActive=state.duels.filter(d=>d.challenger===state.nickname&&(d.status==='open'||d.status==='active'));
+  const myActive=state.duels.filter(d=>duelIsMine(d)&&(d.status==='open'||d.status==='active'));
   if(myActive.length>=1){toast('⚠️ У тебя уже есть дуэль! Заверши или отмени её.');return;}
-  const duel={
-    id:Date.now().toString(),
-    skill,target,
-    opponent:opponent||null,
-    challenger:state.nickname,
-    challengerUid:currentUser.uid,
-    participants:[currentUser.uid],
-    status:'open',
-    created:new Date().toISOString(),
-    challengerResult:null,opponentResult:null,
-    acceptedBy:null,acceptedByUid:null,winner:null
-  };
+  const duel={id:Date.now().toString(),skill,target:String(Math.floor(target)),opponent:opponent||null,challenger:state.nickname,challengerUid:currentUser.uid,participants:[currentUser.uid],status:'open',created:new Date().toISOString(),challengerResult:null,opponentResult:null,acceptedBy:null,acceptedByUid:null,winner:null};
   state.duels.unshift(duel);
   if(db){
     try{
@@ -2643,16 +2879,15 @@ async function createDuel(){
   document.getElementById('duelOpponent').value='';
   saveCloud();renderDuels();
 }
-
 async function acceptDuel(id){
   const d=state.duels.find(x=>x.id===id);
   if(!d)return;
-  if(d.challenger===state.nickname)return toast('Нельзя принять свою дуэль!');
+  if(duelIsMine(d))return toast('Нельзя принять свою дуэль!');
   if(d.acceptedBy)return toast('Дуэль уже принята!');
+  if(!currentUser)return toast('Сначала войди!');
   d.acceptedBy=state.nickname;
   d.acceptedByUid=currentUser.uid;
   d.status='active';
-  // Добавляем UID соперника в participants — теперь он тоже может обновлять дуэль
   if(!d.participants)d.participants=[d.challengerUid];
   if(!d.participants.includes(currentUser.uid))d.participants.push(currentUser.uid);
   if(db){
@@ -2661,20 +2896,21 @@ async function acceptDuel(id){
         acceptedBy:state.nickname,
         acceptedByUid:currentUser.uid,
         status:'active',
-        // arrayUnion безопаснее чем перезапись — не затирает существующие UID
         participants:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
       });
-    }catch(e){console.warn('acceptDuel update:',e);}
+    }catch(e){console.warn('acceptDuel update:',e);toast('Не удалось принять: '+e.message);}
   }
   sfx.levelUp();toast('Принято! ⚡');saveCloud();renderDuels();
 }
-async function submitDuelResult(id){
+async function submitDuelResult(id,val){
   const d=state.duels.find(x=>x.id===id);if(!d)return;
-  const val=parseFloat(prompt('Твой результат ('+SUNITS[d.skill]+'):'));
-  if(isNaN(val)||val<=0)return toast('Неверно!');
-  // Определяем роль по UID (надёжнее чем по никнейму — ник можно поменять)
-  const isC=d.challengerUid===currentUser.uid;
-  const isO=d.acceptedByUid===currentUser.uid;
+  if(val==null||val==='')val=prompt('Твой результат ('+SUNITS[d.skill]+'):');
+  val=parseFloat(val);
+  if(isNaN(val)||val<=0)return toast('Введи число больше 0!');
+  const mx=DUEL_MAX[d.skill]||1000;
+  if(val>mx)return toast('Максимум '+mx+' '+SUNITS[d.skill]);
+  const isC=duelIsChallenger(d);
+  const isO=d.acceptedByUid===currentUser.uid||(!d.acceptedByUid&&d.acceptedBy===state.nickname);
   if(!isC&&!isO){toast('Ты не участник дуэли!');return;}
   const patch={};
   if(isC)patch.challengerResult=val;else patch.opponentResult=val;
@@ -2682,7 +2918,6 @@ async function submitDuelResult(id){
     try{await db.collection('duels').doc(id).update(patch);}catch(e){console.warn('submitDuelResult update:',e);}
   }
   if(isC)d.challengerResult=val;else d.opponentResult=val;
-  // Подтягиваем свежие данные из БД — результат соперника мог прийти раньше
   if(db){
     try{
       const s=await db.collection('duels').doc(id).get();
@@ -2691,10 +2926,10 @@ async function submitDuelResult(id){
   }
   if(d.challengerResult!=null&&d.opponentResult!=null&&d.status!=='done'){
     d.status='done';
-    // Победитель: у кого больше результат
     const challengerWins=d.challengerResult>=d.opponentResult;
     d.winner=challengerWins?d.challenger:d.acceptedBy;
     d.winnerUid=challengerWins?d.challengerUid:d.acceptedByUid;
+    _lastLocalDuelDone=Date.now();
     if(db){
       try{await db.collection('duels').doc(id).update({status:'done',winner:d.winner||null,winnerUid:d.winnerUid||null});}catch(e){console.warn('submitDuelResult done update:',e);}
     }
@@ -2717,18 +2952,154 @@ async function submitDuelResult(id){
 async function cancelDuel(id){
   const d=state.duels.find(x=>x.id===id);
   if(!d)return;
-  if(d.challenger!==state.nickname){toast('Только создатель может отменить дуэль!');return;}
-  if(d.status==='active'){
-    if(!confirm('Дуэль уже активна! Отменить?'))return;
-  }
+  if(!duelIsChallenger(d)){toast('Только создатель может отменить дуэль!');return;}
+  if(d.status==='active'&&!confirm('Дуэль уже активна! Отменить?'))return;
   state.duels=state.duels.filter(x=>x.id!==id);
   if(db){
     try{await db.collection('duels').doc(id).delete();}catch(e){console.warn('cancelDuel:',e);}
   }
   saveCloud();toast('Дуэль отменена');renderDuels();
 }
-async function renderDuels(){const el=document.getElementById('duelList');if(!el)return;el.innerHTML='';let duels=[...(state.duels||[])];if(db){try{const snap=await db.collection('duels').where('status','in',['open','active','done']).orderBy('createdAt','desc').limit(30).get();snap.docs.forEach(d=>{const gd={id:d.id,...d.data()};const i=duels.findIndex(x=>x.id===gd.id);if(i<0)duels.unshift(gd);else duels[i]=gd;});state.duels=duels;}catch(e){}}if(!duels.length){const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';p.textContent='Нет дуэлей.';el.appendChild(p);return;}duels.slice(0,20).forEach(d=>{const card=document.createElement('div');card.className='duel-card';const h4=document.createElement('h4');h4.textContent='⚡ '+(SNAMES[d.skill]||d.skill)+' — '+d.target;const vs=document.createElement('div');vs.className='duel-vs';const p1=document.createElement('div');p1.className='player';p1.textContent=d.challenger;if(d.challengerResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.challengerResult+' '+SUNITS[d.skill];p1.appendChild(r);}const vb=document.createElement('div');vb.className='vs-badge';vb.textContent='VS';const p2=document.createElement('div');p2.className='player';p2.textContent=d.acceptedBy?d.acceptedBy:(d.opponent?d.opponent:'??? (открытая)');if(d.opponentResult!=null){const r=document.createElement('div');r.style.cssText='font-size:11px;color:var(--accent);';r.textContent=d.opponentResult+' '+SUNITS[d.skill];p2.appendChild(r);}vs.append(p1,vb,p2);const meta=document.createElement('p');meta.style.cssText='font-size:12px;color:var(--muted);margin:0 0 10px;';const dl=d.deadline?' · Дедлайн: '+d.deadline:'';meta.textContent=(d.status==='done'?'Победитель: '+(d.winner||'—'):d.status==='active'?'Активна':'Открытая')+dl;card.append(h4,vs,meta);const isC=d.challenger===state.nickname;const isO=d.acceptedBy===state.nickname;const canAc=d.status==='open'&&!isC&&(!d.opponent||d.opponent===state.nickname);const canSu=d.status==='active'&&(isC||isO);if(canAc){const b=document.createElement('button');b.className='btn btn-primary btn-full';b.style.padding='10px';b.textContent='⚡ Принять!';b.onclick=()=>acceptDuel(d.id);card.appendChild(b);}else if(canSu){const b=document.createElement('button');b.className='btn btn-warn';b.style.cssText='padding:10px;font-size:13px;flex:1;';b.textContent='📏 Результат';b.onclick=()=>submitDuelResult(d.id);const cb=document.createElement('button');cb.className='btn btn-danger';cb.style.cssText='padding:10px 14px;font-size:13px;';cb.textContent='✕';cb.title='Отменить дуэль';cb.onclick=()=>{if(d.status==='active'&&!confirm('Дуэль активна! Отменить?'))return;cancelDuel(d.id);};const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px;';btnRow.append(b,cb);card.appendChild(btnRow);}else if(d.status==='done'){const dn=document.createElement('div');dn.style.cssText='text-align:center;font-weight:900;color:var(--good);padding:8px;';dn.textContent='🏆 '+(d.winner||'—')+' победил!';card.appendChild(dn);}else if(d.status==='open'&&isC){const cb=document.createElement('button');cb.className='btn btn-danger';cb.style.cssText='padding:10px;font-size:13px;width:100%;';cb.textContent='✕ Отменить дуэль';cb.onclick=()=>cancelDuel(d.id);card.appendChild(cb);}el.appendChild(card);});}
-
+function duelStatusText(d){
+  const isM=duelIsMine(d);
+  const isC=duelIsChallenger(d);
+  if(d.status==='done')return '🏆 Победил: '+(d.winner||'—');
+  if(d.status==='active'){
+    if(isC){
+      if(d.challengerResult!=null&&d.opponentResult==null)return '✅ Твой результат записан. Ждём результат '+(d.acceptedBy||'соперника')+'…';
+      if(d.challengerResult==null&&d.opponentResult!=null)return '⚡ '+(d.acceptedBy||'Соперник')+' записал результат! Теперь твой ход.';
+      return '⚡ Твой ход! Сделай трюк и введи результат.';
+    }else{
+      if(d.opponentResult!=null&&d.challengerResult==null)return '✅ Твой результат записан. Ждём результат '+(d.challenger||'соперника')+'…';
+      if(d.opponentResult==null&&d.challengerResult!=null)return '⚡ '+(d.challenger||'Соперник')+' записал результат! Теперь твой ход.';
+      return '⚡ Твой ход! Сделай трюк и введи результат.';
+    }
+  }
+  if(isM)return '⏳ Ждём соперника… Пригласи друга по коду (Друзья) или оставь вызов открытым.';
+  if(d.opponent&&d.opponent!=='??? (открытая)')return '⚡ Тебя вызвали на дуэль!';
+  return '🔥 Открытый вызов — прими!';
+}
+function duelResultForm(d){
+  const wrap=document.createElement('div');wrap.className='duel-form';
+  const inp=document.createElement('input');inp.className='field';inp.type='number';inp.min='1';inp.step='0.1';inp.max=DUEL_MAX[d.skill]||1000;
+  inp.placeholder='Твой результат ('+SUNITS[d.skill]+')';
+  const btn=document.createElement('button');btn.className='btn btn-success';btn.style.cssText='flex:1;padding:10px;font-size:13px;';
+  btn.textContent='💾 Сохранить';
+  btn.onclick=()=>submitDuelResult(d.id,inp.value);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')submitDuelResult(d.id,inp.value);});
+  wrap.append(inp,btn);
+  return wrap;
+}
+function duelActions(d){
+  const isM=duelIsMine(d);
+  const isC=duelIsChallenger(d);
+  if(d.status==='open'){
+    if(isM){
+      const cb=document.createElement('button');cb.className='btn btn-danger';cb.style.cssText='padding:10px;font-size:13px;width:100%;';
+      cb.textContent='✕ Отменить вызов';cb.onclick=()=>cancelDuel(d.id);
+      return cb;
+    }
+    const canAc=!d.acceptedBy&&(!d.opponent||d.opponent===state.nickname)&&currentUser;
+    if(canAc){
+      const b=document.createElement('button');b.className='btn btn-primary btn-full';b.style.padding='10px';
+      b.textContent='⚡ Принять вызов';b.onclick=()=>acceptDuel(d.id);
+      return b;
+    }
+    return null;
+  }
+  if(d.status==='active'){
+    if(!isM)return null;
+    if(d.challengerResult!=null&&d.opponentResult!=null)return null;
+    const mineRes=isC?d.challengerResult:d.opponentResult;
+    if(mineRes!=null)return null;
+    return duelResultForm(d);
+  }
+  if(d.status==='done'){
+    const dn=document.createElement('div');dn.className='duel-done';
+    dn.textContent='🏆 '+(d.winner||'—')+' выиграл!';
+    return dn;
+  }
+  return null;
+}
+function renderDuels(){
+  const el=document.getElementById('duelList');if(!el)return;
+  el.innerHTML='';
+  let duels=[...(state.duels||[])];
+  duels.sort((a,b)=>(a.status==='done'?1:0)-(b.status==='done'?1:0)||((b.created||'').localeCompare(a.created||'')));
+  duels=duels.slice(0,20);
+  if(!duels.length){
+    const p=document.createElement('div');p.className='form-card';p.style.cssText='text-align:center;color:var(--muted);padding:24px;';
+    p.textContent='Нет дуэлей. Брось вызов или прими открытый!';
+    el.appendChild(p);return;
+  }
+  duels.forEach(d=>{
+    const card=document.createElement('div');card.className='duel-card';
+    const h4=document.createElement('h4');
+    h4.textContent='⚡ '+(SNAMES[d.skill]||d.skill)+' — '+d.target+' '+(SUNITS[d.skill]||'');
+    card.appendChild(h4);
+    const vs=document.createElement('div');vs.className='duel-vs';
+    const p1=document.createElement('div');p1.className='player';
+    const n1=document.createElement('div');n1.className='dp-nick';n1.textContent=d.challenger||'???';
+    p1.appendChild(n1);
+    if(d.challengerResult!=null){const r=document.createElement('div');r.className='dp-res';r.textContent=d.challengerResult+' '+(SUNITS[d.skill]||'');p1.appendChild(r);}
+    const vb=document.createElement('div');vb.className='vs-badge';vb.textContent='VS';
+    const p2=document.createElement('div');p2.className='player';
+    const n2=document.createElement('div');n2.className='dp-nick';n2.textContent=d.acceptedBy?d.acceptedBy:(d.opponent?d.opponent:'Открытый вызов');
+    p2.appendChild(n2);
+    if(d.opponentResult!=null){const r=document.createElement('div');r.className='dp-res';r.textContent=d.opponentResult+' '+(SUNITS[d.skill]||'');p2.appendChild(r);}
+    vs.append(p1,vb,p2);
+    card.appendChild(vs);
+    const meta=document.createElement('p');meta.className='duel-status';
+    meta.textContent=duelStatusText(d);
+    card.appendChild(meta);
+    const act=duelActions(d);
+    if(act)card.appendChild(act);
+    el.appendChild(card);
+  });
+}
+function initDuelListener(){
+  if(!db||!currentUser||duelUnsub)return;
+  try{
+    duelUnsub=db.collection('duels').where('status','in',['open','active','done']).onSnapshot(snap=>{
+      const prev=(state.duels||[]).slice();
+      const merged=[...prev];
+      snap.docChanges().forEach(ch=>{
+        const gd={id:ch.doc.id,...ch.doc.data()};
+        const i=merged.findIndex(x=>x.id===gd.id);
+        if(ch.type==='added'){if(i<0)merged.unshift(gd);}
+        else if(ch.type==='modified'){if(i<0)merged.unshift(gd);else merged[i]=gd;}
+        else if(ch.type==='removed'){if(i>=0)merged.splice(i,1);}
+      });
+      const now=Date.now();
+      snap.docs.map(d=>({id:d.id,...d.data()})).filter(duelIsMine).forEach(gd=>{
+        const old=prev.find(x=>x.id===gd.id);
+        if(!old)return;
+        if(old.status==='open'&&gd.status==='active'&&duelIsChallenger(gd)){
+          toast('⚡ '+(gd.acceptedBy||'Кто-то')+' принял твой вызов!');
+          sfx.levelUp();
+        }
+        if(old.status==='active'&&gd.status==='active'&&duelIsMine(gd)){
+          const isC=duelIsChallenger(gd);
+          const myPrev=isC?old.challengerResult:old.opponentResult;
+          const myNow=isC?gd.challengerResult:gd.opponentResult;
+          const oppPrev=isC?old.opponentResult:old.challengerResult;
+          const oppNow=isC?gd.opponentResult:gd.challengerResult;
+          if(myPrev==null&&myNow==null&&oppPrev==null&&oppNow!=null){
+            toast('⚡ '+(isC?(gd.acceptedBy||'Соперник'):(gd.challenger||'Соперник'))+' записал результат! Твой ход.');
+          }
+        }
+        if(old.status==='active'&&gd.status==='done'&&gd.winner&&now-_lastLocalDuelDone>4000){
+          if(gd.winnerUid===currentUser.uid){toast('🏆 Ты победил в дуэли!');sfx.max();confetti(80);}
+          else{toast('Дуэль завершена. Победил '+gd.winner);}
+        }
+      });
+      state.duels=merged;
+      saveLS();
+      renderDuels();
+    },e=>{console.warn('duel listener:',e);});
+  }catch(e){console.warn('initDuelListener:',e);}
+}
+function stopDuelListener(){if(duelUnsub){duelUnsub();duelUnsub=null;}}
 /* ══════════════════════════════
    УВЕДОМЛЕНИЯ — исправленная версия
    Проблема была: Notification API работает только на HTTPS или localhost.
