@@ -1,6 +1,7 @@
 node_modules/
 secrets/
 .firebase/
+.wrangler/
 *firebase-adminsdk*.json
 *-firebase-adminsdk-*.json
 *.bak
