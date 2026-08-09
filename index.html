@@ -175,11 +175,24 @@ select.field{cursor:pointer;}
 /* RECORDS */
 .rec-entry{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px;}
 .rec-best{font-size:28px;font-weight:900;color:var(--accent);font-family:var(--fm);margin:6px 0;}
-.rec-chart{display:flex;align-items:flex-end;gap:4px;height:72px;margin:12px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px;}
+.rec-chart{display:flex;align-items:flex-end;gap:4px;height:88px;margin:12px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px;}
 .rec-bar{flex:1;min-width:8px;max-width:24px;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:4px 4px 0 0;transition:height .4s;position:relative;}
 .rec-bar:hover::after{content:attr(data-val);position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text);white-space:nowrap;background:var(--card);padding:2px 6px;border-radius:6px;}
 .rec-inp-row{display:flex;gap:8px;align-items:center;margin-top:10px;}
 .rec-inp-row .field{margin:0;flex:1;}
+.rec-bar-wrap{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;min-width:8px;}
+.rec-bar-date{font-size:9px;color:var(--muted);margin-top:2px;white-space:nowrap;}
+.rec-log-wrap{margin-top:16px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));}
+.rec-log-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);}
+.rec-log-head h4{margin:0;font-size:15px;}
+.rec-log-scroll{max-height:340px;overflow-y:auto;}
+table.rec-log{width:100%;border-collapse:collapse;font-size:12px;}
+table.rec-log th,table.rec-log td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);}
+table.rec-log th{position:sticky;top:0;background:#1a1f30;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+table.rec-log tr:last-child td{border-bottom:none;}
+.rec-log-best{color:#fbbf24;font-size:11px;}
+.rec-del{background:none;border:0;cursor:pointer;font-size:13px;opacity:.5;padding:2px 4px;}
+.rec-del:hover{opacity:1;}
 
 /* ═══════════════════════════════
    УМНЫЕ ЧЕЛЛЕНДЖИ
@@ -1015,6 +1028,45 @@ function loadLS(){
   }}catch(e){}return defState();
 }
 function saveLS(){localStorage.setItem(SK,JSON.stringify(state));}
+function mergeCloudState(c,l){
+  // Облако — база, но локальный прогресс не теряем: по каждому полю берём максимум,
+  // списки объединяем. Никнейм/настройки/челленджи — из облака (канон).
+  const out=JSON.parse(JSON.stringify(c||{}));
+  const addNums=k=>{if(typeof l[k]==='number'&&(l[k]||0)>(out[k]||0))out[k]=l[k];};
+  const unionArr=k=>{if(Array.isArray(l[k])){const s=new Set(Array.isArray(out[k])?out[k]:[]);l[k].forEach(x=>s.add(x));out[k]=Array.from(s);}};
+  if(!out.nickname&&l.nickname){out.nickname=l.nickname;if(l.nicknameChangedAt)out.nicknameChangedAt=l.nicknameChangedAt;}
+  if(Array.isArray(l.skills)){
+    if(!Array.isArray(out.skills))out.skills=[];
+    out.skills.forEach(cs=>{
+      const ls=l.skills.find(x=>x.id===cs.id);
+      if(!ls)return;
+      if(ls.lv>cs.lv||(ls.lv===cs.lv&&ls.pr>cs.pr)){cs.lv=ls.lv;cs.pr=ls.pr;}
+      if((ls.tr||0)>(cs.tr||0))cs.tr=ls.tr;
+    });
+    l.skills.forEach(ls=>{if(!out.skills.some(x=>x.id===ls.id))out.skills.push(JSON.parse(JSON.stringify(ls)));});
+  }
+  Object.keys(l.records||{}).forEach(sid=>{
+    const lr=Array.isArray(l.records[sid])?l.records[sid]:[];
+    const cr=(out.records=out.records||{});
+    cr[sid]=Array.isArray(cr[sid])?cr[sid]:[];
+    const have={};cr[sid].forEach(r=>{have[r.date]=1;});
+    lr.forEach(r=>{if(r&&r.date!=null&&!have[r.date])cr[sid].push({val:r.val,date:r.date});});
+  });
+  const sL=l.streak||0,sC=out.streak||0;if(sL>sC){out.streak=sL;out.lastTrainDate=l.lastTrainDate;}
+  unionArr('completedChallenges');
+  unionArr('unlockedAchievements');
+  unionArr('following');
+  const byId=new Map();(out.proofs=out.proofs||[]).forEach(p=>byId.set(p.id,1));
+  (l.proofs||[]).forEach(p=>{if(p&&p.id&&!byId.has(p.id)){byId.set(p.id,1);out.proofs.push(p);}});
+  const prc=out.proofReactions&&typeof out.proofReactions==='object'?out.proofReactions:{};out.proofReactions=prc;
+  const prl=l.proofReactions&&typeof l.proofReactions==='object'?l.proofReactions:{};
+  Object.keys(prl).forEach(k=>{if(!prc[k])prc[k]=prl[k];});
+  addNums('challengeXP');
+  addNums('duelsWon');
+  addNums('weeklyXpStart');
+  if(!out.weeklyXpStartTs&&l.weeklyXpStartTs)out.weeklyXpStartTs=l.weeklyXpStartTs;
+  return out;
+}
 async function saveCloud(){
   saveLS();
   if(!db||!currentUser)return;
@@ -1078,8 +1130,9 @@ async function initFB(){
         try{
           const doc=await db.collection('users').doc(user.uid).get();
           if(doc.exists){
-            state={...defState(),...doc.data()};
             const ls=JSON.parse(localStorage.getItem(SK)||'{}');
+            // Мерж: облако — база, но локальный оффлайн-прогресс не теряем
+            state=Array.isArray(ls.skills)?mergeCloudState(doc.data(),ls):{...defState(),...doc.data()};
             if(Array.isArray(ls.duels))state.duels=ls.duels;
             DEF_SKILLS.forEach(ds=>{
               const sk=state.skills.find(x=>x.id===ds.id);
@@ -1249,7 +1302,7 @@ async function deleteAccount(){
     const vsnap=await db.collection('videos').where('ownerId','==',uid).get();
     for(const vd of vsnap.docs){try{await vd.ref.delete();}catch(e8){}}
     const likedSnap=await db.collection('bikes').where('likedBy','array-contains',uid).get();
-    for(const bd of likedSnap.docs){try{await bd.ref.update({likedBy:firebase.firestore.FieldValue.arrayRemove(uid),likes:firebase.firestore.FieldValue.increment(-1)});}catch(e3){}}
+    for(const bd of likedSnap.docs){try{await bd.ref.update({likedBy:firebase.firestore.FieldValue.arrayRemove(uid)});}catch(e3){}}
     const duelsOwn=await db.collection('duels').where('challengerUid','==',uid).get();
     for(const dd of duelsOwn.docs){try{await dd.ref.delete();}catch(e4){}}
     const duelsPart=await db.collection('duels').where('participants','array-contains',uid).get();
@@ -1491,7 +1544,43 @@ function addRecord(id){
   else toast('📊 Записано: '+val);
   checkAch();
 }
-function renderRecords(){const el=document.getElementById('recordsList');if(!el)return;el.innerHTML='';REC_SKILLS.forEach(rs=>{const data=state.records[rs.id]||[];const best=data.length?Math.max(...data.map(r=>r.val)):0;const last10=data.slice(-10);const mx=last10.length?Math.max(...last10.map(r=>r.val)):1;const entry=document.createElement('div');entry.className='rec-entry';const hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;';const h4=document.createElement('h4');h4.style.cssText='margin:0;font-size:16px;';h4.textContent=rs.icon+' '+rs.name;const cnt=document.createElement('span');cnt.style.cssText='font-size:11px;color:var(--muted);';cnt.textContent='Замеров: '+data.length;hdr.append(h4,cnt);const bestEl=document.createElement('div');bestEl.className='rec-best';bestEl.textContent=best||'—';if(best){const u=document.createElement('span');u.style.cssText='font-size:14px;color:var(--muted);';u.textContent=' '+rs.unit;bestEl.appendChild(u);}entry.append(hdr,bestEl);if(data.length>=2){const chart=document.createElement('div');chart.className='rec-chart';last10.forEach(r=>{const bh=Math.max(6,(r.val/mx)*64);const bar=document.createElement('div');bar.className='rec-bar';bar.style.height=bh+'px';bar.dataset.val=r.val+' '+rs.unit;chart.appendChild(bar);});const dir=document.createElement('div');dir.style.cssText='display:flex;justify-content:space-between;font-size:10px;color:var(--muted);';dir.innerHTML='<span>← старые</span><span>новые →</span>';entry.append(chart,dir);}const row=document.createElement('div');row.className='rec-inp-row';const inp=document.createElement('input');inp.id='ri-'+rs.id;inp.className='field';inp.type='number';inp.min='0';inp.step='0.1';inp.placeholder='Новый ('+rs.unit+(rs.hint?', '+rs.hint:'')+')';inp.max=rs.max||'';inp.min='0';inp.style.margin='0';inp.addEventListener('keydown',e=>{if(e.key==='Enter')addRecord(rs.id);});const ab=document.createElement('button');ab.className='btn btn-primary';ab.style.cssText='padding:10px 14px;white-space:nowrap;';ab.textContent='📏 Записать';ab.onclick=()=>addRecord(rs.id);row.append(inp,ab);entry.appendChild(row);el.appendChild(entry);});}
+function renderRecords(){const el=document.getElementById('recordsList');if(!el)return;el.innerHTML='';REC_SKILLS.forEach(rs=>{const data=state.records[rs.id]||[];const best=data.length?Math.max(...data.map(r=>r.val)):0;const last10=data.slice(-10);const mx=last10.length?Math.max(...last10.map(r=>r.val)):1;const entry=document.createElement('div');entry.className='rec-entry';const hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;';const h4=document.createElement('h4');h4.style.cssText='margin:0;font-size:16px;';h4.textContent=rs.icon+' '+rs.name;const cnt=document.createElement('span');cnt.style.cssText='font-size:11px;color:var(--muted);';cnt.textContent='Замеров: '+data.length;hdr.append(h4,cnt);const bestEl=document.createElement('div');bestEl.className='rec-best';bestEl.textContent=best||'—';if(best){const u=document.createElement('span');u.style.cssText='font-size:14px;color:var(--muted);';u.textContent=' '+rs.unit;bestEl.appendChild(u);}entry.append(hdr,bestEl);if(data.length>=2){const chart=document.createElement('div');chart.className='rec-chart';last10.forEach(r=>{const bh=Math.max(6,(r.val/mx)*64);const wrap=document.createElement('div');wrap.className='rec-bar-wrap';const bar=document.createElement('div');bar.className='rec-bar';bar.style.height=bh+'px';bar.dataset.val=r.val+' '+rs.unit;const dl=document.createElement('div');dl.className='rec-bar-date';dl.textContent=fmtRecDate(r.date,true);wrap.append(bar,dl);chart.appendChild(wrap);});const dir=document.createElement('div');dir.style.cssText='display:flex;justify-content:space-between;font-size:10px;color:var(--muted);';dir.innerHTML='<span>← старые</span><span>новые →</span>';entry.append(chart,dir);}const row=document.createElement('div');row.className='rec-inp-row';const inp=document.createElement('input');inp.id='ri-'+rs.id;inp.className='field';inp.type='number';inp.min='0';inp.step='0.1';inp.placeholder='Новый ('+rs.unit+(rs.hint?', '+rs.hint:'')+')';inp.max=rs.max||'';inp.min='0';inp.style.margin='0';inp.addEventListener('keydown',e=>{if(e.key==='Enter')addRecord(rs.id);});const ab=document.createElement('button');ab.className='btn btn-primary';ab.style.cssText='padding:10px 14px;white-space:nowrap;';ab.textContent='📏 Записать';ab.onclick=()=>addRecord(rs.id);row.append(inp,ab);entry.appendChild(row);el.appendChild(entry);});buildRecLog(el);}
+function fmtRecDate(iso,s){if(!iso)return'—';const d=new Date(iso);if(isNaN(d.getTime()))return'—';const p=n=>String(n).padStart(2,'0');return s?p(d.getDate())+'.'+p(d.getMonth()+1):p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear();}
+function buildRecLog(el){
+  const rows=[];
+  REC_SKILLS.forEach(rs=>{(state.records[rs.id]||[]).forEach((r,i)=>{const v=parseFloat(r.val);if(!isNaN(v))rows.push({rs,val:v,date:r.date,i});});});
+  if(!rows.length)return;
+  rows.sort((a,b)=>(new Date(b.date)-new Date(a.date))||b.i-a.i);
+  const best={};
+  REC_SKILLS.forEach(rs=>{const d=state.records[rs.id]||[];if(d.length)best[rs.id]=Math.max(...d.map(x=>x.val));});
+  const wrap=document.createElement('div');wrap.className='rec-log-wrap';
+  const head=document.createElement('div');head.className='rec-log-head';
+  const h4=document.createElement('h4');h4.textContent='📋 Журнал замеров';
+  const cnt=document.createElement('span');cnt.style.cssText='font-size:11px;color:var(--muted);';cnt.textContent=rows.length+' записей';
+  const clear=document.createElement('button');clear.className='rec-del';clear.title='Удалить все замеры';clear.textContent='🗑';
+  clear.onclick=()=>confirmAction('Удалить все замеры?','Журнал рекордов будет очищен.',()=>{state.records={};saveCloud();renderRecords();});
+  head.append(h4,cnt,clear);
+  const sc=document.createElement('div');sc.className='rec-log-scroll';
+  const tbl=document.createElement('table');tbl.className='rec-log';
+  const thead=document.createElement('thead');const trh=document.createElement('tr');
+  ['Дата','Трюк','Результат',''].forEach(t=>{const th=document.createElement('th');th.textContent=t;trh.appendChild(th);});
+  thead.appendChild(trh);tbl.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  rows.slice(0,100).forEach(rw=>{
+    const tr=document.createElement('tr');
+    const tdD=document.createElement('td');tdD.textContent=fmtRecDate(rw.date);tdD.style.whiteSpace='nowrap';
+    const tdS=document.createElement('td');tdS.textContent=rw.rs.icon+' '+rw.rs.name;
+    const tdV=document.createElement('td');tdV.textContent=rw.val+' '+rw.rs.unit;
+    if(rw.val>0&&rw.val>=best[rw.rs.id]){const b=document.createElement('span');b.className='rec-log-best';b.textContent=' 🏆';tdV.appendChild(b);}
+    const tdX=document.createElement('td');tdX.style.textAlign='right';
+    const del=document.createElement('button');del.className='rec-del';del.textContent='🗑';del.title='Удалить замер';
+    del.onclick=()=>confirmAction('Удалить замер?',rw.rs.name+' · '+rw.val+' '+rw.rs.unit,()=>{state.records[rw.rs.id]=(state.records[rw.rs.id]||[]).filter((x,idx)=>idx!==rw.i);saveCloud();renderRecords();});
+    tdX.appendChild(del);
+    tr.append(tdD,tdS,tdV,tdX);
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);sc.appendChild(tbl);wrap.append(head,sc);el.appendChild(wrap);
+}
 
 /* ══════════════════════════════════════════
    УМНЫЕ ЧЕЛЛЕНДЖИ — СИСТЕМА АВТО-ПРОВЕРКИ
@@ -1752,7 +1841,7 @@ function renderBikes(){
     const likedBy=Array.isArray(b.likedBy)?b.likedBy:[];
     const hasLiked=currentUser&&likedBy.includes(currentUser.uid);
     info.append(nameEl,meta);
-    const likeBtn=document.createElement('button');likeBtn.className='like-btn'+(hasLiked?' liked':'');likeBtn.style.marginTop='10px';likeBtn.innerHTML=(hasLiked?'❤️':'🤍')+' '+(b.likes||0);
+    const likeBtn=document.createElement('button');likeBtn.className='like-btn'+(hasLiked?' liked':'');likeBtn.style.marginTop='10px';likeBtn.innerHTML=(hasLiked?'❤️':'🤍')+' '+likedBy.length;
     if(isOwn){likeBtn.disabled=true;const own=document.createElement('span');own.style.cssText='font-size:11px;color:var(--accent);display:block;margin-top:4px;';own.textContent='👈 Твой байк';info.appendChild(own);}
     else if(!currentUser){likeBtn.disabled=true;}
     else if(hasLiked){likeBtn.onclick=()=>unlikeBike(b.id,likeBtn);}
@@ -1768,8 +1857,8 @@ async function likeBike(id,btn){
   const b=bikesCache.find(x=>x.id===id);
   if(b&&b.ownerId===currentUser.uid){toast('Нельзя лайкать свой байк');return;}
   if(b&&Array.isArray(b.likedBy)&&b.likedBy.includes(currentUser.uid)){toast('Уже лайкнул');return;}
-  btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid),likes:firebase.firestore.FieldValue.increment(1)});const b=bikesCache.find(x=>x.id===id);if(b){if(!b.likedBy)b.likedBy=[];b.likedBy.push(currentUser.uid);b.likes=(b.likes||0)+1;}sfx.tick();btn.className='like-btn liked';btn.innerHTML='❤️ '+(b?b.likes:'');btn.onclick=()=>unlikeBike(id,btn);btn.disabled=false;toast('❤️');}catch(e){btn.disabled=false;toast('Ошибка: '+e.message);}}
-async function unlikeBike(id,btn){if(!currentUser||!db)return;btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid),likes:firebase.firestore.FieldValue.increment(-1)});const b=bikesCache.find(x=>x.id===id);if(b){b.likedBy=(b.likedBy||[]).filter(u=>u!==currentUser.uid);b.likes=Math.max(0,(b.likes||1)-1);}btn.className='like-btn';btn.innerHTML='🤍 '+(b?b.likes:'');btn.onclick=()=>likeBike(id,btn);btn.disabled=false;}catch(e){btn.disabled=false;}}
+  btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});const b=bikesCache.find(x=>x.id===id);if(b){if(!Array.isArray(b.likedBy))b.likedBy=[];if(!b.likedBy.includes(currentUser.uid))b.likedBy.push(currentUser.uid);}sfx.tick();btn.className='like-btn liked';btn.innerHTML='❤️ '+(b&&b.likedBy?b.likedBy.length:0);btn.onclick=()=>unlikeBike(id,btn);btn.disabled=false;toast('❤️');}catch(e){btn.disabled=false;toast('Ошибка: '+e.message);}}
+  async function unlikeBike(id,btn){if(!currentUser||!db)return;btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});const b=bikesCache.find(x=>x.id===id);if(b)b.likedBy=(Array.isArray(b.likedBy)?b.likedBy:[]).filter(u=>u!==currentUser.uid);btn.className='like-btn';btn.innerHTML='🤍 '+(b&&b.likedBy?b.likedBy.length:0);btn.onclick=()=>likeBike(id,btn);btn.disabled=false;}catch(e){btn.disabled=false;}}
 
 async function addBike(){
   if(!currentUser){toast('Сначала войди!');return;}
@@ -2003,14 +2092,15 @@ function hideProg(){const w=document.getElementById('proofProgWrap');if(w)w.styl
 function vidFromCloud(d){
   const ratedBy=d.ratedBy||{};
   const rc=Object.keys(ratedBy).length;
+  const vals=Object.values(ratedBy).filter(v=>typeof v==='number');
   return{
     key:d.id,ytId:d.ytId||'',vidUrl:d.vidUrl||'',vidPath:d.vidPath||'',title:d.title||'Без названия',skill:d.skill||'wh',
     author:d.ownerNick||'Аноним',
     ts:d.createdAt&&d.createdAt.toDate?d.createdAt.toDate().getTime():Date.now(),
-    likes:d.likes||0,liked:currentUser&&Array.isArray(d.likedBy)&&d.likedBy.includes(currentUser.uid),
+    likes:Array.isArray(d.likedBy)?d.likedBy.length:0,liked:currentUser&&Array.isArray(d.likedBy)&&d.likedBy.includes(currentUser.uid),
     ratedBy:ratedBy,myRating:currentUser?(ratedBy[currentUser.uid]||0):0,
-    ratingCount:rc,ratingSum:d.ratingSum||0,
-    ratingAvg:rc?Math.round((d.ratingSum||0)/rc*10)/10:null,
+    ratingCount:rc,ratingSum:vals.reduce((a,b)=>a+b,0),
+    ratingAvg:rc?Math.round(vals.reduce((a,b)=>a+b,0)/rc*10)/10:null,
     ownerId:d.ownerId,isOwn:currentUser&&d.ownerId===currentUser.uid,
     local:false,pid:d.pid||'',vidDocId:d.id
   };
@@ -2203,10 +2293,10 @@ async function toggleLike(v,btn,ic,cnt){
   try{
     if(v.local){reactProof(v.pid,'likes');return;}
     if(v.liked){
-      await db.collection('videos').doc(v.vidDocId).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid),likes:firebase.firestore.FieldValue.increment(-1)});
+      await db.collection('videos').doc(v.vidDocId).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});
       v.liked=false;v.likes=Math.max(0,v.likes-1);
     }else{
-      await db.collection('videos').doc(v.vidDocId).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid),likes:firebase.firestore.FieldValue.increment(1)});
+      await db.collection('videos').doc(v.vidDocId).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});
       v.liked=true;v.likes=(v.likes||0)+1;
     }
     sfx.tick();
@@ -2244,11 +2334,10 @@ async function rateVideo(v,stars){
   const isNew=!old;
   try{
     await db.collection('videos').doc(v.vidDocId).set({ratedBy:{[currentUser.uid]:stars}},{merge:true});
-    await db.collection('videos').doc(v.vidDocId).update({ratingSum:firebase.firestore.FieldValue.increment(stars-old),ratingCount:firebase.firestore.FieldValue.increment(isNew?1:0)});
   }catch(e){toast('Ошибка: '+e.message);return;}
   ratedBy[currentUser.uid]=stars;
   v.ratingCount=Object.keys(ratedBy).length;
-  v.ratingSum=(v.ratingSum||0)+(stars-old);
+  v.ratingSum=Object.values(ratedBy).filter(x=>typeof x==='number').reduce((a,b)=>a+b,0);
   v.ratingAvg=v.ratingCount?Math.round(v.ratingSum/v.ratingCount*10)/10:null;
   v.myRating=stars;
   if(isNew){state.challengeXP=(state.challengeXP||0)+2;saveCloudDebounced();sfx.tick();toast('Оценка '+'★'.repeat(stars)+'! +2 XP');}

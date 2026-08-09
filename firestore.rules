@@ -2,19 +2,75 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Валидаторы (анти-чит): значения прогресса/очков ограничены сверху ──
+    function validSkill(s) {
+      return s is map
+        && s.id is string
+        && (!('lv' in s) || (s.lv is number && s.lv >= 0 && s.lv <= 3))
+        && (!('pr' in s) || (s.pr is number && s.pr >= 0 && s.pr <= 100))
+        && (!('tr' in s) || (s.tr is number && s.tr >= 0 && s.tr <= 1000000))
+        && (!('trToday' in s) || (s.trToday is number && s.trToday >= 0 && s.trToday <= 50))
+        && (!('trSession' in s) || (s.trSession is number && s.trSession >= 0 && s.trSession <= 50));
+    }
+    function validSkills() {
+      return request.resource.data.skills is list
+        && request.resource.data.skills.all(validSkill);
+    }
+    function validNickname(n) {
+      return n is string && (n.size() == 0 || (n.size() >= 2 && n.size() <= 24));
+    }
+    // Запись своей строки users: uid совпадает + прогресс в допустимых пределах.
+    // Поля проверяем только если они меняются (in) — legacy-документы без полей не блокируем.
+    function validUserWrite() {
+      return request.resource.data.uid == request.auth.uid
+        && (!('skills' in request.resource.data) || validSkills())
+        && (!('nickname' in request.resource.data) || validNickname(request.resource.data.nickname))
+        && (!('challengeXP' in request.resource.data)
+            || (request.resource.data.challengeXP is number
+                && request.resource.data.challengeXP >= 0
+                && request.resource.data.challengeXP <= 2000000));
+    }
+    // Лайк = добавление/удаление РОВНО своего uid в/из массива likedBy (ничего больше менять нельзя)
+    function validLikeChange() {
+      let oldL = resource.data.likedBy;
+      let newL = request.resource.data.likedBy;
+      let oldSz = oldL is list ? oldL.size() : 0;
+      return newL is list
+        && (
+          (newL.size() == oldSz + 1 && request.auth.uid in newL && !(oldL is list && request.auth.uid in oldL))
+          || (oldL is list && newL.size() == oldSz - 1 && request.auth.uid in oldL && !(request.auth.uid in newL))
+        );
+    }
+    // Оценка = меняется ТОЛЬКО свой ключ в map ratedBy, значение 1..5 (сумму/среднее клиент считает из map)
+    function validRatingChange() {
+      let oldM = resource.data.ratedBy is map ? resource.data.ratedBy : {};
+      let newM = request.resource.data.ratedBy;
+      return newM is map
+        && newM[request.auth.uid] is number
+        && newM[request.auth.uid] >= 1
+        && newM[request.auth.uid] <= 5
+        && newM.diff(oldM).affectedKeys().hasOnly([request.auth.uid]);
+    }
+
     // Пользовательские данные: читать могут авторизованные (нужно для поиска по коду друга),
     // писать — только владелец документа (uid в документе == auth.uid)
     match /users/{uid} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow update: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if validUserWrite();
+      allow update: if validUserWrite();
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
     // Лидерборд: публичное чтение, запись только своей строки
     match /leaderboard/{uid} {
       allow read: if true;
-      allow create, update: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow create, update: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.pts is number
+        && request.resource.data.pts >= 0
+        && request.resource.data.pts <= 2000000
+        && (!('nickname' in request.resource.data)
+            || (request.resource.data.nickname is string && request.resource.data.nickname.size() <= 30));
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
@@ -30,25 +86,29 @@ service cloud.firestore {
     }
 
     // Гараж байков: чтение публичное, создание только своего байка,
-    // обновление — владелец ИЛИ только поля лайков (likedBy/likes)
+    // обновление — владелец ИЛИ только свой лайк (likedBy; счётчик likes больше не пишется — считаем из массива)
     match /bikes/{id} {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
       allow update: if request.auth != null && (
         resource.data.ownerId == request.auth.uid
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy', 'likes'])
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
+            && validLikeChange())
       );
       allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
 
     // Видео-доказательства: чтение публичное (TikTok-лента), создание только своего видео,
-    // обновление — владелец ИЛИ только поля реакций (likedBy/likes/ratedBy/ratingSum/ratingCount)
+    // обновление — владелец ИЛИ только свой лайк (likedBy) или своя оценка (ratedBy)
     match /videos/{id} {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
       allow update: if request.auth != null && (
         resource.data.ownerId == request.auth.uid
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy', 'likes', 'ratedBy', 'ratingSum', 'ratingCount'])
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
+            && validLikeChange())
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratedBy'])
+            && validRatingChange())
       );
       allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
