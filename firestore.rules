@@ -90,11 +90,18 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
-    // Гараж байков: чтение публичное, создание только своего байка,
+    // Гараж байков: чтение публичное, создание только своего байка с валидными полями,
     // обновление — владелец ИЛИ только свой лайк (likedBy; счётчик likes больше не пишется — считаем из массива)
     match /bikes/{id} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.ownerNick is string
+        && request.resource.data.ownerNick.size() <= 40
+        && request.resource.data.likedBy is list;
       allow update: if request.auth != null && (
         resource.data.ownerId == request.auth.uid
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
@@ -103,11 +110,20 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
 
-    // Видео-доказательства: чтение публичное (TikTok-лента), создание только своего видео,
+    // Видео-доказательства: чтение публичное (TikTok-лента), создание только своего видео с валидными полями,
     // обновление — владелец ИЛИ только свой лайк (likedBy) или своя оценка (ratedBy)
     match /videos/{id} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.pid is string
+        && request.resource.data.ownerNick is string
+        && request.resource.data.ownerNick.size() <= 40
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.skill is string
+        && request.resource.data.likedBy is list
+        && request.resource.data.ratedBy is map;
       allow update: if request.auth != null && (
         resource.data.ownerId == request.auth.uid
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
@@ -118,21 +134,47 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
 
+    // Дружба создаётся ТОЛЬКО после принятой заявки (friend_requests.status=='accepted'),
+    // чтобы нельзя было добавить человека в друзья без его согласия
+    function validFriendCreate() {
+      return request.resource.data.uids is list
+        && request.resource.data.uids.size() == 2
+        && request.auth.uid in request.resource.data.uids
+        && request.resource.data.requestId is string
+        && exists(/databases/$(database)/documents/friend_requests/$(request.resource.data.requestId))
+        && get(/databases/$(database)/documents/friend_requests/$(request.resource.data.requestId)).data.status == 'accepted'
+        && request.auth.uid == get(/databases/$(database)/documents/friend_requests/$(request.resource.data.requestId)).data.toUid
+        && get(/databases/$(database)/documents/friend_requests/$(request.resource.data.requestId)).data.fromUid in request.resource.data.uids
+        && get(/databases/$(database)/documents/friend_requests/$(request.resource.data.requestId)).data.toUid in request.resource.data.uids;
+    }
     // Друзья: доступ только участникам пары
     match /friends/{id} {
       allow read: if request.auth != null && request.auth.uid in resource.data.uids;
-      allow create: if request.auth != null && request.auth.uid in request.resource.data.uids;
+      allow create: if request.auth != null && validFriendCreate();
       allow update: if request.auth != null && request.auth.uid in resource.data.uids;
       allow delete: if request.auth != null && request.auth.uid in resource.data.uids;
     }
 
-    // Заявки в друзья: доступ только отправителю и получателю
+    // Заявки в друзья: доступ только отправителю и получателю.
+    // create — только от себя, статус pending, получатель не сам;
+    // update (принять) — только получатель и только смена status на accepted
     match /friend_requests/{id} {
       allow read: if request.auth != null
         && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
-      allow create: if request.auth != null && request.resource.data.fromUid == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
+        && request.resource.data.toUid != request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.fromNick is string
+        && request.resource.data.fromNick.size() <= 40
+        && request.resource.data.toNick is string
+        && request.resource.data.toNick.size() <= 40;
       allow update: if request.auth != null
-        && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+        && resource.data.status == 'pending'
+        && request.auth.uid == resource.data.toUid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status == 'accepted';
       allow delete: if request.auth != null
         && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
     }
@@ -143,11 +185,56 @@ service cloud.firestore {
       allow create, update, delete: if request.auth != null && request.auth.uid == uid;
     }
 
-    // Дуэли: чтение публичное (лента открытых дуэлей), изменения — только участники
+    // Дуэли: чтение публичное (лента открытых дуэлей).
+    // Безопасность: участник может менять ТОЛЬКО свой результат, победу подделать нельзя —
+    // winnerUid должен совпадать с вычисленным по обоим результатам, а просроченную
+    // дуэль (7+ дней) любой участник может пометить void
     match /duels/{id} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.challengerUid == request.auth.uid;
-      allow update: if request.auth != null && request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null
+        && request.resource.data.challengerUid == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.challenger is string
+        && request.resource.data.skill is string
+        && request.resource.data.target is string
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 1
+        && request.resource.data.participants[0] == request.auth.uid;
+      allow update: if request.auth != null && (
+        // Свой результат: challenger записывает только challengerResult
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['challengerResult'])
+          && request.auth.uid == resource.data.challengerUid
+          && resource.data.status == 'active'
+          && request.resource.data.challengerResult is number
+          && request.resource.data.challengerResult > 0)
+        // Свой результат: opponent записывает только opponentResult
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['opponentResult'])
+          && request.auth.uid == resource.data.acceptedByUid
+          && resource.data.status == 'active'
+          && request.resource.data.opponentResult is number
+          && request.resource.data.opponentResult > 0)
+        // Принятие дуэли любым авторизованным (не создателем)
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['acceptedBy','acceptedByUid','status','participants'])
+          && request.resource.data.status == 'active'
+          && resource.data.status == 'open'
+          && request.auth.uid != resource.data.challengerUid
+          && !(request.auth.uid in resource.data.participants))
+        // Завершение: победитель обязан совпадать с вычисленным по обоим результатам
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','winner','winnerUid'])
+          && request.resource.data.status == 'done'
+          && resource.data.status == 'active'
+          && request.auth.uid in resource.data.participants
+          && resource.data.challengerResult is number
+          && resource.data.opponentResult is number
+          && request.resource.data.winnerUid == (resource.data.challengerResult >= resource.data.opponentResult ? resource.data.challengerUid : resource.data.acceptedByUid))
+        // Истечение: просроченную дуэль участник может пометить void
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status == 'void'
+          && resource.data.status in ['open','active']
+          && request.auth.uid in resource.data.participants
+          && resource.data.createdAt is timestamp
+          && request.time - resource.data.createdAt > duration.value(7, 'd'))
+      );
       allow delete: if request.auth != null && resource.data.challengerUid == request.auth.uid;
     }
   }
