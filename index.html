@@ -1643,16 +1643,13 @@ function getChallengeProgress(ch){
 
 /* Автоматически засчитываем выполненные AUTO-челленджи */
 function checkAutoCompleteChallenge(){
-  let changed=false;
   (state.challenges||[]).forEach(ch=>{
     if(ch.completed||!ch.auto)return;
     const prog=getChallengeProgress(ch);
     if(prog&&prog.cur>=prog.max){
       completeChallengeInternal(ch.id,true);
-      changed=true;
     }
   });
-  if(changed)renderChallenges();
 }
 
 function completeChallengeInternal(id,auto=false){
@@ -1664,7 +1661,7 @@ function completeChallengeInternal(id,auto=false){
   state.completedChallenges.push(id);
   sfx.levelUp();saveCloud();
   toast((auto?'🤖 Авто: ':'')+'+'+ch.xp+' XP за «'+ch.text+'»!');
-  confetti(40);renderSkills();checkAch();
+  confetti(40);renderSkills();checkAch();renderChallenges();
 }
 
 function completeChallenge(id){completeChallengeInternal(id,false);}
