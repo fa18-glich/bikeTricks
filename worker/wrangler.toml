@@ -1,0 +1,8 @@
+name = "mtb-support-bot"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[vars]
+ADMIN_IDS = "5580435878,745902683"
+PROJECT_ID = "mtb-skills-pro-38297"

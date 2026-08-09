@@ -18,7 +18,8 @@
       "package-lock.json",
       "scripts/**",
       "css/**",
-      "js/**"
+      "js/**",
+      "worker/**"
     ],
     "rewrites": [
       { "source": "**", "destination": "/index.html" }

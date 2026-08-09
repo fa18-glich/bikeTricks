@@ -237,5 +237,22 @@ service cloud.firestore {
       );
       allow delete: if request.auth != null && resource.data.challengerUid == request.auth.uid;
     }
+
+    // ── Коллекции Telegram-бота поддержки: доступ только через Admin SDK (функции) ──
+    match /tickets/{id} {
+      allow read, write: if false;
+    }
+    match /faq/{id} {
+      allow read, write: if false;
+    }
+    match /bot_state/{id} {
+      allow read, write: if false;
+    }
+    match /tg_users/{id} {
+      allow read, write: if false;
+    }
+    match /config/{id} {
+      allow read, write: if false;
+    }
   }
 }
