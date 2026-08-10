@@ -27,7 +27,6 @@ jobs:
   deploy:
     needs: check
     runs-on: ubuntu-latest
-    if: ${{ secrets.FIREBASE_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,4 +35,7 @@ jobs:
       - name: Install firebase-tools
         run: npm i -g firebase-tools@13.35.1
       - name: Deploy to Firebase
-        run: firebase deploy --only hosting,firestore --token "${{ secrets.FIREBASE_TOKEN }}" --non-interactive
+        if: env.FIREBASE_TOKEN != ''
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only hosting,firestore --token "$FIREBASE_TOKEN" --non-interactive
