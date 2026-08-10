@@ -227,6 +227,16 @@ async function createTicket(msg, env) {
   const fromId = String(msg.from.id);
   let nickname = msg.from.username ? '@' + msg.from.username : (msg.from.first_name || '');
   try { nickname = (await fsGet('tg_users/' + fromId, env)).nickname || nickname; } catch (e) {}
+  const openTickets = (await fsList('tickets', env)).filter(
+    (t) => t.data.userId === fromId && (t.data.status === 'new' || t.data.status === 'answered')
+  );
+  if (openTickets.length >= 3) {
+    await tg('sendMessage', {
+      chat_id: chatId,
+      text: '⚠️ У вас уже есть ' + openTickets.length + ' открытых вопроса. Дождитесь ответа или напишите в ответе на него — поддержка обязательно ответит 🙂'
+    }, env);
+    return null;
+  }
   const res = await fsAdd('tickets', {
     userId: fromId,
     chatId,
@@ -427,6 +437,9 @@ export default {
     const url = new URL(request.url);
     if (url.pathname !== '/webhook') return new Response('MTB support bot. Use POST /webhook', { status: 200 });
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+    if (request.headers.get('X-Telegram-Bot-Api-Secret-Token') !== env.WEBHOOK_SECRET) {
+      return new Response('Unauthorized', { status: 403 });
+    }
     try {
       const upd = await request.json();
       if (upd && upd.callback_query) await handleCallback(upd.callback_query, env);

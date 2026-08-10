@@ -769,6 +769,17 @@ table.rec-log tr:last-child td{border-bottom:none;}
         <div class="ct-card"><div class="ci">💬</div><h4>Telegram</h4><a href="https://t.me/Mtbskillspro_bot" target="_blank">@Mtbskillspro_bot</a><br><br><a href="https://t.me/Mtbskillspro_bot" target="_blank" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
         <div class="ct-card"><div class="ci">📧</div><h4>Email</h4><a href="mailto:pvp0101gg@gmail.com">pvp0101gg@gmail.com</a><br><br><a href="mailto:pvp0101gg@gmail.com" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
       </div>
+      <div style="margin-top:14px;font-size:13px;color:var(--muted);">
+        <h3 style="font-size:14px;margin:0 0 8px;">❓ Частые вопросы</h3>
+        <details style="background:var(--card,#15181d);border:1px solid var(--line,#242830);border-radius:10px;padding:10px 12px;margin-bottom:8px;"><summary style="cursor:pointer;font-weight:600;color:var(--txt,#e8eaf0);">Как сохраняется прогресс?</summary><p style="margin:8px 0 0;">Войдите в аккаунт — прогресс автоматически синхронизируется с облаком с любого устройства. Без интернета тренировки тоже сохраняются локально и подхватятся после входа.</p></details>
+        <details style="background:var(--card,#15181d);border:1px solid var(--line,#242830);border-radius:10px;padding:10px 12px;margin-bottom:8px;"><summary style="cursor:pointer;font-weight:600;color:var(--txt,#e8eaf0);">Что такое скиллы и как их прокачать?</summary><p style="margin:8px 0 0;">В приложении 5 трюков (Bunny Hop, Manual, Wheelie, Drop, 180). Каждый прокачивается от 1 до 3 уровней. Тренируйтесь и выполняйте челленджи, чтобы получать очки навыков.</p></details>
+        <details style="background:var(--card,#15181d);border:1px solid var(--line,#242830);border-radius:10px;padding:10px 12px;margin-bottom:8px;"><summary style="cursor:pointer;font-weight:600;color:var(--txt,#e8eaf0);">Как работают уровни и XP?</summary><p style="margin:8px 0 0;">XP дают за тренировки и челленджи. Дневные челленджи обновляются каждый день, недельные — раз в неделю. XP накапливается и повышает ваш уровень.</p></details>
+        <details style="background:var(--card,#15181d);border:1px solid var(--line,#242830);border-radius:10px;padding:10px 12px;margin-bottom:8px;"><summary style="cursor:pointer;font-weight:600;color:var(--txt,#e8eaf0);">Как добавить байк или видео?</summary><p style="margin:8px 0 0;">В разделе «Байк» нажмите добавить и выберите фото из галереи. В разделе «Видео» публикуются ссылки на YouTube-ролики с вашими трюками.</p></details>
+        <details style="background:var(--card,#15181d);border:1px solid var(--line,#242830);border-radius:10px;padding:10px 12px;margin-bottom:8px;"><summary style="cursor:pointer;font-weight:600;color:var(--txt,#e8eaf0);">Как пригласить друга в дуэль?</summary><p style="margin:8px 0 0;">Откройте раздел «Дуэли», создайте дуэль и поделитесь ссылкой. Соперник вводит её у себя, и победитель определяется автоматически.</p></details>
+        <details style="background:var(--card,#15181d);border:1px solid var(--line,#242830);border-radius:10px;padding:10px 12px;margin-bottom:8px;"><summary style="cursor:pointer;font-weight:600;color:var(--txt,#e8eaf0);">Пропали челленджи после обновления?</summary><p style="margin:8px 0 0;">Просто обновите страницу или переустановите PWA. Новый список заданий создаётся при смене дня/недели.</p></details>
+        <details style="background:var(--card,#15181d);border:1px solid var(--line,#242830);border-radius:10px;padding:10px 12px;margin-bottom:8px;"><summary style="cursor:pointer;font-weight:600;color:var(--txt,#e8eaf0);">Как удалить аккаунт?</summary><p style="margin:8px 0 0;">В профиле выберите «Удалить аккаунт» — все данные будут стёрты из облака.</p></details>
+        <details style="background:var(--card,#15181d);border:1px solid var(--line,#242830);border-radius:10px;padding:10px 12px;"><summary style="cursor:pointer;font-weight:600;color:var(--txt,#e8eaf0);">Как связаться с поддержкой?</summary><p style="margin:8px 0 0;">Напишите нам в Telegram (@Mtbskillspro_bot) — мы ответим прямо в чате.</p></details>
+      </div>
       <div class="form-card" style="margin-top:14px;text-align:center;">
         <p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Вошёл: <strong id="userEmailDisp" style="color:var(--accent);"></strong><br>Ник: <strong id="myNickDisp" style="color:var(--accent);"></strong> <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;margin-left:6px;" onclick="changeNick()">Сменить</button></p>
         <button class="btn btn-danger" onclick="confirmAction('Удалить аккаунт?','Все данные будут удалены. Восстановить невозможно!',deleteAccount)">🗑 Удалить аккаунт</button>
@@ -1931,7 +1942,7 @@ async function deleteBike(id){
 }
 
 /* ══ PROOFS (TikTok-лента) ══ */
-let videosCache=[],vidSeg='all',ttObserver=null;
+let videosCache=[],vidSeg='all',ttObserver=null,vidLimit=30,vidCursor=null,vidHasMore=false;
 let vidURLMap={};
 function idbOpen(){
   return new Promise((res,rej)=>{
@@ -2135,10 +2146,13 @@ async function loadVideos(){
   const el=document.getElementById('proofFeed');if(!el)return;
   el.innerHTML='<div style="height:100%;display:grid;place-items:center;color:var(--muted);font-family:var(--fm);font-size:13px;">Загрузка ленты...</div>';
   let items=[];
+  vidCursor=null;vidHasMore=false;
   if(db){
     try{
-      const snap=await db.collection('videos').orderBy('createdAt','desc').limit(100).get();
+      const snap=await db.collection('videos').orderBy('createdAt','desc').limit(vidLimit).get();
       items=snap.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
+      vidCursor=snap.docs.length?snap.docs[snap.docs.length-1]:null;
+      vidHasMore=snap.docs.length===vidLimit;
       const cloudPids={};items.forEach(v=>{if(v.pid)cloudPids[v.pid]=1;});
       (state.proofs||[]).filter(p=>!cloudPids[p.id]).forEach(p=>items.unshift(vidFromLocal(p)));
     }catch(e){console.warn('loadVideos:',e);items=(state.proofs||[]).map(vidFromLocal);}
@@ -2146,6 +2160,20 @@ async function loadVideos(){
     items=(state.proofs||[]).map(vidFromLocal);
   }
   videosCache=items;
+  renderProofs();
+}
+async function loadMoreVideos(){
+  if(!db||!vidCursor)return;
+  const el=document.getElementById('proofFeed');if(!el)return;
+  const btn=el.querySelector('.tt-more');if(btn){btn.disabled=true;btn.textContent='Загрузка...';}
+  try{
+    const snap=await db.collection('videos').orderBy('createdAt','desc').startAfter(vidCursor).limit(vidLimit).get();
+    if(snap.empty){vidHasMore=false;renderProofs();return;}
+    const add=snap.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
+    videosCache=videosCache.concat(add);
+    vidCursor=snap.docs[snap.docs.length-1];
+    vidHasMore=snap.docs.length===vidLimit;
+  }catch(e){console.warn('loadMore:',e);vidHasMore=false;}
   renderProofs();
 }
 function setVidSeg(seg){
@@ -2293,6 +2321,14 @@ function renderProofs(){
     });
   },{threshold:.6});
   el.querySelectorAll('.tt-item').forEach(it=>ttObserver.observe(it));
+  if(vidHasMore){
+    const lm=document.createElement('button');
+    lm.className='btn btn-ghost btn-full tt-more';
+    lm.style.cssText='max-width:320px;margin:18px auto;display:block;';
+    lm.textContent='Загрузить ещё';
+    lm.onclick=loadMoreVideos;
+    el.appendChild(lm);
+  }
 }
 async function toggleLike(v,btn,ic,cnt){
   if(!currentUser){toast('Войди чтобы лайкать');return;}
@@ -3273,7 +3309,7 @@ async function requestNotifPermission(){
     saveCloud();scheduleNotif();updateNotifStatus();
     toast('✅ Уведомления включены!');
     // Показываем тестовое уведомление
-    new Notification('MTB Skills Pro 🚵‍♂️',{body:'Уведомления работают! 🔥',icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png'});
+    new Notification('MTB Skills Pro 🚵‍♂️',{body:'Уведомления работают! 🔥',icon:location.origin+'/image/icon-192.png'});
   }else{
     toast('Разрешение отклонено. Разреши в настройках браузера.');
     updateNotifStatus();
@@ -3312,10 +3348,11 @@ function scheduleNotif(){
     if(now.getHours()===h&&now.getMinutes()===m&&now.getSeconds()<30){
       if(localStorage.getItem('mtb_lastNotif')===todayKey.toString())return;
       localStorage.setItem('mtb_lastNotif',todayKey.toString());
+      const iconUrl=location.origin+'/image/icon-192.png';
       if(navigator.serviceWorker&&navigator.serviceWorker.ready){
-        navigator.serviceWorker.ready.then(reg=>{reg.showNotification('MTB Skills Pro 🚵‍♂️',{body:'Время тренироваться! ⛑️ Не забудь шлем!',icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png',badge:'https://i.ibb.co/7xnbTSWB/1774284993874.png',tag:'mtb-daily',requireInteraction:false});}).catch(()=>{});
+        navigator.serviceWorker.ready.then(reg=>{reg.showNotification('MTB Skills Pro 🚵‍♂️',{body:'Время тренироваться! ⛑️ Не забудь шлем!',icon:iconUrl,badge:iconUrl,tag:'mtb-daily',requireInteraction:false});}).catch(()=>{});
       }else{
-        try{new Notification('MTB Skills Pro 🚵‍♂️',{body:'Время тренироваться! ⛑️ Не забудь шлем!',icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png',tag:'mtb-daily',requireInteraction:false});}catch(e){}
+        try{new Notification('MTB Skills Pro 🚵‍♂️',{body:'Время тренироваться! ⛑️ Не забудь шлем!',icon:iconUrl,tag:'mtb-daily',requireInteraction:false});}catch(e){}
       }
     }
   },20000);
@@ -3324,7 +3361,7 @@ function scheduleNotif(){
 function testNotif(){
   if(!('Notification' in window)){toast('Не поддерживается в этом браузере');return;}
   if(Notification.permission==='granted'){
-    new Notification('MTB Skills Pro 🚵‍♂️',{body:'Тест работает! 🔥',icon:'https://i.ibb.co/7xnbTSWB/1774284993874.png'});
+    new Notification('MTB Skills Pro 🚵‍♂️',{body:'Тест работает! 🔥',icon:location.origin+'/image/icon-192.png'});
     toast('Уведомление отправлено!');
   }else{
     requestNotifPermission();
