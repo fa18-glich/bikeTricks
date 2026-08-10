@@ -1573,6 +1573,7 @@ function gotoTab(t){
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>gotoTab(btn.dataset.tab)));
 function switchBikeTab(tab){document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));const b=document.querySelector(`[data-subtab="${tab}"]`);if(b)b.classList.add('active');document.getElementById('bikes-feed').style.display=tab==='feed'?'block':'none';document.getElementById('bikes-add').style.display=tab==='add'?'block':'none';if(tab==='feed')loadBikes();}
+document.querySelectorAll('#tab-support details').forEach(d=>d.addEventListener('click',e=>{if(!e.target.closest('summary'))d.open=false;}));
 
 /* ══ ACH ══ */
 function checkAch(){if(!state.unlockedAchievements)state.unlockedAchievements=[];let n=false;ACHIEVEMENTS.forEach(a=>{if(!state.unlockedAchievements.includes(a.id)&&a.check(state)){state.unlockedAchievements.push(a.id);n=true;setTimeout(()=>{sfx.ach();showLvlUp('АЧИВКА!',a.name,a.icon);},400);}});if(n)saveCloud();renderAch();}
