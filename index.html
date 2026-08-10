@@ -1102,7 +1102,14 @@ function loadLS(){
     return s;
   }}catch(e){}return defState();
 }
-function saveLS(){localStorage.setItem(lsKey(),JSON.stringify(state));}
+function saveLS(){
+  try{localStorage.setItem(lsKey(),JSON.stringify(state));return;}
+  catch(e){}
+  try{
+    const s={...state,proofs:undefined,proofReactions:undefined};
+    localStorage.setItem(lsKey(),JSON.stringify(s));
+  }catch(e){console.warn('localStorage full:',e);}
+}
 function mergeCloudState(c,l){
   // Облако — база, но локальный прогресс не теряем: по каждому полю берём максимум,
   // списки объединяем. Никнейм/настройки/челленджи — из облака (канон).
@@ -1185,9 +1192,10 @@ async function initFB(){
       hideLoad();showAuthScr();
     },12000);
 
-    // Оффлайн-режим Firestore
-    db.enablePersistence({synchronizeTabs:true}).catch(e=>{
-      if(e.code==='failed-precondition')console.warn('Persistence: несколько вкладок');
+    // Оффлайн-режим Firestore (одна вкладка: multi-tab пишет служебные ключи в localStorage
+    // и при переполнении ломает SDK — «INTERNAL ASSERTION FAILED: Unexpected state»)
+    db.enablePersistence({synchronizeTabs:false}).catch(e=>{
+      if(e.code==='failed-precondition')console.warn('Persistence: не поддерживается');
       else if(e.code==='unimplemented')console.warn('Persistence не поддерживается');
     });
 
@@ -1901,20 +1909,24 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{if(e.target.id==='bikeTypeF'||e.target.id==='bikeSortF')loadBikes();});
 
+let bikesLoading=false;
 async function loadBikes(){
   const feed=document.getElementById('globalBikeFeed');if(!feed)return;
+  if(bikesLoading)return;
+  bikesLoading=true;
   feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--fm);">Загрузка...</div>';
-  if(!db){feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;">Firebase не подключён</div>';return;}
+  if(!db){feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;">Firebase не подключён</div>';bikesLoading=false;return;}
   try{
     const sortBy=document.getElementById('bikeSortF')?.value||'newest';
     let q=db.collection('bikes').orderBy('createdAt','desc').limit(50);
-    const snap=await q.get();
+    const snap=await withTimeout(q.get(),15000);
     bikesCache=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderBikes();
   }catch(e){
     console.error('loadBikes:',e);
-    feed.innerHTML=`<div style="text-align:center;color:var(--danger);padding:24px;">Ошибка: ${e.message}</div>`;
-  }
+    const raw=e.message||'';
+    feed.innerHTML=`<div style="text-align:center;color:var(--danger);padding:24px;">${raw.includes('firestore_timeout')?'Не удалось загрузить байки — нет связи с сервером. Проверь интернет и попробуй снова.':'Не удалось загрузить байки. Переключи вкладку и попробуй снова.'}</div>`;
+  }finally{bikesLoading=false;}
 }
 
 function renderBikes(){
