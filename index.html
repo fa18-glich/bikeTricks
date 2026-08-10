@@ -261,8 +261,16 @@ table.rec-log tr:last-child td{border-bottom:none;}
 .proof-reacts{display:flex;gap:8px;flex-wrap:wrap;}
 /* TikTok-лента видео */
 .tt-wrap{position:relative;}
-.tt-feed{height:calc(100dvh - 182px);min-height:400px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;border-radius:20px;background:#000;box-shadow:var(--shadow);}
+.tt-feed{height:calc(100dvh - 182px);min-height:400px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;border-radius:20px;background:#000;box-shadow:var(--shadow);position:relative;overscroll-behavior-y:contain;}
 .tt-feed::-webkit-scrollbar{display:none;}
+.tt-feed.ptr-nosnap{scroll-snap-type:none;}
+.tt-sentinel{height:70px;display:grid;place-items:center;scroll-snap-align:none;color:var(--muted);font-family:var(--fm);font-size:12px;pointer-events:none;}
+.tt-sentinel.busy::before{content:'Загрузка…';}
+.tt-ptr{position:absolute;top:0;left:0;right:0;height:48px;display:grid;place-items:center;color:var(--muted);font-family:var(--fm);font-size:12px;z-index:5;pointer-events:none;transform:translateY(-48px);transition:transform .2s ease;}
+.tt-ptr.pull{transform:translateY(0);}
+.tt-ptr.refresh{transform:translateY(0);}
+.tt-ptr.refresh .ptr-ic{animation:ptrspin 1s linear infinite;}
+@keyframes ptrspin{to{transform:rotate(360deg);}}
 .tt-item{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden;}
 .tt-vid{position:absolute;inset:0;}
 .tt-vid iframe{width:100%;height:100%;object-fit:cover;border:0;pointer-events:none;}
@@ -1429,6 +1437,7 @@ function initApp(){
   syncProofs();
   startFriendListeners();
   setupPresence();
+  setupPullToRefresh();
 }
 function genPWA(){const sec=(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1');if('serviceWorker' in navigator&&sec){navigator.serviceWorker.register('sw.js').catch(()=>{});}}
 
@@ -1942,7 +1951,8 @@ async function deleteBike(id){
 }
 
 /* ══ PROOFS (TikTok-лента) ══ */
-let videosCache=[],vidSeg='all',ttObserver=null,vidLimit=30,vidCursor=null,vidHasMore=false;
+let videosCache=[],vidSeg='all',ttObserver=null,loadMoreObserver=null,vidLimit=30,vidCursor=null,vidHasMore=false;
+let ptrStartY=0,ptrPulling=false,ptrPull=0,loadingMore=false;
 let vidURLMap={};
 function idbOpen(){
   return new Promise((res,rej)=>{
@@ -2142,9 +2152,7 @@ function vidFromLocal(p){
     local:true,pid:p.id,vidDocId:null
   };
 }
-async function loadVideos(){
-  const el=document.getElementById('proofFeed');if(!el)return;
-  el.innerHTML='<div style="height:100%;display:grid;place-items:center;color:var(--muted);font-family:var(--fm);font-size:13px;">Загрузка ленты...</div>';
+async function fetchVideos(){
   let items=[];
   vidCursor=null;vidHasMore=false;
   if(db){
@@ -2159,13 +2167,24 @@ async function loadVideos(){
   }else{
     items=(state.proofs||[]).map(vidFromLocal);
   }
-  videosCache=items;
+  return items;
+}
+async function loadVideos(){
+  const el=document.getElementById('proofFeed');if(!el)return;
+  el.innerHTML='<div style="height:100%;display:grid;place-items:center;color:var(--muted);font-family:var(--fm);font-size:13px;">Загрузка ленты...</div>';
+  videosCache=await fetchVideos();
   renderProofs();
 }
+async function refreshVideos(){
+  videosCache=await fetchVideos();
+  renderProofs();
+  toast('Лента обновлена 🔄');
+}
 async function loadMoreVideos(){
-  if(!db||!vidCursor)return;
-  const el=document.getElementById('proofFeed');if(!el)return;
-  const btn=el.querySelector('.tt-more');if(btn){btn.disabled=true;btn.textContent='Загрузка...';}
+  if(!db||!vidCursor||!vidHasMore||loadingMore)return;
+  loadingMore=true;
+  const el=document.getElementById('proofFeed');if(!el){loadingMore=false;return;}
+  const sent=el.querySelector('.tt-sentinel');if(sent)sent.classList.add('busy');
   try{
     const snap=await db.collection('videos').orderBy('createdAt','desc').startAfter(vidCursor).limit(vidLimit).get();
     if(snap.empty){vidHasMore=false;renderProofs();return;}
@@ -2174,7 +2193,51 @@ async function loadMoreVideos(){
     vidCursor=snap.docs[snap.docs.length-1];
     vidHasMore=snap.docs.length===vidLimit;
   }catch(e){console.warn('loadMore:',e);vidHasMore=false;}
+  loadingMore=false;
   renderProofs();
+}
+function setupPullToRefresh(){
+  const el=document.getElementById('proofFeed');if(!el||el.dataset.ptr)return;
+  el.dataset.ptr='1';
+  const ptr=document.createElement('div');ptr.className='tt-ptr';ptr.innerHTML='<span class="ptr-ic">🔄</span><span class="ptr-tx" style="margin-left:6px;">Потяни вниз</span>';
+  el.appendChild(ptr);el.__ptr=ptr;
+  const THRESHOLD=60;
+  let refreshing=false;
+  el.addEventListener('touchstart',e=>{
+    if(refreshing||el.scrollTop>0)return;
+    ptrStartY=e.touches[0].clientY;ptrPulling=false;ptrPull=0;
+  },{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(refreshing)return;
+    const dy=e.touches[0].clientY-ptrStartY;
+    if(el.scrollTop<=0&&dy>0){
+      ptrPulling=true;
+      const pull=Math.min(dy*0.5,72);
+      ptrPull=pull;
+      ptr.classList.add('pull');
+      ptr.style.transform='translateY('+(pull-48)+'px)';
+      el.classList.add('ptr-nosnap');
+      ptr.querySelector('.ptr-tx').textContent=pull>=THRESHOLD?'Отпусти, чтобы обновить':'Потяни вниз';
+    }
+  },{passive:true});
+  el.addEventListener('touchend',()=>{
+    if(!ptrPulling||refreshing)return;
+    ptrPulling=false;
+    el.classList.remove('ptr-nosnap');
+    if(ptrPull>=THRESHOLD){
+      refreshing=true;
+      ptr.classList.add('refresh');
+      ptr.querySelector('.ptr-tx').textContent='Обновляем…';
+      refreshVideos().finally(()=>{
+        refreshing=false;
+        ptr.classList.remove('refresh','pull');
+        ptr.style.transform='';ptrPull=0;
+        ptr.querySelector('.ptr-tx').textContent='Потяни вниз';
+      });
+    }else{
+      ptr.classList.remove('pull');ptr.style.transform='';ptrPull=0;
+    }
+  });
 }
 function setVidSeg(seg){
   vidSeg=seg;
@@ -2184,7 +2247,9 @@ function setVidSeg(seg){
 function renderProofs(){
   const el=document.getElementById('proofFeed');if(!el)return;
   el.innerHTML='';
+  if(el.__ptr&&!el.__ptr.isConnected)el.appendChild(el.__ptr);
   if(ttObserver){ttObserver.disconnect();ttObserver=null;}
+  if(loadMoreObserver){loadMoreObserver.disconnect();loadMoreObserver=null;}
   let items=videosCache||[];
   if(vidSeg==='subs')items=items.filter(v=>v.isOwn||isFollowing(v.ownerId));
   else if(vidSeg==='mine')items=items.filter(v=>v.isOwn);
@@ -2321,13 +2386,13 @@ function renderProofs(){
     });
   },{threshold:.6});
   el.querySelectorAll('.tt-item').forEach(it=>ttObserver.observe(it));
-  if(vidHasMore){
-    const lm=document.createElement('button');
-    lm.className='btn btn-ghost btn-full tt-more';
-    lm.style.cssText='max-width:320px;margin:18px auto;display:block;';
-    lm.textContent='Загрузить ещё';
-    lm.onclick=loadMoreVideos;
-    el.appendChild(lm);
+  if(vidHasMore&&vidSeg!=='mine'){
+    const sent=document.createElement('div');sent.className='tt-sentinel';
+    el.appendChild(sent);
+    loadMoreObserver=new IntersectionObserver(entries=>{
+      if(entries.some(en=>en.isIntersecting))loadMoreVideos();
+    },{root:el,rootMargin:'200px 0px 0px 0px'});
+    loadMoreObserver.observe(sent);
   }
 }
 async function toggleLike(v,btn,ic,cnt){
