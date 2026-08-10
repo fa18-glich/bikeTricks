@@ -932,6 +932,7 @@ let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function setT(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
 function setLoadText(t){setT('loadText',t);}
+function withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('firestore_timeout')),ms))]);}
 function showMsg(msg,type){const e=document.getElementById('authMsg');e.textContent=msg;e.className='auth-msg '+(type||'err');}
 function clearMsg(){const e=document.getElementById('authMsg');e.className='auth-msg';}
 
@@ -1202,7 +1203,7 @@ async function initFB(){
       if(user){
         currentUser=user;setLoadText('Загружаю данные...');
         try{
-          const doc=await db.collection('users').doc(user.uid).get();
+          const doc=await withTimeout(db.collection('users').doc(user.uid).get(),15000);
           if(doc.exists){
           const ls=JSON.parse(localStorage.getItem(lsKey())||localStorage.getItem(SK)||'{}');
           // Одноразовая миграция со старого общего ключа: переносим и удаляем его,
@@ -1218,7 +1219,16 @@ async function initFB(){
             });
             saveLS();setSyncDot('synced');
           }else{await saveCloud();}
-        }catch(e){console.warn('Cloud load:',e);setSyncDot('error');}
+        }catch(e){
+          console.warn('Cloud load:',e);setSyncDot('error');
+          if(e.message==='firestore_timeout'){
+            try{
+              const ls=JSON.parse(localStorage.getItem(lsKey())||'{}');
+              state=Object.assign(defState(),ls);
+              saveLS();
+            }catch(e2){console.warn('offline fallback:',e2);}
+          }
+        }
         resetDailyCountersIfNeeded();
         hideLoad();
         if(!state.nickname)showNickScr();else initApp();
