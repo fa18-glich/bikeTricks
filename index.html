@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>MTB Skills Pro</title>
+<script>try{if(localStorage.getItem('mtb_theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 <meta name="theme-color" content="#090b0f"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="MTB Skills"/>
@@ -28,7 +29,27 @@
   --fd:'Bebas Neue',sans-serif;
   --fb:'Syne',sans-serif;
   --fm:'JetBrains Mono',monospace;
+  color-scheme:dark;
 }
+html[data-theme="light"]{
+  --bg:#f2f5fc;--panel:#ffffff;--card:#ffffff;
+  --text:#101522;--muted:#5a6478;
+  --accent:#0e9adf;--accent2:#6b4dff;
+  --good:#1d9e3e;--warn:#d98e04;--danger:#e0243c;
+  --line:rgba(10,20,40,.14);
+  --shadow:0 20px 50px rgba(20,30,60,.12);
+  color-scheme:light;
+}
+html[data-theme="light"] body{background-image:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(14,154,223,.1) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 80% 5%,rgba(107,77,255,.12) 0%,transparent 60%);}
+html[data-theme="light"] .load-bar,html[data-theme="light"] .prog,html[data-theme="light"] .ch-progress-bar,html[data-theme="light"] .upload-progress{background:rgba(10,20,40,.09);}
+html[data-theme="light"] .panel{background:rgba(255,255,255,.92);}
+html[data-theme="light"] .form-card{background:rgba(255,255,255,.8);}
+html[data-theme="light"] .skill-card,html[data-theme="light"] .rec-entry,html[data-theme="light"] .rec-log-wrap,html[data-theme="light"] .ch-card,html[data-theme="light"] .bike-card,html[data-theme="light"] .proof-card,html[data-theme="light"] .pf-hero,html[data-theme="light"] .lb-row,html[data-theme="light"] .why-card,html[data-theme="light"] .notif-card,html[data-theme="light"] .ct-card{background:linear-gradient(160deg,#ffffff,#edf1fa);}
+html[data-theme="light"] .duel-card{background:linear-gradient(135deg,rgba(107,77,255,.14),rgba(224,36,60,.1));border-color:rgba(107,77,255,.4);}
+html[data-theme="light"] .google-btn,html[data-theme="light"] .field,html[data-theme="light"] .btn-ghost,html[data-theme="light"] .rank-chip,html[data-theme="light"] .tab-btn,html[data-theme="light"] .sub-tab,html[data-theme="light"] .ach,html[data-theme="light"] .pill,html[data-theme="light"] .bike-thumb,html[data-theme="light"] .bike-ph,html[data-theme="light"] .like-btn,html[data-theme="light"] .fi,html[data-theme="light"] .fs,html[data-theme="light"] .pf-stat,html[data-theme="light"] .pf-follow-btn.following,html[data-theme="light"] .pf-row,html[data-theme="light"] .time-row input[type="time"],html[data-theme="light"] .nd-item,html[data-theme="light"] .my-code-box,html[data-theme="light"] .req-card,html[data-theme="light"] .friend-row,html[data-theme="light"] .goal-box,html[data-theme="light"] .step-item{background:rgba(10,20,40,.05);}
+html[data-theme="light"] .pr-btn{background:rgba(10,20,40,.05);}
+html[data-theme="light"] .pr-btn:hover{background:rgba(10,20,40,.1);}
+html[data-theme="light"] .ch-complete-btn.not-ready{background:rgba(10,20,40,.06);}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hidden;
@@ -303,6 +324,12 @@ table.rec-log tr:last-child td{border-bottom:none;}
 .tt-seg{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:4px;padding:5px;border-radius:999px;background:rgba(10,12,18,.72);border:1px solid var(--line);backdrop-filter:blur(8px);}
 .tt-seg button{border:0;background:none;color:rgba(255,255,255,.65);font-size:12px;font-weight:800;font-family:var(--fb);padding:7px 14px;border-radius:999px;cursor:pointer;transition:.2s;white-space:nowrap;}
 .tt-seg button.active{background:linear-gradient(135deg,#4cc9f0,#7c5cff);color:#fff;box-shadow:0 4px 14px rgba(124,92,255,.4);}
+.tt-filters{position:absolute;top:62px;left:10px;right:10px;z-index:6;display:flex;gap:8px;align-items:center;}
+.tt-sel{flex:1;min-width:0;background:rgba(10,12,18,.72);color:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-family:var(--fb);font-size:12px;outline:none;backdrop-filter:blur(8px);}
+.tt-sel option{background:#13161e;color:#fff;}
+.tt-type{display:flex;gap:4px;}
+.tt-type button{border:1px solid var(--line);background:rgba(10,12,18,.72);color:rgba(255,255,255,.65);border-radius:10px;padding:8px 10px;font-size:12px;font-family:var(--fb);cursor:pointer;backdrop-filter:blur(8px);transition:.2s;}
+.tt-type button.active{background:linear-gradient(135deg,#4cc9f0,#7c5cff);color:#fff;}
 .tt-author{display:inline-flex;align-items:center;gap:5px;font-weight:800;color:#fff;background:none;border:0;padding:0;cursor:pointer;font-size:14px;font-family:var(--fb);text-shadow:0 1px 3px rgba(0,0,0,.7);}
 .tt-author:active{opacity:.7;}
 .tt-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,.4);z-index:5;pointer-events:none;font-family:var(--fm);}
@@ -670,6 +697,21 @@ table.rec-log tr:last-child td{border-bottom:none;}
         <button data-vseg="subs" onclick="setVidSeg('subs')">📌 Подписки</button>
         <button data-vseg="mine" onclick="setVidSeg('mine')">👤 Мои</button>
       </div>
+      <div class="tt-filters" id="ttFilters">
+        <select id="ttSkillF" class="tt-sel" onchange="setVidSkill(this.value)">
+          <option value="all">Все трюки</option>
+          <option value="wh">Вилли</option>
+          <option value="mn">Мэнуал</option>
+          <option value="ts">Трекстенд</option>
+          <option value="bh">Банни-хоп</option>
+          <option value="st">Стоппи</option>
+        </select>
+        <div class="tt-type" id="ttType">
+          <button data-tttype="all" class="active" onclick="setVidType('all')">Все</button>
+          <button data-tttype="video" onclick="setVidType('video')">🎬</button>
+          <button data-tttype="photo" onclick="setVidType('photo')">🖼</button>
+        </div>
+      </div>
       <div id="proofFeed" class="tt-feed"></div>
       <button class="tt-add" id="ttAdd" onclick="openProofModal()" aria-label="Загрузить видео">➕</button>
     </div>
@@ -768,6 +810,14 @@ table.rec-log tr:last-child td{border-bottom:none;}
           <button class="btn btn-primary" style="flex:1;" onclick="requestNotifPermission()">🔔 Разрешить уведомления</button>
           <button class="btn btn-ghost" style="flex:1;" onclick="testNotif()">Тест</button>
         </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h3>🎨 Тема</h3><p>Выбери оформление приложения</p></div></div>
+      <div class="notif-card">
+        <div class="toggle-row"><span>Тёмная тема</span><label class="toggle"><input type="checkbox" id="themeToggle" onchange="setTheme(this.checked?'dark':'light')"><span class="toggle-sl"></span></label></div>
+        <p style="font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.5;">По умолчанию приложение тёмное. Светлая тема включится сразу после переключения.</p>
       </div>
     </div>
 
@@ -1438,6 +1488,21 @@ function initApp(){
   startFriendListeners();
   setupPresence();
   setupPullToRefresh();
+  initTheme();
+  startNewVideosListener();
+}
+function setTheme(mode){
+  const light=mode==='light';
+  if(light)document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  try{localStorage.setItem('mtb_theme',light?'light':'dark');}catch(e){}
+  const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',light?'#f2f5fc':'#090b0f');
+  const tg=document.getElementById('themeToggle');if(tg)tg.checked=!light;
+}
+function initTheme(){
+  const light=(document.documentElement.getAttribute('data-theme')==='light');
+  const tg=document.getElementById('themeToggle');if(tg)tg.checked=!light;
+  const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute('content',light?'#f2f5fc':'#090b0f');
 }
 function genPWA(){const sec=(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1');if('serviceWorker' in navigator&&sec){navigator.serviceWorker.register('sw.js').catch(()=>{});}}
 
@@ -1951,7 +2016,8 @@ async function deleteBike(id){
 }
 
 /* ══ PROOFS (TikTok-лента) ══ */
-let videosCache=[],vidSeg='all',ttObserver=null,loadMoreObserver=null,vidLimit=30,vidCursor=null,vidHasMore=false;
+let videosCache=[],vidSeg='all',vidSkill='all',vidType='all',ttObserver=null,loadMoreObserver=null,vidLimit=30,vidCursor=null,vidHasMore=false;
+let newVidUnsub=null,newVidCount=0,newVidSeen=new Set();
 let ptrStartY=0,ptrPulling=false,ptrPull=0,loadingMore=false;
 let vidURLMap={};
 function idbOpen(){
@@ -2157,7 +2223,9 @@ async function fetchVideos(){
   vidCursor=null;vidHasMore=false;
   if(db){
     try{
-      const snap=await db.collection('videos').orderBy('createdAt','desc').limit(vidLimit).get();
+      let q=db.collection('videos').orderBy('createdAt','desc');
+      if(vidSeg==='mine'&&currentUser)q=q.where('ownerId','==',currentUser.uid);
+      const snap=await q.limit(vidLimit).get();
       items=snap.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
       vidCursor=snap.docs.length?snap.docs[snap.docs.length-1]:null;
       vidHasMore=snap.docs.length===vidLimit;
@@ -2178,7 +2246,40 @@ async function loadVideos(){
 async function refreshVideos(){
   videosCache=await fetchVideos();
   renderProofs();
+  hideNewVidsBanner();
   toast('Лента обновлена 🔄');
+}
+function startNewVideosListener(){
+  if(!db||newVidUnsub)return;
+  let first=true;
+  newVidUnsub=db.collection('videos').orderBy('createdAt','desc').limit(5).onSnapshot(snap=>{
+    if(first){first=false;return;}
+    let fresh=0;
+    snap.docs.forEach(d=>{
+      const key=d.id;
+      if(d.data().ownerId===currentUser?.uid)return;
+      if(newVidSeen.has(key))return;
+      if(videosCache.some(v=>v.key===key))return;
+      newVidSeen.add(key);
+      fresh++;
+    });
+    if(fresh>0){newVidCount+=fresh;showNewVidsBanner();}
+  },err=>console.warn('newVids:',err));
+}
+function showNewVidsBanner(){
+  let b=document.getElementById('newVidsBanner');
+  if(!b){
+    b=document.createElement('button');b.id='newVidsBanner';
+    b.style.cssText='position:fixed;bottom:150px;left:50%;transform:translateX(-50%);z-index:60;background:linear-gradient(135deg,#4cc9f0,#7c5cff);color:#fff;border:0;border-radius:999px;padding:12px 20px;font-family:var(--fb);font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(124,92,255,.5);animation:mcIn .3s ease both;max-width:90vw;';
+    b.onclick=()=>{refreshVideos();};
+    document.body.appendChild(b);
+  }
+  b.textContent='🔥 Новые видео — обновить';
+  b.style.display='block';
+}
+function hideNewVidsBanner(){
+  newVidCount=0;
+  const b=document.getElementById('newVidsBanner');if(b)b.style.display='none';
 }
 async function loadMoreVideos(){
   if(!db||!vidCursor||!vidHasMore||loadingMore)return;
@@ -2186,14 +2287,16 @@ async function loadMoreVideos(){
   const el=document.getElementById('proofFeed');if(!el){loadingMore=false;return;}
   const sent=el.querySelector('.tt-sentinel');if(sent)sent.classList.add('busy');
   try{
-    const snap=await db.collection('videos').orderBy('createdAt','desc').startAfter(vidCursor).limit(vidLimit).get();
-    if(snap.empty){vidHasMore=false;renderProofs();return;}
+    let q=db.collection('videos').orderBy('createdAt','desc');
+    if(vidSeg==='mine'&&currentUser)q=q.where('ownerId','==',currentUser.uid);
+    const snap=await q.startAfter(vidCursor).limit(vidLimit).get();
+    if(snap.empty){vidHasMore=false;return;}
     const add=snap.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
     videosCache=videosCache.concat(add);
     vidCursor=snap.docs[snap.docs.length-1];
     vidHasMore=snap.docs.length===vidLimit;
   }catch(e){console.warn('loadMore:',e);vidHasMore=false;}
-  loadingMore=false;
+  finally{loadingMore=false;}
   renderProofs();
 }
 function setupPullToRefresh(){
@@ -2201,8 +2304,35 @@ function setupPullToRefresh(){
   el.dataset.ptr='1';
   const ptr=document.createElement('div');ptr.className='tt-ptr';ptr.innerHTML='<span class="ptr-ic">🔄</span><span class="ptr-tx" style="margin-left:6px;">Потяни вниз</span>';
   el.appendChild(ptr);el.__ptr=ptr;
-  const THRESHOLD=60;
-  let refreshing=false;
+  const tx=()=>ptr.querySelector('.ptr-tx');
+  const THRESHOLD=60,MAX=72;
+  let refreshing=false,wheelTimer=null;
+  function draw(pull){
+    if(refreshing)return;
+    ptrPulling=true;ptrPull=pull;
+    ptr.classList.add('pull');
+    ptr.style.transform='translateY('+(pull-48)+'px)';
+    el.classList.add('ptr-nosnap');
+    tx().textContent=pull>=THRESHOLD?'Отпусти, чтобы обновить':'Потяни вниз';
+  }
+  function resetPull(){
+    ptrPulling=false;ptrPull=0;
+    el.classList.remove('ptr-nosnap');
+    ptr.classList.remove('pull');ptr.style.transform='';
+  }
+  function commit(){
+    ptrPulling=false;ptrPull=0;
+    el.classList.remove('ptr-nosnap');
+    refreshing=true;
+    ptr.classList.add('refresh');
+    tx().textContent='Обновляем…';
+    refreshVideos().finally(()=>{
+      refreshing=false;
+      ptr.classList.remove('refresh','pull');
+      ptr.style.transform='';ptrPull=0;
+      tx().textContent='Потяни вниз';
+    });
+  }
   el.addEventListener('touchstart',e=>{
     if(refreshing||el.scrollTop>0)return;
     ptrStartY=e.touches[0].clientY;ptrPulling=false;ptrPull=0;
@@ -2210,38 +2340,60 @@ function setupPullToRefresh(){
   el.addEventListener('touchmove',e=>{
     if(refreshing)return;
     const dy=e.touches[0].clientY-ptrStartY;
-    if(el.scrollTop<=0&&dy>0){
-      ptrPulling=true;
-      const pull=Math.min(dy*0.5,72);
-      ptrPull=pull;
-      ptr.classList.add('pull');
-      ptr.style.transform='translateY('+(pull-48)+'px)';
-      el.classList.add('ptr-nosnap');
-      ptr.querySelector('.ptr-tx').textContent=pull>=THRESHOLD?'Отпусти, чтобы обновить':'Потяни вниз';
-    }
+    if(el.scrollTop<=0&&dy>0)draw(Math.min(dy*0.5,MAX));
   },{passive:true});
   el.addEventListener('touchend',()=>{
     if(!ptrPulling||refreshing)return;
-    ptrPulling=false;
-    el.classList.remove('ptr-nosnap');
-    if(ptrPull>=THRESHOLD){
-      refreshing=true;
-      ptr.classList.add('refresh');
-      ptr.querySelector('.ptr-tx').textContent='Обновляем…';
-      refreshVideos().finally(()=>{
-        refreshing=false;
-        ptr.classList.remove('refresh','pull');
-        ptr.style.transform='';ptrPull=0;
-        ptr.querySelector('.ptr-tx').textContent='Потяни вниз';
-      });
-    }else{
-      ptr.classList.remove('pull');ptr.style.transform='';ptrPull=0;
+    if(ptrPull>=THRESHOLD)commit();else resetPull();
+  });
+  el.addEventListener('wheel',e=>{
+    if(refreshing)return;
+    if(el.scrollTop<=0&&e.deltaY<0){
+      draw(Math.min((ptrPull||0)+(-e.deltaY*0.18),MAX));
+      if(wheelTimer)clearTimeout(wheelTimer);
+      wheelTimer=setTimeout(()=>{
+        if(ptrPulling&&!refreshing){
+          if(ptrPull>=THRESHOLD)commit();else resetPull();
+        }
+      },140);
     }
+  },{passive:true});
+  let dragging=false,my=0;
+  el.addEventListener('mousedown',e=>{
+    if(refreshing||e.button!==0||el.scrollTop>0)return;
+    dragging=true;my=e.clientY;ptrPull=0;ptrPulling=false;
+    el.style.cursor='grabbing';
+  });
+  window.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    const dy=e.clientY-my;
+    if(dy<=0){resetPull();return;}
+    draw(Math.min(dy*0.5,MAX));
+  });
+  window.addEventListener('mouseup',()=>{
+    if(!dragging)return;
+    dragging=false;el.style.cursor='';
+    if(ptrPulling&&!refreshing){
+      if(ptrPull>=THRESHOLD)commit();else resetPull();
+    }
+  });
+  el.addEventListener('mouseleave',()=>{
+    if(dragging){dragging=false;el.style.cursor='';resetPull();}
   });
 }
 function setVidSeg(seg){
+  if(seg===vidSeg){renderProofs();return;}
   vidSeg=seg;
+  vidSkill='all';vidType='all';
+  const sf=document.getElementById('ttSkillF');if(sf)sf.value='all';
+  document.querySelectorAll('#ttType button').forEach(b=>b.classList.toggle('active',b.dataset.tttype==='all'));
   document.querySelectorAll('#ttSeg button').forEach(b=>b.classList.toggle('active',b.dataset.vseg===seg));
+  loadVideos();
+}
+function setVidSkill(v){vidSkill=v;renderProofs();}
+function setVidType(t){
+  vidType=t;
+  document.querySelectorAll('#ttType button').forEach(b=>b.classList.toggle('active',b.dataset.tttype===t));
   renderProofs();
 }
 function renderProofs(){
@@ -2253,12 +2405,17 @@ function renderProofs(){
   let items=videosCache||[];
   if(vidSeg==='subs')items=items.filter(v=>v.isOwn||isFollowing(v.ownerId));
   else if(vidSeg==='mine')items=items.filter(v=>v.isOwn);
+  if(vidSkill!=='all')items=items.filter(v=>(v.skill||'wh')===vidSkill);
+  if(vidType==='video')items=items.filter(v=>!(v.photos&&v.photos.length));
+  else if(vidType==='photo')items=items.filter(v=>v.photos&&v.photos.length);
   if(!items.length){
     const box=document.createElement('div');box.className='tt-empty';
     const h3=document.createElement('h3');
     const pp=document.createElement('p');
     let btn=null;
-    if(vidSeg==='subs'){h3.textContent='📌 Нет подписок';pp.textContent='Найди райдеров во вкладке «Для тебя» и загляни в их профиль. Подписка покажет их видео здесь.';btn=document.createElement('button');btn.className='btn btn-ghost btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Показать «Для тебя»';btn.onclick=()=>setVidSeg('all');}
+    const filtered=vidSkill!=='all'||vidType!=='all';
+    if(filtered){h3.textContent='🎬 Нет видео по фильтру';pp.textContent='Попробуй другой трюк или тип контента.';btn=document.createElement('button');btn.className='btn btn-ghost btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Сбросить фильтры';btn.onclick=()=>{vidSkill='all';vidType='all';const sf=document.getElementById('ttSkillF');if(sf)sf.value='all';document.querySelectorAll('#ttType button').forEach(b=>b.classList.toggle('active',b.dataset.tttype==='all'));renderProofs();};}
+    else if(vidSeg==='subs'){h3.textContent='📌 Нет подписок';pp.textContent='Найди райдеров во вкладке «Для тебя» и загляни в их профиль. Подписка покажет их видео здесь.';btn=document.createElement('button');btn.className='btn btn-ghost btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Показать «Для тебя»';btn.onclick=()=>setVidSeg('all');}
     else if(vidSeg==='mine'){h3.textContent='🎬 Пока нет видео';pp.textContent='Покажи свои трюки другим райдерам — видео или фото!';btn=document.createElement('button');btn.className='btn btn-primary btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Загрузить первое 🎥';btn.onclick=openProofModal;}
     else{h3.textContent='🎬 Лента пуста';pp.textContent='Покажи свой первый трюк всему сообществу!';btn=document.createElement('button');btn.className='btn btn-primary btn-full';btn.style.cssText='max-width:260px;';btn.textContent='Загрузить первое 🎥';btn.onclick=openProofModal;}
     box.append(h3,pp);if(btn)box.appendChild(btn);el.appendChild(box);return;
@@ -2386,7 +2543,7 @@ function renderProofs(){
     });
   },{threshold:.6});
   el.querySelectorAll('.tt-item').forEach(it=>ttObserver.observe(it));
-  if(vidHasMore&&vidSeg!=='mine'){
+  if(vidHasMore){
     const sent=document.createElement('div');sent.className='tt-sentinel';
     el.appendChild(sent);
     loadMoreObserver=new IntersectionObserver(entries=>{
