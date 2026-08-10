@@ -1,0 +1,39 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'sw.js'
+      - 'manifest.json'
+      - 'storage.rules'
+      - 'firestore.rules'
+      - 'firestore.indexes.json'
+      - '.firebaserc'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax check inline scripts
+        run: node scripts/check-inline.js
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    if: ${{ secrets.FIREBASE_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install firebase-tools
+        run: npm i -g firebase-tools@13.35.1
+      - name: Deploy to Firebase
+        run: firebase deploy --only hosting,firestore --token "${{ secrets.FIREBASE_TOKEN }}" --non-interactive
