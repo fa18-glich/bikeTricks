@@ -35,7 +35,11 @@ jobs:
       - name: Install firebase-tools
         run: npm i -g firebase-tools@13.35.1
       - name: Deploy to Firebase
-        if: env.FIREBASE_TOKEN != ''
         env:
           FIREBASE_TOKEN: ${{ secrets.BIKE }}
-        run: firebase deploy --only hosting,firestore --token "$FIREBASE_TOKEN" --non-interactive
+        run: |
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            echo "::error::Secret BIKE is empty or missing"
+            exit 1
+          fi
+          firebase deploy --only hosting,firestore --token "$FIREBASE_TOKEN" --non-interactive
