@@ -318,6 +318,7 @@ table.rec-log tr:last-child td{border-bottom:none;}
 .music-bar .m-name{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .music-bar button{background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--text);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;display:grid;place-items:center;flex-shrink:0;padding:0;}
 .music-bar button:hover{background:rgba(76,201,240,.18);}
+.music-bar .m-vol{width:72px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin:0 2px;}
 html[data-theme="light"] .music-bar{background:rgba(255,255,255,.95);border-color:var(--line);}
 html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:var(--text);}
 .tt-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;background:radial-gradient(circle at 50% 30%,rgba(124,92,255,.28),rgba(9,11,15,1) 72%);text-align:center;padding:24px;}
@@ -840,7 +841,7 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
       <div class="panel-head"><div><h3>🛠 Поддержка</h3></div></div>
       <div class="sup-grid">
         <div class="ct-card"><div class="ci">💬</div><h4>Telegram</h4><a href="https://t.me/Mtbskillspro_bot" target="_blank">@Mtbskillspro_bot</a><br><br><a href="https://t.me/Mtbskillspro_bot" target="_blank" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
-        <div class="ct-card"><div class="ci">📧</div><h4>Email</h4><a href="mailto:pvp0101gg@gmail.com">pvp0101gg@gmail.com</a><br><br><a href="mailto:pvp0101gg@gmail.com" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
+        <div class="ct-card"><div class="ci">📧</div><h4>Email</h4><a href="mailto:mtbskillspro@gmail.com">mtbskillspro@gmail.com</a><br><br><a href="mailto:mtbskillspro@gmail.com" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
       </div>
       <div style="margin-top:14px;font-size:13px;color:var(--muted);">
         <h3 style="font-size:14px;margin:0 0 8px;">❓ Частые вопросы</h3>
@@ -871,6 +872,7 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
   <button id="mPrev" title="Предыдущий трек">⏮</button>
   <button id="mPlay" title="Играть / Пауза">▶</button>
   <button id="mNext" title="Следующий трек">⏭</button>
+  <input id="mVol" type="range" class="m-vol" min="0" max="1" step="0.05" value="0.8" title="Громкость">
   <span id="mName" class="m-name">—</span>
 </div>
 
@@ -3749,6 +3751,16 @@ function musicInit(){
   document.getElementById('mPlay')?.addEventListener('click',mToggle);
   document.getElementById('mNext')?.addEventListener('click',mNext);
   document.getElementById('mPrev')?.addEventListener('click',mPrev);
+  const mvol=document.getElementById('mVol');
+  if(mvol){
+    let saved=0.8;
+    try{saved=parseFloat(localStorage.getItem('mtb_mvol'));if(isNaN(saved)||saved<0||saved>1)saved=0.8;}catch(e){}
+    mAudio.volume=saved;mvol.value=saved;
+    mvol.addEventListener('input',()=>{
+      mAudio.volume=parseFloat(mvol.value)||0;
+      try{localStorage.setItem('mtb_mvol',String(mvol.value));}catch(e){}
+    });
+  }
   const fromManifest=Array.isArray(window.MUSIC_SONGS)?window.MUSIC_SONGS.filter(t=>t):[];
   const tracks=[...fromManifest];
   const bar=document.getElementById('musicBar');
