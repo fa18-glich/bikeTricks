@@ -11,6 +11,9 @@ on:
       - 'firestore.rules'
       - 'firestore.indexes.json'
       - '.firebaserc'
+      - 'privacy.html'
+      - 'scripts/**'
+      - 'music/**'
   workflow_dispatch:
 
 jobs:
