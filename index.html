@@ -622,7 +622,6 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
     <button class="tab-btn" data-tab="bikes">🚲<span>Байки</span></button>
     <button class="tab-btn" data-tab="videos">🎬<span>Видео</span></button>
     <button class="tab-btn" data-tab="friends">🏆<span>Топ</span></button>
-    <button class="tab-btn" data-tab="friends2">👥<span>Друзья</span></button>
     <button class="tab-btn" data-tab="duel">⚡<span>Дуэли</span></button>
     <button class="tab-btn" data-tab="profile">👤<span>Профиль</span></button>
     <button class="tab-btn" data-tab="support">🛠<span>Ещё</span></button>
@@ -745,32 +744,6 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
     </div>
   </section>
 
-  <!-- FRIENDS2 -->
-  <section id="tab-friends2" class="tab">
-    <div class="panel">
-      <div class="panel-head"><div><h3>👥 Друзья</h3></div></div>
-      <div class="my-code-box">
-        <div class="my-code-label">Мой код:</div>
-        <div class="my-code-num" id="myCodeNum">——————</div>
-        <button class="btn btn-ghost copy-btn" onclick="copyMyCode()">📋</button>
-      </div>
-      <button class="btn btn-ghost btn-full" style="margin:8px 0 12px;" onclick="shareApp()">📤 Поделиться приложением</button>
-      <div class="friends-add-row">
-        <input id="friendCodeInput" class="field" type="text" placeholder="Введи код друга (12 цифр)" maxlength="12"/>
-        <button class="btn btn-primary" onclick="sendFriendRequest()">Отправить</button>
-      </div>
-      <div id="friendsReqMsg" style="display:none;" class="auth-msg"></div>
-      <div class="sub-tabs" id="friendsSubTabs">
-        <button class="sub-tab active" data-fsub="received" onclick="switchFriendsSub('received')">Входящие <span id="frInpCount" class="fr-count"></span></button>
-        <button class="sub-tab" data-fsub="friends" onclick="switchFriendsSub('friends')">Друзья <span id="frFriendsCount" class="fr-count"></span></button>
-        <button class="sub-tab" data-fsub="sent" onclick="switchFriendsSub('sent')">Исходящие</button>
-      </div>
-      <div id="friendsReceived" class="friends-panel"></div>
-      <div id="friendsList" class="friends-panel" style="display:none;"></div>
-      <div id="friendsSent" class="friends-panel" style="display:none;"></div>
-    </div>
-  </section>
-
   <!-- DUELS -->
   <section id="tab-duel" class="tab">
     <div class="panel">
@@ -789,6 +762,30 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
   <!-- PROFILE -->
   <section id="tab-profile" class="tab">
     <div id="profileRoot"></div>
+    <div id="profileFriends">
+      <div class="panel">
+        <div class="panel-head"><div><h3>👥 Друзья</h3></div></div>
+        <div class="my-code-box">
+          <div class="my-code-label">Мой код:</div>
+          <div class="my-code-num" id="myCodeNum">——————</div>
+          <button class="btn btn-ghost copy-btn" onclick="copyMyCode()">📋</button>
+        </div>
+        <button class="btn btn-ghost btn-full" style="margin:8px 0 12px;" onclick="shareApp()">📤 Поделиться приложением</button>
+        <div class="friends-add-row">
+          <input id="friendCodeInput" class="field" type="text" placeholder="Введи код друга (12 цифр)" maxlength="12"/>
+          <button class="btn btn-primary" onclick="sendFriendRequest()">Отправить</button>
+        </div>
+        <div id="friendsReqMsg" style="display:none;" class="auth-msg"></div>
+        <div class="sub-tabs" id="friendsSubTabs">
+          <button class="sub-tab active" data-fsub="received" onclick="switchFriendsSub('received')">Входящие <span id="frInpCount" class="fr-count"></span></button>
+          <button class="sub-tab" data-fsub="friends" onclick="switchFriendsSub('friends')">Друзья <span id="frFriendsCount" class="fr-count"></span></button>
+          <button class="sub-tab" data-fsub="sent" onclick="switchFriendsSub('sent')">Исходящие</button>
+        </div>
+        <div id="friendsReceived" class="friends-panel"></div>
+        <div id="friendsList" class="friends-panel" style="display:none;"></div>
+        <div id="friendsSent" class="friends-panel" style="display:none;"></div>
+      </div>
+    </div>
   </section>
 
   <!-- MORE -->
@@ -1632,9 +1629,8 @@ function gotoTab(t){
   if(t==='bikes'){switchBikeTab('feed');loadBikes();}
   if(t==='videos'){const b=document.getElementById('ttAdd');if(b)b.style.display='flex';setVidSeg(vidSeg);loadVideos();}
   if(t==='friends')renderFriends();
-  if(t==='friends2')renderFriendsTab();
-  if(t==='duel'){updateDuelHint();renderDuels();refreshDuels();}
-  if(t==='profile')renderProfile();
+  if(t==='duel')renderDuels();
+  if(t==='profile'){renderProfile();renderFriendsTab();}
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>gotoTab(btn.dataset.tab)));
 function switchBikeTab(tab){document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));const b=document.querySelector(`[data-subtab="${tab}"]`);if(b)b.classList.add('active');document.getElementById('bikes-feed').style.display=tab==='feed'?'block':'none';document.getElementById('bikes-add').style.display=tab==='add'?'block':'none';if(tab==='feed')loadBikes();}
@@ -3473,7 +3469,7 @@ function duelStatusText(d){
       return '⚡ Твой ход! Сделай трюк и введи результат.';
     }
   }
-  if(isM)return '⏳ Ждём соперника… Пригласи друга по коду (Друзья) или оставь вызов открытым.';
+  if(isM)return '⏳ Ждём соперника… Пригласи друга по коду (Профиль) или оставь вызов открытым.';
   if(d.opponent&&d.opponent!=='??? (открытая)')return '⚡ Тебя вызвали на дуэль!';
   return '🔥 Открытый вызов — прими!';
 }
