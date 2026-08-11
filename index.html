@@ -993,6 +993,30 @@ let confirmCb=null;
 function confirmAction(title,text,cb){confirmCb=cb;document.getElementById('confirmCont').innerHTML=`<div class="conf-ov" onclick="if(event.target===this)closeConf()"><div class="conf-box"><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="conf-acts"><button class="btn btn-ghost" style="flex:1;" onclick="closeConf()">Отмена</button><button class="btn btn-danger" style="flex:1;" onclick="execConf()">Да</button></div></div></div>`;}
 function closeConf(){document.getElementById('confirmCont').innerHTML='';confirmCb=null;}
 function execConf(){if(confirmCb)confirmCb();closeConf();}
+let promptCb=null;
+function promptApp(title,placeholder,def,cb){
+  promptCb=cb;
+  const el=document.getElementById('confirmCont');
+  el.innerHTML=`<div class="conf-ov" onclick="if(event.target===this)closePrompt()"><div class="conf-box"><h3>${esc(title)}</h3><input id="promptInp" class="field" style="width:100%;margin:12px 0;" placeholder="${esc(placeholder||'')}" value="${esc(def||'')}"><div class="conf-acts"><button class="btn btn-ghost" style="flex:1;" onclick="closePrompt()">Отмена</button><button class="btn btn-primary" style="flex:1;" onclick="execPrompt()">ОК</button></div></div></div>`;
+  const inp=document.getElementById('promptInp');
+  inp.focus();inp.select();
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')execPrompt();});
+}
+function closePrompt(){document.getElementById('confirmCont').innerHTML='';promptCb=null;}
+function execPrompt(){const inp=document.getElementById('promptInp');const v=inp?inp.value:'';if(promptCb)promptCb(v);closePrompt();}
+async function copyText(txt){
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(txt);
+      toast('Скопировано 📋');return;
+    }
+    throw new Error('no-clipboard');
+  }catch(e){
+    promptApp('Скопируй ссылку','',txt,()=>{});
+    const inp=document.getElementById('promptInp');
+    if(inp){inp.readOnly=true;inp.select();toast('Выдели и скопируй');}
+  }
+}
 let toastT=null;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2500);}
 
@@ -1404,9 +1428,18 @@ async function deleteAccount(){
       const provider=new firebase.auth.GoogleAuthProvider();
       await auth.currentUser.reauthenticateWithPopup(provider);
     }else{
-      const password=prompt('Для удаления аккаунта введи пароль:');
-      if(!password){toast('Отменено');return;}
-      try{await auth.signInWithEmailAndPassword(currentUser.email,password);}catch(e){toast('Неверный пароль');return;}
+      const ok=await new Promise(res=>{
+        const ask=()=>{
+          promptApp('Подтверди удаление','Пароль от '+currentUser.email,'',pwd=>{
+            if(!pwd){toast('Отменено');res(false);return;}
+            auth.signInWithEmailAndPassword(currentUser.email,pwd)
+              .then(()=>res(true))
+              .catch(()=>{toast('Неверный пароль');ask();});
+          });
+        };
+        ask();
+      });
+      if(!ok)return;
     }
   }catch(e){
     toast('Не удалось подтвердить. Войди снова и попробуй.');
@@ -1495,7 +1528,9 @@ async function changeNick(){
       toast('Можно менять через '+days+' дн.');return;
     }
   }
-  const n=prompt('Новый никнейм:',state.nickname);
+  promptApp('Новый никнейм','Никнейм (2–24 символа)',state.nickname||'',n=>{doChangeNick(n);});
+}
+async function doChangeNick(n){
   if(!n)return;
   const v=n.trim().replace(/[<>&"']/g,'');
   if(v.length<2){toast('Никнейм минимум 2 символа');return;}
@@ -3068,7 +3103,7 @@ async function shareApp(){
     await navigator.clipboard.writeText(text);
     toast('Ссылка скопирована! 📤');
   }catch(e2){
-    window.prompt('Скопируй ссылку:',url);
+    copyText(url);
   }
 }
 
@@ -3146,15 +3181,16 @@ async function cancelFriendRequest(reqId,toUid){
     renderFriendsTab();
   }catch(e){toast('Ошибка: '+e.message);}
 }
-async function removeFriend(friendUid,friendName){
-  if(!confirm('Удалить '+friendName+' из друзей?'))return;
+function removeFriend(friendUid,friendName){
   if(!db||!currentUser)return;
-  try{
-    const friendDocId=[currentUser.uid,friendUid].sort().join('_');
-    await db.collection('friends').doc(friendDocId).delete();
-    toast('Друг удалён');
-    renderFriendsTab();
-  }catch(e){toast('Ошибка: '+e.message);}
+  confirmAction('Удалить друга?','Удалить '+friendName+' из друзей?',async()=>{
+    try{
+      const friendDocId=[currentUser.uid,friendUid].sort().join('_');
+      await db.collection('friends').doc(friendDocId).delete();
+      toast('Друг удалён');
+      renderFriendsTab();
+    }catch(e){toast('Ошибка: '+e.message);}
+  });
 }
 function switchFriendsSub(sub){
   friendsCurrentSub=sub;
@@ -3339,7 +3375,10 @@ function declineDuel(id){
 }
 async function submitDuelResult(id,val){
   const d=state.duels.find(x=>x.id===id);if(!d)return;
-  if(val==null||val==='')val=prompt('Твой результат ('+SUNITS[d.skill]+'):');
+  if(val==null||val===''){
+    promptApp('Твой результат ('+(SUNITS[d.skill]||'')+')','Число в '+(SUNITS[d.skill]||''),'',v=>{if(v==='')return toast('Отменено');submitDuelResult(id,v);});
+    return;
+  }
   val=parseFloat(val);
   if(isNaN(val)||val<=0)return toast('Введи число больше 0!');
   const mx=DUEL_MAX[d.skill]||1000;
