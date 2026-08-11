@@ -3739,16 +3739,33 @@ function musicInit(){
   mAudio=document.getElementById('musicAudio');
   if(!mAudio)return;
   mAudio.addEventListener('ended',()=>mNext());
+  mAudio.addEventListener('error',()=>{if(mTracks.length>1)setTimeout(()=>mNext(),400);});
   document.getElementById('mPlay')?.addEventListener('click',mToggle);
   document.getElementById('mNext')?.addEventListener('click',mNext);
   document.getElementById('mPrev')?.addEventListener('click',mPrev);
   const fromManifest=Array.isArray(window.MUSIC_SONGS)?window.MUSIC_SONGS.filter(t=>t):[];
   const tracks=[...fromManifest];
   const bar=document.getElementById('musicBar');
-  const probes=[];
-  for(let i=1;i<=20;i++)probes.push('music/track'+i+'.mp3');
-  Promise.all(probes.map(u=>fetch(u,{method:'HEAD'}).then(r=>r.ok?u:null).catch(()=>null))).then(found=>{
-    found.filter(Boolean).forEach(u=>{if(!tracks.includes(u))tracks.push(u);});
+  // Автопоиск файлов track1..track20 в папке music/. Проверка существования:
+  // у настоящего аудио Content-Type не HTML (у Hosting SPA-rewrite отсутствующий
+  // файл отдаётся как index.html)
+  const exts=['mp3','m4a','ogg','wav','webm'];
+  const probeUrls=[];
+  for(let i=1;i<=20;i++)for(const e of exts)probeUrls.push('music/track'+i+'.'+e);
+  Promise.all(probeUrls.map(u=>fetch(u,{headers:{Range:'bytes=0-1'}}).then(r=>{
+    if(!r.ok)return null;
+    const ct=(r.headers.get('content-type')||'').toLowerCase();
+    return ct.includes('html')?null:u;
+  }).catch(()=>null))).then(found=>{
+    const existing=new Set(found.filter(Boolean));
+    const ordered=[];
+    for(let i=1;i<=20;i++){
+      for(const e of exts){
+        const u='music/track'+i+'.'+e;
+        if(existing.has(u)){ordered.push(u);break;}
+      }
+    }
+    ordered.forEach(u=>{if(!tracks.includes(u))tracks.push(u);});
     if(!tracks.length){if(bar)bar.style.display='none';return;}
     mTracks=tracks;
     if(bar)bar.style.display='flex';
