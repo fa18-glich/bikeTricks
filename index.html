@@ -1598,7 +1598,7 @@ function gotoTab(t){
   if(t==='videos'){const b=document.getElementById('ttAdd');if(b)b.style.display='flex';setVidSeg(vidSeg);loadVideos();}
   if(t==='friends')renderFriends();
   if(t==='friends2')renderFriendsTab();
-  if(t==='duel'){updateDuelHint();renderDuels();}
+  if(t==='duel'){updateDuelHint();renderDuels();refreshDuels();}
   if(t==='profile')renderProfile();
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>gotoTab(btn.dataset.tab)));
@@ -3251,6 +3251,9 @@ document.getElementById('friendSort')?.addEventListener('change',renderFriends);
 
 /* ══ DUELS ══ */
 let duelUnsub=null;
+let duelListenerRetry=null;
+let _duelListenerWarned=false;
+let _duelFirstSnap=true;
 let _lastLocalDuelDone=0;
 // Дедуп начисления duelsWon за сессию — чтобы победу не засчитали дважды
 // (локальный путь submitDuelResult + слушатель Firestore)
@@ -3283,6 +3286,14 @@ async function createDuel(){
   if(!state.duels)state.duels=[];
   const myActive=state.duels.filter(d=>duelIsMine(d)&&(d.status==='open'||d.status==='active'));
   if(myActive.length>=1){toast('⚠️ У тебя уже есть дуэль! Заверши или отмени её.');return;}
+  if(db){
+    try{
+      const chk=await db.collection('duels')
+        .where('participants','array-contains',currentUser.uid)
+        .where('status','in',['open','active']).limit(1).get();
+      if(!chk.empty){toast('⚠️ У тебя уже есть дуэль! Заверши или отмени её.');return;}
+    }catch(e){console.warn('createDuel check:',e);}
+  }
   const duel={id:Date.now().toString(),skill,target:String(Math.floor(target)),opponent:opponent||null,challenger:state.nickname,challengerUid:currentUser.uid,participants:[currentUser.uid],status:'open',created:new Date().toISOString(),challengerResult:null,opponentResult:null,acceptedBy:null,acceptedByUid:null,winner:null,local:true};
   state.duels.unshift(duel);
   if(db){
@@ -3379,10 +3390,15 @@ async function cancelDuel(id){
   const d=state.duels.find(x=>x.id===id);
   if(!d)return;
   if(!duelIsChallenger(d)){toast('Только создатель может отменить дуэль!');return;}
-  if(d.status==='active'&&!confirm('Дуэль уже активна! Отменить?'))return;
+  if(d.status==='active'){confirmAction('Отменить дуэль?','Дуэль уже активна. Отменить?',()=>doCancelDuel(id));return;}
+  doCancelDuel(id);
+}
+function doCancelDuel(id){
+  if(!state.declinedDuels)state.declinedDuels=[];
+  if(!state.declinedDuels.includes(id))state.declinedDuels.push(id);
   state.duels=state.duels.filter(x=>x.id!==id);
   if(db){
-    try{await db.collection('duels').doc(id).delete();}catch(e){console.warn('cancelDuel:',e);}
+    try{db.collection('duels').doc(id).delete().catch(e=>console.warn('cancelDuel:',e));}catch(e){}
   }
   saveCloud();toast('Дуэль отменена');renderDuels();
 }
@@ -3472,7 +3488,7 @@ function renderDuels(){
   const el=document.getElementById('duelList');if(!el)return;
   el.innerHTML='';
   const declined=new Set(state.declinedDuels||[]);
-  let duels=[...(state.duels||[])].filter(d=>!(d.status==='open'&&!duelIsMine(d)&&declined.has(d.id)));
+  let duels=[...(state.duels||[])].filter(d=>!declined.has(d.id));
   duels.sort((a,b)=>(a.status==='done'?1:0)-(b.status==='done'?1:0)||((b.created||'').localeCompare(a.created||'')));
   duels=duels.slice(0,20);
   if(!duels.length){
@@ -3507,10 +3523,11 @@ function renderDuels(){
 }
 function initDuelListener(){
   if(!db||!currentUser||duelUnsub)return;
+  _duelFirstSnap=true;
   try{
-    duelUnsub=db.collection('duels').where('status','in',['open','active','done']).onSnapshot(snap=>{
-      const prev=(state.duels||[]).slice();
-      const merged=[...prev];
+    duelUnsub=db.collection('duels').where('status','in',['open','active','done','void']).onSnapshot(snap=>{
+  const prev=(state.duels||[]).slice();
+  let merged=[...prev];
       snap.docChanges().forEach(ch=>{
         const gd={id:ch.doc.id,...ch.doc.data()};
         const i=merged.findIndex(x=>x.id===gd.id);
@@ -3549,11 +3566,31 @@ function initDuelListener(){
           else{toast('Дуэль завершена. Победил '+gd.winner);}
         }
       });
+      const declined=new Set(state.declinedDuels||[]);
+      merged=merged.filter(d=>!declined.has(d.id));
+      const firstSnap=_duelFirstSnap;_duelFirstSnap=false;
+      if(!firstSnap){
+        snap.docChanges().forEach(ch=>{
+          if(ch.type==='added'){
+            const gd={id:ch.doc.id,...ch.doc.data()};
+            if(!duelIsMine(gd)&&gd.status==='open'&&(!gd.opponent||gd.opponent===state.nickname)&&!declined.has(gd.id)){
+              toast('🔥 Новый вызов на дуэль!');
+              sfx.levelUp();
+            }
+          }
+        });
+      }
       state.duels=merged;
       saveLS();
       renderDuels();
       syncLocalDuels();
-    },e=>{console.warn('duel listener:',e);});
+    },e=>{
+      console.warn('duel listener:',e);
+      if(!_duelListenerWarned){_duelListenerWarned=true;toast('Не удаётся следить за дуэлями. Открой вкладку ещё раз.');}
+      if(duelUnsub){try{duelUnsub();}catch(_){}duelUnsub=null;}
+      clearTimeout(duelListenerRetry);
+      duelListenerRetry=setTimeout(initDuelListener,5000);
+    });
   }catch(e){console.warn('initDuelListener:',e);}
 }
 function stopDuelListener(){if(duelUnsub){duelUnsub();duelUnsub=null;}}
@@ -3570,13 +3607,14 @@ function startDuelRefresh(){
 async function refreshDuels(){
   if(!db||!currentUser)return;
   try{
-    const q=db.collection('duels').where('status','in',['open','active','done']);
+    const q=db.collection('duels').where('status','in',['open','active','done','void']);
     const snap=await withTimeout(q.get(),15000);
     const map={};
     (state.duels||[]).forEach(d=>map[d.id]=d);
     const cloudIds=new Set();
     snap.docs.forEach(d=>{cloudIds.add(d.id);map[d.id]={id:d.id,...d.data()};});
-    const merged=Object.values(map).filter(d=>cloudIds.has(d.id)||d.local);
+    const declined=new Set(state.declinedDuels||[]);
+    const merged=Object.values(map).filter(d=>!declined.has(d.id)&&(cloudIds.has(d.id)||d.local));
     const changed=JSON.stringify(merged)!==JSON.stringify(state.duels||[]);
     state.duels=merged;
     saveLS();
