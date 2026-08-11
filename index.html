@@ -515,7 +515,18 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
 .vid-box{position:relative;}
 .vid-box.reco{box-shadow:0 0 0 3px rgba(50,215,75,.45),0 0 24px rgba(50,215,75,.55);animation:recoPulse 2.6s ease-in-out infinite;}
 @keyframes recoPulse{0%,100%{box-shadow:0 0 0 3px rgba(50,215,75,.4),0 0 20px rgba(50,215,75,.45);}50%{box-shadow:0 0 0 5px rgba(50,215,75,.65),0 0 42px rgba(50,215,75,.75),0 0 80px rgba(50,215,75,.35);}}
-.reco-badge{position:absolute;top:-13px;right:12px;z-index:5;background:linear-gradient(135deg,#32d74b,#2ea043);color:#fff;font-size:11px;font-weight:900;padding:6px 14px;border-radius:999px;box-shadow:0 6px 20px rgba(50,215,75,.5);display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.reco-badge{position:absolute;top:12px;right:12px;z-index:7;background:linear-gradient(135deg,#32d74b,#2ea043);color:#fff;font-size:11px;font-weight:900;padding:6px 14px;border-radius:999px;box-shadow:0 6px 20px rgba(50,215,75,.5);display:flex;align-items:center;gap:6px;white-space:nowrap;pointer-events:none;}
+.vid-overlay{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:linear-gradient(160deg,rgba(124,92,255,.25),rgba(10,12,18,.55));cursor:pointer;text-align:center;transition:opacity .4s;}
+.vid-overlay.hidden{opacity:0;pointer-events:none;}
+.vid-play-ic{width:74px;height:74px;border-radius:50%;background:linear-gradient(135deg,#7c5cff,#4cc9f0);display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;box-shadow:0 10px 30px rgba(124,92,255,.5);animation:playPulse 1.8s ease-in-out infinite;}
+@keyframes playPulse{0%,100%{transform:scale(1);box-shadow:0 10px 30px rgba(124,92,255,.5);}50%{transform:scale(1.08);box-shadow:0 14px 40px rgba(124,92,255,.75);}}
+.vid-overlay-t{font-size:15px;font-weight:900;color:#fff;letter-spacing:.5px;}
+.vid-overlay-s{font-size:12px;color:rgba(255,255,255,.8);font-family:var(--fm);}
+.vid-learn{position:absolute;bottom:12px;left:12px;right:12px;z-index:6;background:rgba(10,12,18,.8);border-radius:999px;padding:7px 14px;display:none;align-items:center;gap:10px;}
+.vid-learn.show{display:flex;}
+.vid-learn-bar{flex:1;height:6px;border-radius:99px;background:rgba(255,255,255,.2);overflow:hidden;}
+.vid-learn-fill{display:block;height:100%;width:0%;background:linear-gradient(90deg,#7c5cff,#32d74b);border-radius:99px;transition:width .12s linear;}
+.vid-learn-lb{font-size:11px;font-weight:800;color:#fff;font-family:var(--fm);white-space:nowrap;}
 .mistake-box{background:rgba(255,80,80,.06);border:1px solid rgba(255,80,80,.25);border-radius:16px;padding:14px;margin-bottom:12px;}
 .mistake-box h4{font-size:13px;font-weight:900;color:#ff8a80;margin:0 0 8px;}
 .mistake-box ul{margin:0;padding-left:18px;}
@@ -894,7 +905,7 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
 <div id="modal" class="modal">
   <div class="modal-card">
     <div class="modal-head"><h2 id="modalTitle"></h2><button class="btn btn-ghost" style="padding:8px 12px;" onclick="closeModal()">✕</button></div>
-    <div class="vid-box reco"><span class="reco-badge">⭐ Очень рекомендовано к просмотру</span><iframe id="modalVideo" src="" allowfullscreen></iframe></div>
+    <div class="vid-box reco"><span class="reco-badge">⭐ Очень рекомендовано к просмотру</span><div id="vidOverlay" class="vid-overlay" onclick="startVideo()"><div class="vid-play-ic">▶</div><div class="vid-overlay-t">Начать обучение</div><div class="vid-overlay-s">Первый просмотр сегодня — бонус +5% XP</div></div><div id="vidLearn" class="vid-learn"><div class="vid-learn-bar"><i id="vidLearnFill"></i></div><span id="vidLearnLabel" class="vid-learn-lb">📺 Загрузка обучения…</span></div><iframe id="modalVideo" src="" allowfullscreen></iframe></div>
     <div class="timer-wrap">
       <div class="timer-disp" id="timerDisp">00:00.0</div>
       <div class="timer-btns"><button class="btn btn-success" id="timerStartBtn" onclick="timerStart()">▶ Старт</button><button class="btn btn-warn" onclick="timerStop()">⏹ Стоп</button><button class="btn btn-ghost" onclick="timerReset()">↺ Сброс</button></div>
@@ -1715,8 +1726,60 @@ function renderAch(){const el=document.getElementById('achList');if(!el)return;e
 function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);body.append(tit,p1,p2,pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();}
 
 /* ══ MODAL ══ */
-function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);document.getElementById('modalVideo').src=base.video;const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});if(base.mistakes&&base.mistakes.length){const mb=document.createElement('div');mb.className='mistake-box';const mh=document.createElement('h4');mh.textContent='🚫 Частые ошибки';mb.appendChild(mh);const ul=document.createElement('ul');base.mistakes.forEach(m=>{const li=document.createElement('li');li.textContent=m;ul.appendChild(li);});mb.appendChild(ul);st.appendChild(mb);}const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,false);btn.disabled=isMax;updateModalDaily();document.getElementById('modal').classList.add('show');}
-function closeModal(){mResume();timerReset();document.getElementById('modal').classList.remove('show');document.getElementById('modalVideo').src='';}
+function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);setupVideo();const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});if(base.mistakes&&base.mistakes.length){const mb=document.createElement('div');mb.className='mistake-box';const mh=document.createElement('h4');mh.textContent='🚫 Частые ошибки';mb.appendChild(mh);const ul=document.createElement('ul');base.mistakes.forEach(m=>{const li=document.createElement('li');li.textContent=m;ul.appendChild(li);});mb.appendChild(ul);st.appendChild(mb);}const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,false);btn.disabled=isMax;updateModalDaily();document.getElementById('modal').classList.add('show');}
+function closeModal(){stopLearnBar();mResume();timerReset();document.getElementById('modal').classList.remove('show');document.getElementById('modalVideo').src='';}
+let videoWatching=false,_learnTimer=null;
+function setupVideo(){
+  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
+  const f=document.getElementById('modalVideo');if(!f)return;
+  videoWatching=false;stopLearnBar();
+  const ov=document.getElementById('vidOverlay');if(ov)ov.classList.remove('hidden');
+  const lb=document.getElementById('vidLearn');if(lb)lb.classList.remove('show');
+  const fill=document.getElementById('vidLearnFill');if(fill)fill.style.width='0%';
+  if(!base||!base.video){f.removeAttribute('src');return;}
+  f.src=base.video+'?enablejsapi=1&rel=0';
+}
+function startVideo(){
+  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
+  const f=document.getElementById('modalVideo');if(!base||!f||videoWatching)return;
+  videoWatching=true;
+  const ov=document.getElementById('vidOverlay');if(ov)ov.classList.add('hidden');
+  f.src=base.video+'?autoplay=1&enablejsapi=1&rel=0';
+  const sk=state.skills.find(x=>x.id===activeSkillId);
+  const today=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  if(sk&&sk.view!==today){sk.view=today;giveVideoBonus(5,'🎥 Первый просмотр! +5%');runLearnBar();}
+  else toast('▶ Поехали! Учись и катайся 💪');
+  saveCloudDebounced();
+}
+function giveVideoBonus(gain,msg){
+  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
+  const user=state.skills.find(s=>s.id===activeSkillId);
+  if(!user||!base)return;
+  if(user.lv>=base.levels.length-1&&user.pr>=100){toast('✅ Максимум уже достигнут');return;}
+  user.pr=Math.min(100,user.pr+gain);
+  sfx.tick();toast(msg,'toast-xp');renderSkills();checkAch();
+  ['totalPoints','totalTrainings','openLevels','avgProgress'].forEach(popSt);
+}
+function runLearnBar(){
+  const lb=document.getElementById('vidLearn');if(!lb)return;
+  const fill=document.getElementById('vidLearnFill');
+  const txt=document.getElementById('vidLearnLabel');
+  lb.classList.add('show');
+  if(fill)fill.style.width='0%';
+  if(txt)txt.textContent='📺 Загрузка обучения…';
+  let p=0;
+  stopLearnBar();
+  _learnTimer=setInterval(()=>{
+    p+=2;
+    if(fill)fill.style.width=Math.min(100,p)+'%';
+    if(p>=100){
+      stopLearnBar();
+      if(txt)txt.textContent='🔥 Обучение начато!';
+      setTimeout(()=>lb.classList.remove('show'),1000);
+    }
+  },120);
+}
+function stopLearnBar(){if(_learnTimer){clearInterval(_learnTimer);_learnTimer=null;}}
 
 function trainBtnLabel(isMax,dayDone){
   if(isMax)return '✅ МАКСИМУМ ДОСТИГНУТ';
