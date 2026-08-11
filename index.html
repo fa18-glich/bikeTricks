@@ -1010,6 +1010,7 @@ const REC_SKILLS=[
 ];
 // Максимум цели в дуэлях — реалистичный потолок (меньше чем рекорды)
 const DUEL_MAX={wh:1000,mn:500,ts:600,bh:150,st:300};
+const DUEL_MIN={wh:5,mn:5,ts:3,bh:15,st:5};
 const SNAMES={wh:'Вилли',mn:'Мэнуал',ts:'Трекстенд',bh:'Банни-хоп',st:'Стоппи'};
 const SUNITS={wh:'метров',mn:'метров',ts:'секунд',bh:'см',st:'метров'};
 const ACHIEVEMENTS=[
@@ -3257,7 +3258,8 @@ function updateDuelHint(){
   const el=document.getElementById('duelHint');if(!el)return;
   const skill=document.getElementById('duelSkill').value;
   const mx=DUEL_MAX[skill]||1000;
-  el.textContent='Максимум цели: '+mx+' '+(SUNITS[skill]||'');
+  const mn=DUEL_MIN[skill]||1;
+  el.textContent='Цель: от '+mn+' до '+mx+' '+(SUNITS[skill]||'');
 }
 function duelIsChallenger(d){
   return (d.challengerUid&&currentUser&&d.challengerUid===currentUser.uid)||(!d.challengerUid&&d.challenger===state.nickname);
@@ -3273,6 +3275,8 @@ async function createDuel(){
   const opponent=document.getElementById('duelOpponent').value.trim();
   if(!target||isNaN(target)||target<1)return toast('Укажи цель!');
   const mx=DUEL_MAX[skill]||1000;
+  const mn=DUEL_MIN[skill]||1;
+  if(target<mn)return toast('Минимум цели: '+mn+' '+(SUNITS[skill]||''));
   if(target>mx)return toast('Максимум цели: '+mx+' '+(SUNITS[skill]||''));
   if(!state.duels)state.duels=[];
   const myActive=state.duels.filter(d=>duelIsMine(d)&&(d.status==='open'||d.status==='active'));
@@ -3326,6 +3330,8 @@ async function submitDuelResult(id,val){
   val=parseFloat(val);
   if(isNaN(val)||val<=0)return toast('Введи число больше 0!');
   const mx=DUEL_MAX[d.skill]||1000;
+  const mn=DUEL_MIN[d.skill]||1;
+  if(val<mn)return toast('Минимум '+mn+' '+SUNITS[d.skill]);
   if(val>mx)return toast('Максимум '+mx+' '+SUNITS[d.skill]);
   const isC=duelIsChallenger(d);
   const isO=d.acceptedByUid===currentUser.uid||(!d.acceptedByUid&&d.acceptedBy===state.nickname);
@@ -3416,7 +3422,7 @@ function duelStatusText(d){
 }
 function duelResultForm(d){
   const wrap=document.createElement('div');wrap.className='duel-form';
-  const inp=document.createElement('input');inp.className='field';inp.type='number';inp.min='1';inp.step='0.1';inp.max=DUEL_MAX[d.skill]||1000;
+  const inp=document.createElement('input');inp.className='field';inp.type='number';inp.min=DUEL_MIN[d.skill]||1;inp.step='0.1';inp.max=DUEL_MAX[d.skill]||1000;
   inp.placeholder='Твой результат ('+SUNITS[d.skill]+')';
   const btn=document.createElement('button');btn.className='btn btn-success';btn.style.cssText='flex:1;padding:10px;font-size:13px;';
   btn.textContent='💾 Сохранить';
