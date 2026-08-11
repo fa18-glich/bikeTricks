@@ -313,7 +313,7 @@ table.rec-log tr:last-child td{border-bottom:none;}
 .tt-rate-pop{position:absolute;right:58px;bottom:130px;background:rgba(19,22,30,.96);border:1px solid var(--line);border-radius:14px;padding:6px 10px;display:flex;gap:2px;z-index:4;box-shadow:var(--shadow);animation:mcIn .2s cubic-bezier(.34,1.56,.64,1);}
 .tt-add{position:fixed;right:16px;bottom:76px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#7c5cff,#ff453a);color:#fff;font-size:26px;border:0;box-shadow:0 8px 24px rgba(124,92,255,.45);z-index:50;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s;}
 .tt-add:active{transform:scale(.9);}
-.music-bar{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:9000;display:none;align-items:center;gap:8px;background:rgba(19,22,30,.92);border:1px solid var(--line);border-radius:999px;padding:7px 12px;box-shadow:var(--shadow);backdrop-filter:blur(10px);font-family:var(--fm);font-size:12px;max-width:92vw;color:var(--text);}
+.music-bar{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:950;display:none;align-items:center;gap:8px;background:rgba(19,22,30,.92);border:1px solid var(--line);border-radius:999px;padding:7px 12px;box-shadow:var(--shadow);backdrop-filter:blur(10px);font-family:var(--fm);font-size:12px;max-width:92vw;color:var(--text);}
 .music-bar .m-ic{font-size:15px;}
 .music-bar .m-name{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .music-bar button{background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--text);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;display:grid;place-items:center;flex-shrink:0;padding:0;}
@@ -542,7 +542,7 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
 #lvlBox p{margin:8px 0 0;color:var(--muted);font-size:15px;}
 .cf{position:fixed;top:-10px;border-radius:3px;pointer-events:none;z-index:2500;animation:cfFall linear forwards;}
 @keyframes cfFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
-.toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%) translateY(14px);opacity:0;background:var(--text);color:var(--bg);padding:12px 26px;border-radius:999px;font-weight:900;font-size:15px;transition:opacity .65s ease,transform .65s cubic-bezier(.22,1,.36,1);pointer-events:none;z-index:10000;box-shadow:0 10px 30px rgba(255,255,255,.15);font-family:var(--fb);}
+.toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%) translateY(14px);opacity:0;background:var(--text);color:var(--bg);padding:12px 26px;border-radius:999px;font-weight:900;font-size:15px;transition:opacity .65s ease,transform .65s cubic-bezier(.22,1,.36,1);pointer-events:none;z-index:10000;box-shadow:0 10px 30px rgba(255,255,255,.15);font-family:var(--fb);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast-xp{background:linear-gradient(135deg,#32d74b,#2ea043);color:#fff;box-shadow:0 10px 30px rgba(50,215,75,.45);}
 .conf-ov{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.85);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px;animation:mfIn .2s ease;}
@@ -603,6 +603,8 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
     </div>
     <button id="authSubmitBtn" class="btn btn-primary btn-full" onclick="handleEmailAuth()">Войти</button>
     <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:13px;" onclick="handleForgotPassword()">Забыл пароль?</button>
+    <div class="auth-divider"><span>или</span></div>
+    <button class="btn btn-ghost btn-full" style="font-size:14px;" onclick="enterGuest()">⚡ Тренироваться без аккаунта</button>
   </div>
 </div>
 
@@ -627,6 +629,7 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
       <div><div class="brand-name">MTB SKILLS PRO</div><div id="welcomeText" class="brand-sub">Твой карманный тренер</div></div>
     </div>
     <div class="header-right">
+      <button id="authBtn" class="btn btn-ghost" style="display:none;padding:8px 14px;font-size:13px;" onclick="showAuthScr()">Войти</button>
       <div id="userInfo" class="user-info" style="display:none;">
         <img id="userAvatar" class="user-avatar" src="" alt="" style="display:none;"/>
         <span id="userDN" class="user-name"></span>
@@ -860,6 +863,19 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
         <div class="toggle-row"><span>Музыка выключена</span><label class="toggle"><input type="checkbox" id="mOff"><span class="toggle-sl"></span></label></div>
         <div class="toggle-row" style="margin-top:10px;"><span style="flex-shrink:0;">Громкость</span><input id="mVol2" type="range" min="0" max="1" step="0.05" value="0.5" style="flex:1;accent-color:var(--accent);"></div>
         <p style="font-size:12px;color:var(--muted);margin:10px 0 0;line-height:1.5;">По умолчанию громкость — 50%. Выключенная музыка запоминается: при запуске приложение не будет играть треки, пока вы её не включите.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h3>💾 Данные</h3><p>Бэкап и восстановление прогресса</p></div></div>
+      <div class="notif-card">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="btn btn-ghost" style="flex:1;" onclick="exportData()">📤 Экспорт (JSON)</button>
+          <button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('importFile').click()">📥 Импорт</button>
+          <input type="file" id="importFile" accept="application/json,.json" style="display:none;" onchange="importData(this)"/>
+        </div>
+        <button class="btn btn-danger" style="width:100%;margin-top:10px;" onclick="confirmAction('Сбросить все данные?','Весь прогресс на этом устройстве и в облаке будет удалён. Безвозвратно!',resetAll)">🗑 Сбросить всё</button>
+        <p style="font-size:12px;color:var(--muted);margin:10px 0 0;line-height:1.5;">Экспорт сохраняет файл с прогрессом. Импорт восстанавливает его на любом устройстве.</p>
       </div>
     </div>
 
@@ -1634,24 +1650,53 @@ async function doChangeNick(n){
 function initApp(){
   document.getElementById('authScreen').style.display='none';
   document.getElementById('nickScreen').style.display='none';
-  setT('welcomeText','Привет, '+state.nickname+' 👋');
-  setT('myNickDisp',state.nickname);
+  setT('welcomeText',currentUser?('Привет, '+state.nickname+' 👋'):'Гостевой режим 👋');
+  setT('myNickDisp',state.nickname||'Гость');
   if(currentUser){setT('userEmailDisp',currentUser.email||'');updateUserUI();}
-  setSyncDot('synced');
+  setSyncDot(currentUser?'synced':'local');
   renderSkills();renderRecords();
   initNotifUI();updateStreak();genChallengesIfNeeded();
-  initDuelListener();
-  startDuelRefresh();
-  expireStaleDuels();
-  syncLocalDuels();
+  if(currentUser){initDuelListener();startDuelRefresh();expireStaleDuels();syncLocalDuels();}
   setInterval(updateChTimer,60000);updateChTimer();
   genPWA();
-  syncProofs();
-  startFriendListeners();
-  setupPresence();
+  if(currentUser){syncProofs();startFriendListeners();setupPresence();startNewVideosListener();}
   setupPullToRefresh();
   initTheme();
-  startNewVideosListener();
+  updateGuestUI();
+  startDayRollover();
+}
+function enterGuest(){
+  currentUser=null;
+  hideLoad();
+  state=loadLS();
+  initApp();
+  toast('⚡ Гостевой режим — прогресс сохраняется на этом устройстве');
+}
+function updateGuestUI(){
+  const ab=document.getElementById('authBtn');
+  if(currentUser){if(ab)ab.style.display='none';const ui=document.getElementById('userInfo');if(ui)ui.style.display='flex';return;}
+  if(ab)ab.style.display='inline-flex';
+  const ui=document.getElementById('userInfo');if(ui)ui.style.display='none';
+  const dn=document.getElementById('userDN');if(dn)dn.textContent='Гость';
+}
+let _lastDayKey='';
+function startDayRollover(){
+  const tick=()=>{
+    const key=new Date().toDateString();
+    if(key===_lastDayKey)return;
+    const first=!_lastDayKey;
+    _lastDayKey=key;
+    if(first)return;
+    resetDailyCountersIfNeeded();
+    genChallengesIfNeeded();
+    updateStreak();
+    renderSkills();
+    updateModalDaily();
+    const chTab=document.querySelector('.tab-btn[data-tab="challenges"]');
+    if(chTab&&chTab.classList.contains('active'))renderChallenges();
+  };
+  tick();
+  setInterval(tick,30000);
 }
 function setTheme(mode){
   const light=mode==='light';
@@ -1702,6 +1747,7 @@ function renderStreak(){const b=document.getElementById('streakBanner');if(!b)re
 /* ══ TABS ══ */
 function gotoTab(t){
   sfx.tab();
+  if(!currentUser&&['friends','duel','profile','videos'].includes(t)){toast('🔒 Войди в аккаунт, чтобы открыть раздел');showAuthScr();return;}
   document.querySelectorAll('.tab,.tab-btn').forEach(el=>el.classList.remove('active'));
   const tb=document.querySelector('.tab-btn[data-tab="'+t+'"]');if(tb)tb.classList.add('active');
   const el=document.getElementById('tab-'+t);if(el)el.classList.add('active');
@@ -3941,6 +3987,20 @@ function updateNotifStatus(){
 
 /* ══ EXPORT / RESET ══ */
 function exportData(){const a=document.createElement('a');a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(state));a.download='mtb_backup.json';a.click();}
+function importData(inp){
+  const f=inp&&inp.files&&inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const s=JSON.parse(r.result);
+      if(!s||!Array.isArray(s.skills)||s.skills.length!==DEF_SKILLS.length)throw new Error('bad');
+      state=s;
+      saveLS();saveCloud();
+      toast('✅ Бэкап импортирован!');setTimeout(()=>location.reload(),800);
+    }catch(e){toast('❌ Не удалось прочитать файл бэкапа');}
+  };
+  r.readAsText(f);
+}
 async function resetAll(){clearLSPrefix();try{await idbClear();}catch(e){}if(db&&currentUser){try{await db.collection('users').doc(currentUser.uid).delete();await db.collection('leaderboard').doc(currentUser.uid).delete();}catch(e){}}location.reload();}
 
 /* ══ MUSIC PLAYER ══ */
