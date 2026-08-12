@@ -1,5 +1,10 @@
-const CACHE = 'mtb-skills-v6';
-const PRECACHE = ['./', './index.html', './manifest.json', './image/icon-192.png', './image/icon-512.png'];
+const CACHE = 'mtb-skills-v7';
+const PRECACHE = ['./', './index.html', './manifest.json', './image/icon-192.png', './image/icon-512.png',
+  './image/wh-cover.png', './image/wh-step1.jpg', './image/wh-step4.png',
+  './image/mn-cover.jpg', './image/mn-step1.jpg', './image/mn-step3.jpg',
+  './image/ts-cover.png', './image/ts-step1.jpg', './image/ts-step3.jpg',
+  './image/bh-cover.png', './image/bh-step1.jpg',
+  './image/st-cover.png', './image/st-step1.jpg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(

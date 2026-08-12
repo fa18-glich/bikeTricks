@@ -5,6 +5,7 @@
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#090b0f",
   "theme_color": "#090b0f",
   "icons": [
@@ -12,5 +13,10 @@
     { "src": "image/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "image/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
     { "src": "image/icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Навыки", "short_name": "Навыки", "url": "index.html#tab-skills", "icons": [{ "src": "image/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Рекорды", "short_name": "Рекорды", "url": "index.html#tab-records", "icons": [{ "src": "image/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Челленджи", "short_name": "Челленджи", "url": "index.html#tab-challenges", "icons": [{ "src": "image/icon-192.png", "sizes": "192x192" }] }
   ]
 }
