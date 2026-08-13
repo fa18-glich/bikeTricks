@@ -80,7 +80,10 @@ The Firebase config (`FB_CFG`) is hardcoded in the inline script of `index.html`
 
 - **Composite indexes** — `firestore.indexes.json` (deploy with `firebase deploy --only firestore:indexes`). Needed for friend requests (`toUid`+`status`, `fromUid`+`status`) and duels (`status`+`createdAt`) queries.
 
-> If you enable *App Check enforcement*, requests will be blocked — the app shows a warning pointing to Firebase Console → App Check.
+> **App Check:** the SDK is pre-wired in `index.html` (`FB_AC_SITE_KEY` + `firebase.appCheck()`), but it only activates once you set the key. To enable:
+> 1. Firebase Console → Build → App Check → Apps → register the web app for **reCAPTCHA** (v3 or Enterprise) and copy the site key.
+> 2. Put the key into `const FB_AC_SITE_KEY='...'` in `index.html` (or better: deploy via the `FIREBASE_APPCHECK_SITE_KEY` GitHub secret and inject it at build time).
+> 3. Start with **Monitor** mode in the console, watch for your app's traffic, then switch to **Enforce**.
 >
 > **Security rules:** the repo ships with `firestore.rules`. Deploy it to your Firebase project (Firestore → Rules) before going live — it restricts writes to the document owner while keeping public features (leaderboard, bike feed, nickname lookup) working.
 
@@ -194,7 +197,10 @@ npx serve .
 
 - **Составные индексы** — `firestore.indexes.json` (деплой: `firebase deploy --only firestore:indexes`). Нужны для запросов заявок в друзья (`toUid`+`status`, `fromUid`+`status`) и дуэлей (`status`+`createdAt`).
 
-> Если включён *App Check enforcement*, запросы будут блокироваться — приложение покажет предупреждение со ссылкой на Firebase Console → App Check.
+> **App Check:** SDK уже подключён в `index.html` (`FB_AC_SITE_KEY` + `firebase.appCheck()`), но активируется только после вставки ключа. Чтобы включить:
+> 1. Firebase Console → Build → App Check → Apps → зарегистрируй веб-приложение на **reCAPTCHA** (v3 или Enterprise) и скопируй site key.
+> 2. Вставь ключ в `const FB_AC_SITE_KEY='...'` в `index.html` (или прокидывай через GitHub-секрет `FIREBASE_APPCHECK_SITE_KEY` при деплое).
+> 3. Сначала включи режим **Monitor** в консоли, убедись, что трафик приложения проходит, потом переключай на **Enforce**.
 >
 > **Правила безопасности:** в репозитории есть `firestore.rules`. Разверни их в своём проекте (Firestore → Rules) перед запуском — они ограничивают запись только владельцем документа, сохраняя публичные функции (лидерборд, лента байков, поиск по коду).
 

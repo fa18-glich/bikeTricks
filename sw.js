@@ -1,4 +1,4 @@
-const CACHE = 'mtb-skills-v7';
+const CACHE = 'mtb-skills-v8';
 const PRECACHE = ['./', './index.html', './manifest.json', './image/icon-192.png', './image/icon-512.png',
   './image/wh-cover.png', './image/wh-step1.jpg', './image/wh-step4.png',
   './image/mn-cover.jpg', './image/mn-step1.jpg', './image/mn-step3.jpg',

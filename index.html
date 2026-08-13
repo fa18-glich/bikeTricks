@@ -22,6 +22,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script src="music/songs.js"></script>
 <style>
 :root{
@@ -128,6 +129,7 @@ select.field{cursor:pointer;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* TOPBAR */
+.offline-banner{position:sticky;top:0;z-index:55;background:linear-gradient(135deg,#ffb74d,#ff7043);color:#1a2029;font-size:12px;font-weight:800;text-align:center;padding:8px 12px;margin:-16px -14px 12px;box-shadow:0 4px 14px rgba(0,0,0,.25);}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
 .brand{display:flex;align-items:center;gap:12px;}
 .brand-badge{width:60px;height:60px;border-radius:14px;display:grid;place-items:center;cursor:default;flex-shrink:0;overflow:hidden;}
@@ -679,6 +681,7 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
 <canvas id="particles"></canvas>
 
 <div class="app">
+  <div id="offlineBanner" class="offline-banner" style="display:none;">📡 Нет связи — показываю сохранённые данные</div>
   <header class="topbar">
     <div class="brand">
       <div class="brand-badge"><img src="image/icon.png" style="width:60px;height:60px;object-fit:cover;" alt="logo"/></div>
@@ -1065,6 +1068,9 @@ const FB_CFG={
   messagingSenderId:"771638572867",
   appId:"1:771638572867:web:524987af3a428dd553e1f6"
 };
+// Site key для App Check (reCAPTCHA). Пустое значение = App Check выключен.
+// Вставь ключ из Firebase Console → App Check → Apps, и включи enforcement в консоли.
+const FB_AC_SITE_KEY='';
 let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st=null;
 
 /* ══ UTILS ══ */
@@ -1072,6 +1078,8 @@ function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').repla
 function setT(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
 function setLoadText(t){setT('loadText',t);}
 function withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('firestore_timeout')),ms))]);}
+// Серверный запрос с таймаутом и фоллбэком на локальный кэш Firestore (офлайн-режим)
+async function loadOrCache(q,ms){try{return await withTimeout(q.get(),ms||15000);}catch(e){console.warn('loadOrCache: сервер не ответил, берём из кэша',e);return await q.get({source:'cache'});}}
 function showMsg(msg,type){const e=document.getElementById('authMsg');e.textContent=msg;e.className='auth-msg '+(type||'err');}
 function clearMsg(){const e=document.getElementById('authMsg');e.className='auth-msg';}
 
@@ -1431,6 +1439,15 @@ async function initFB(){
     db=firebase.firestore();
     auth=firebase.auth();
     try{st=firebase.storage&&firebase.storage()?firebase.storage():null;}catch(e){st=null;}
+    // App Check (reCAPTCHA). Работает только если задан FB_AC_SITE_KEY и SDK подключён.
+    // Enforcement включается в консоли Firebase — до этого токены просто отправляются.
+    try{
+      if(FB_AC_SITE_KEY&&firebase.appCheck){
+        if(location.hostname==='localhost'&&typeof self!=='undefined')self.FIREBASE_APPCHECK_DEBUG_TOKEN=true;
+        firebase.appCheck().activate(FB_AC_SITE_KEY,true);
+        console.info('App Check активирован');
+      }
+    }catch(ac){console.warn('App Check init:',ac);}
 
     // Таймаут — якщо Firebase не відповідає за 12 секунд, показуємо екран авторизації
     fbTimeout=setTimeout(()=>{
@@ -2472,25 +2489,29 @@ function handleBikePhoto(input){
   toast('Фото выбрано! ✅');
 }
 
-async function uploadBikePhoto(file){
-  // Сжимаем изображение перед загрузкой если > 1MB
-  let uploadFile=file;
-  if(file.size>1024*1024){
-    uploadFile=await new Promise(res=>{
-      const img=new Image();const url=URL.createObjectURL(file);
-      img.onload=()=>{
-        const canvas=document.createElement('canvas');
-        const maxW=1200;const ratio=Math.min(maxW/img.width,maxW/img.height,1);
-        canvas.width=Math.round(img.width*ratio);canvas.height=Math.round(img.height*ratio);
-        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-        URL.revokeObjectURL(url);
-        canvas.toBlob(b=>res(new File([b],file.name,{type:'image/jpeg'})),'image/jpeg',0.82);
-      };
-      img.onerror=()=>{URL.revokeObjectURL(url);res(file);};
-      img.src=url;
-    });
-  }
-  return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(uploadFile);});
+function compressBikePhoto(file){
+  if(file.size<=1024*1024)return Promise.resolve(file);
+  return new Promise(res=>{
+    const img=new Image();const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const maxW=1200;const ratio=Math.min(maxW/img.width,maxW/img.height,1);
+      canvas.width=Math.round(img.width*ratio);canvas.height=Math.round(img.height*ratio);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(b=>res(new File([b],file.name,{type:'image/jpeg'})),'image/jpeg',0.82);
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);res(file);};
+    img.src=url;
+  });
+}
+function fileToDataURL(file){
+  return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file);});
+}
+async function uploadBikePhotoToStorage(file,path){
+  const ref=st.ref(path);
+  await ref.put(file);
+  return ref.getDownloadURL();
 }
 
 let bikesCache=[];
@@ -2508,14 +2529,7 @@ async function loadBikes(){
   feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--fm);">Загрузка...</div>';
   if(!db){feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;">Firebase не подключён</div>';bikesLoading=false;return;}
   try{
-    let q=db.collection('bikes').orderBy('createdAt','desc').limit(50);
-    let snap;
-    try{
-      snap=await withTimeout(q.get(),15000);
-    }catch(e){
-      console.warn('loadBikes: сервер не ответил, пробуем локальный кэш',e);
-      snap=await q.get({source:'cache'});
-    }
+    const snap=await loadOrCache(db.collection('bikes').orderBy('createdAt','desc').limit(50));
     bikesCache=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderBikes();
   }catch(e){
@@ -2583,25 +2597,31 @@ async function addBike(){
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Загружаю...';
 
   try{
-    let photoUrl=urlInput;
-    // Если выбрали файл — сжимаем и конвертируем в base64
+    let photoUrl=urlInput,photoPath='';
+    // Если выбрали файл — сжимаем и грузим в Firebase Storage, base64 только как фоллбэк
     if(bikePhotoFile){
       try{
-        photoUrl=await uploadBikePhoto(bikePhotoFile);
+        const comp=await compressBikePhoto(bikePhotoFile);
+        if(st){
+          try{photoPath='bikes/'+currentUser.uid+'/'+Date.now()+'_'+Math.random().toString(36).slice(2)+'.jpg';photoUrl=await uploadBikePhotoToStorage(comp,photoPath);}
+          catch(e){console.warn('Storage upload failed, using base64',e);photoUrl=await fileToDataURL(comp);photoPath='';}
+        }else{
+          photoUrl=await fileToDataURL(comp);
+        }
       }catch(e){
-        photoUrl=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(bikePhotoFile);});
-        console.warn('Photo compress failed, using base64');
+        console.warn('Photo compress failed, using base64 raw');
+        photoUrl=await fileToDataURL(bikePhotoFile);
       }
     }
-    // Лимит документа Firestore — 1MB. База64 в base64 больше исходника на ~33%.
-    if(photoUrl&&photoUrl.length>900*1024){
+    // Лимит документа Firestore — 1MB — применим только к base64, Storage-URL не лимитирован
+    if(photoUrl&&photoUrl.startsWith('data:')&&photoUrl.length>900*1024){
       toast('Фото слишком тяжёлое для базы (лимит ~1MB). Выбери файл поменьше.');
       btn.disabled=false;btn.textContent='Добавить в гараж 🚲';
       return;
     }
 
     await db.collection('bikes').add({
-      name,type,photoUrl,
+      name,type,photoUrl,photoPath,
       ownerId:currentUser.uid,
       ownerNick:state.nickname||currentUser.displayName||'Аноним',
       likedBy:[],likes:0,
@@ -2627,8 +2647,10 @@ async function addBike(){
 async function deleteBike(id){
   if(!currentUser||!db)return;
   try{
+    const b=bikesCache.find(x=>x.id===id);
     await db.collection('bikes').doc(id).delete();
-    bikesCache=bikesCache.filter(b=>b.id!==id);
+    if(b&&b.photoPath&&st){try{await st.ref(b.photoPath).delete();}catch(e){console.warn('deleteBike photo:',e);}}
+    bikesCache=bikesCache.filter(x=>x.id!==id);
     sfx.save();renderBikes();toast('Байк удалён');
   }catch(e){toast('Ошибка: '+e.message);}
 }
@@ -2843,7 +2865,7 @@ async function fetchVideos(){
     try{
       let q=db.collection('videos').orderBy('createdAt','desc');
       if(vidSeg==='mine'&&currentUser)q=q.where('ownerId','==',currentUser.uid);
-      const snap=await q.limit(vidLimit).get();
+      const snap=await loadOrCache(q.limit(vidLimit));
       items=snap.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
       vidCursor=snap.docs.length?snap.docs[snap.docs.length-1]:null;
       vidHasMore=snap.docs.length===vidLimit;
@@ -2907,7 +2929,7 @@ async function loadMoreVideos(){
   try{
     let q=db.collection('videos').orderBy('createdAt','desc');
     if(vidSeg==='mine'&&currentUser)q=q.where('ownerId','==',currentUser.uid);
-    const snap=await q.startAfter(vidCursor).limit(vidLimit).get();
+    const snap=await loadOrCache(q.startAfter(vidCursor).limit(vidLimit));
     if(snap.empty){vidHasMore=false;return;}
     const add=snap.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
     videosCache=videosCache.concat(add);
@@ -3833,7 +3855,7 @@ let _lbCache=null,_lbCacheTs=0;
 async function getLeaderboardCache(){
   const now=Date.now();
   if(_lbCache&&now-_lbCacheTs<30000)return _lbCache;
-  const snap=await db.collection('leaderboard').orderBy('pts','desc').limit(50).get();
+  const snap=await loadOrCache(db.collection('leaderboard').orderBy('pts','desc').limit(50));
   const arr=[];
   snap.docs.forEach(d=>{const u=d.data();if(u.nickname)arr.push({id:d.id,uid:u.uid,nickname:u.nickname,pts:u.pts||0});});
   _lbCache=arr;_lbCacheTs=now;
@@ -4202,7 +4224,7 @@ async function refreshDuels(){
   if(!db||!currentUser)return;
   try{
     const q=db.collection('duels').where('status','in',['open','active','done','void']);
-    const snap=await withTimeout(q.get(),15000);
+    const snap=await loadOrCache(q);
     const map={};
     (state.duels||[]).forEach(d=>map[d.id]=d);
     const cloudIds=new Set();
@@ -4555,7 +4577,16 @@ document.getElementById('nickInput')?.addEventListener('keydown',e=>{if(e.key===
 document.getElementById('authEmail')?.addEventListener('keydown',e=>{if(e.key==='Enter')handleEmailAuth();});
 document.getElementById('authPass')?.addEventListener('keydown',e=>{if(e.key==='Enter')handleEmailAuth();});
 
+/* ══ OFFLINE INDICATOR ══ */
+function updateOfflineBanner(){
+  const b=document.getElementById('offlineBanner');if(!b)return;
+  b.style.display=navigator.onLine?'none':'block';
+}
+window.addEventListener('online',updateOfflineBanner);
+window.addEventListener('offline',updateOfflineBanner);
+
 /* ══ BOOT ══ */
+updateOfflineBanner();
 initFB();
 </script>
 <script>if(location.protocol==='file:'){document.write('<script src="cordova.js"><\/script>');}</script>
