@@ -2508,15 +2508,20 @@ async function loadBikes(){
   feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--fm);">Загрузка...</div>';
   if(!db){feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;">Firebase не подключён</div>';bikesLoading=false;return;}
   try{
-    const sortBy=document.getElementById('bikeSortF')?.value||'newest';
     let q=db.collection('bikes').orderBy('createdAt','desc').limit(50);
-    const snap=await withTimeout(q.get(),15000);
+    let snap;
+    try{
+      snap=await withTimeout(q.get(),15000);
+    }catch(e){
+      console.warn('loadBikes: сервер не ответил, пробуем локальный кэш',e);
+      snap=await q.get({source:'cache'});
+    }
     bikesCache=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderBikes();
   }catch(e){
     console.error('loadBikes:',e);
     const raw=e.message||'';
-    feed.innerHTML=`<div style="text-align:center;color:var(--danger);padding:24px;">${raw.includes('firestore_timeout')?'Не удалось загрузить байки — нет связи с сервером. Проверь интернет и попробуй снова.':'Не удалось загрузить байки. Переключи вкладку и попробуй снова.'}</div>`;
+    feed.innerHTML=`<div style="text-align:center;color:var(--danger);padding:24px;font-family:var(--fm);">${raw.includes('firestore_timeout')?'Не удалось загрузить байки — нет связи с сервером. Проверь интернет и попробуй снова.':'Не удалось загрузить байки. Переключи вкладку и попробуй снова.'}<br><button class="btn btn-ghost" style="margin-top:12px;" onclick="loadBikes()">Повторить ↻</button></div>`;
   }finally{bikesLoading=false;}
 }
 
