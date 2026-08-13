@@ -204,8 +204,9 @@ select.field{cursor:pointer;}
 .skill-visual img{width:100%;height:100%;object-fit:cover;transition:transform .35s;}
 .skill-card:hover .skill-visual img{transform:scale(1.08);}
 .skill-body{min-width:0;}
-.skill-title{font-size:18px;font-weight:900;margin-bottom:6px;}
-.pill{display:inline-block;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);padding:4px 9px;border-radius:999px;font-size:11px;margin-right:5px;margin-bottom:5px;white-space:nowrap;}
+.skill-title{font-size:18px;font-weight:900;margin-bottom:6px;overflow-wrap:anywhere;}
+.skill-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.pill{display:inline-block;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);padding:4px 9px;border-radius:999px;font-size:11px;white-space:normal;overflow-wrap:anywhere;max-width:100%;}
 .prog{height:8px;border-radius:999px;background:rgba(255,255,255,.07);margin:8px 0;overflow:hidden;}
 .prog>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s;border-radius:999px;}
 
@@ -559,6 +560,9 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
 .var-chip.active .var-bd{color:#7dff9a;}
 .var-lk{font-size:10px;color:var(--muted);font-family:var(--fm);flex-shrink:0;}
 .pill--var{border-color:rgba(76,201,240,.4);color:var(--accent);background:rgba(76,201,240,.1);}
+.var-safety{border:1px solid rgba(255,69,58,.35);background:rgba(255,69,58,.08);border-radius:14px;padding:12px 14px;margin-top:10px;font-size:12px;color:var(--text);}
+.var-safety h4{margin:0 0 6px;color:#ff6b5f;font-size:13px;}
+.var-safety p{margin:2px 0;color:var(--muted);line-height:1.45;}
 
 /* BIKE GUIDE */
 .bg-guide{--bikeC:#b9c3d6;--bikeA:#4cc9f0;--bikeT:#1a2029;--bikeTR:#2e3746;}
@@ -1242,11 +1246,8 @@ const DEF_SKILLS=[
     {title:'Гашение',text:'Научись аккуратно опускать колесо задним тормозом, прежде чем пробовать на длину. Резкий рывок со всей силы в начале — путь к перевороту. Дозируй усилие, расти по чуть-чуть.',img:'image/wh-step1.jpg'}
   ],vars:[
     {id:'w_lh',icon:'🖐️',name:'Левая рука вверх',bonus:3,req:1,desc:'Отпусти левую руку и вытяни в сторону'},
-    {id:'w_rh',icon:'🖐️',name:'Правая рука вверх',bonus:3,req:1,desc:'Отпусти правую руку'},
     {id:'w_lf',icon:'🦵',name:'Нога на раму',bonus:6,req:2,desc:'Одна нога с педали — на раму'},
-    {id:'w_nh',icon:'🙌',name:'Руки в стороны',bonus:8,req:2,desc:'Обе руки — без руля'},
-    {id:'w_ey',icon:'😌',name:'С закрытыми глазами',bonus:7,req:2,desc:'Только баланс — без взгляда вперёд'},
-    {id:'w_nf',icon:'🧘',name:'Ноги на раме',bonus:12,req:3,desc:'Обе ноги без педалей — чистое равновесие'}
+    {id:'w_nf',icon:'🧘',name:'Ноги на раме',bonus:12,req:3,desc:'Обе ноги без педалей — чистое равновесие',safety:'Ноги на раме — не снять ногу мгновенно. Не делай на скорости, палец держи на тормозе'}
   ],mistakes:[
     'Руки согнуты и тянут руль с силой — подъём должен идти от рывка корпусом и педалей, а не от рук.',
     'Едут стоя, а не сидя — в вилли нужно сидеть на седле и крутить педали.',
@@ -1261,11 +1262,8 @@ const DEF_SKILLS=[
     {title:'Баланс коленями',text:'В мэнуале баланс держат только ноги: вытяни ноги — носок опустится вниз, согни колени — поднимется. Работай ими плавно, как пружинами. Педали почти не крути.',img:'image/mn-step3.jpg'}
   ],vars:[
     {id:'m_lh',icon:'🖐️',name:'Левая рука вверх',bonus:3,req:1,desc:'Отпусти левую руку'},
-    {id:'m_rh',icon:'🖐️',name:'Правая рука вверх',bonus:3,req:1,desc:'Отпусти правую руку'},
     {id:'m_lf',icon:'🦵',name:'Нога на раму',bonus:6,req:2,desc:'Одна нога с педали — на раму'},
-    {id:'m_nh',icon:'🙌',name:'Руки в стороны',bonus:8,req:2,desc:'Обе руки — без руля'},
-    {id:'m_ey',icon:'😌',name:'С закрытыми глазами',bonus:7,req:2,desc:'Только баланс — без взгляда вперёд'},
-    {id:'m_nf',icon:'🧘',name:'Ноги на раме',bonus:12,req:3,desc:'Обе ноги без педалей'}
+    {id:'m_nf',icon:'🧘',name:'Ноги на раме',bonus:12,req:3,desc:'Обе ноги без педалей',safety:'В мэнуале нельзя погасить нос тормозом — пробуй только над мягким покрытием'}
   ],mistakes:[
     'Руки согнуты в локтях — вес уходит вперёд, и переднее колесо сразу падает.',
     'Слишком сильный рывок — уходишь в переворот, а в мэнуале тормозов для страховки нет.',
@@ -1279,10 +1277,8 @@ const DEF_SKILLS=[
     {title:'Микро-движения',text:'Играй весом: чуть наклонился вперёд — надави на переднюю педаль, чуть назад — потяни руль. Движения крошечные, 2–3 см. Поймай точку равновесия и удерживай её, плечи расслабь, дыши.',img:'image/ts-step3.jpg'}
   ],vars:[
     {id:'t_h',icon:'🖐️',name:'Одна рука вверх',bonus:3,req:0,desc:'Отпусти руку — держи баланс корпусом'},
-    {id:'t_nh',icon:'🙌',name:'Руки в стороны',bonus:8,req:1,desc:'Обе руки — без руля'},
-    {id:'t_f',icon:'🦵',name:'Нога на раму',bonus:6,req:1,desc:'Одна нога с педали — на раму'},
-    {id:'t_sw',icon:'🔄',name:'Крути руль 180°',bonus:6,req:2,desc:'Разворот руля из стороны в сторону'},
-    {id:'t_ey',icon:'😌',name:'С закрытыми глазами',bonus:7,req:2,desc:'Стоим и балансируем вслепую'}
+    {id:'t_nh',icon:'🙌',name:'Руки в стороны',bonus:8,req:1,desc:'Обе руки — без руля',safety:'Колёса зажаты тормозами, но при падении не сможешь опереться — страхуйся стеной рядом'},
+    {id:'t_f',icon:'🦵',name:'Нога на раму',bonus:6,req:1,desc:'Одна нога с педали — на раму'}
   ],mistakes:[
     'Колёса не зафиксированы тормозами — байк уезжает вперёд.',
     'Руль стоит прямо, а не повёрнут — без поворота руля балансировать на месте почти невозможно.',
@@ -1296,10 +1292,9 @@ const DEF_SKILLS=[
     {title:'Высота и приземление',text:'Когда поймал тайминг — добавляй амплитуду: выше рывок, сильнее поджим коленей, байк «складывается» под тобой. Приземляйся на оба колеса одновременно, ноги мягкие, как пружины. Начинай с палки в 10 см, потом повышай.',img:'image/bh-step1.jpg'}
   ],vars:[
     {id:'b_hi',icon:'📏',name:'Выше планка',bonus:5,req:1,desc:'Подними препятствие ещё на 5–10 см'},
-    {id:'b_180',icon:'🔄',name:'Хоп 180°',bonus:9,req:2,desc:'Разворот на пол-оборота в прыжке'},
-    {id:'b_nh',icon:'🙌',name:'Хоп без рук',bonus:9,req:2,desc:'Обе руки — отпустил руль в воздухе'},
+    {id:'b_180',icon:'🔄',name:'Хоп 180°',bonus:9,req:2,desc:'Разворот на пол-оборота в прыжке',safety:'При недокруте педаль цепляет землю — начинай с высоты до 15 см'},
     {id:'b_ty',icon:'🪨',name:'Тайр-тэп',bonus:7,req:2,desc:'Коснись бордюра задним колесом в прыжке'},
-    {id:'b_360',icon:'🌀',name:'Хоп 360°',bonus:14,req:3,desc:'Полный оборот в воздухе'}
+    {id:'b_360',icon:'🌀',name:'Хоп 360°',bonus:14,req:3,desc:'Полный оборот в воздухе',safety:'Полный оборот — самый рискованный трюк. Только на мягком грунте, начинай с 180°'}
   ],mistakes:[
     'Прыгают, не научившись фронт-лифту — без чистого подъёма переднего хоп не выйдет.',
     'Тянут руль силой рук, а не корпусом — подъём получается рваный и низкий.',
@@ -1314,9 +1309,7 @@ const DEF_SKILLS=[
     {title:'Баланс и опускание',text:'Когда зад на нужной высоте — слегка ослабь тормоз, чтобы удержать угол. Опускается зад тоже тормозом: отпустил — опустился. Отрабатывай до 45°, потом поднимай выше.',img:'image/st-step1.jpg'}
   ],vars:[
     {id:'s_h',icon:'🖐️',name:'Одна рука вверх',bonus:3,req:0,desc:'Отпусти руку — держи вес корпусом'},
-    {id:'s_nh',icon:'🙌',name:'Руки в стороны',bonus:8,req:2,desc:'Обе руки — без руля'},
-    {id:'s_180',icon:'🔄',name:'Стоппи 180°',bonus:9,req:2,desc:'Разворот на переднем колесе'},
-    {id:'s_ey',icon:'😌',name:'С закрытыми глазами',bonus:7,req:2,desc:'Чувствуй баланс без взгляда'},
+    {id:'s_180',icon:'🔄',name:'Стоппи 180°',bonus:9,req:2,desc:'Разворот на переднем колесе',safety:'Легко перелететь через руль — дозируй тормоз, не блокируй переднее колесо'},
     {id:'s_en',icon:'🎯',name:'Стоппи-эндо',bonus:8,req:3,desc:'Зафиксируй переворот на переднем колесе'}
   ],mistakes:[
     'Зажимают передний тормоз резко и намертво — блокировка переднего колеса и перелёт через руль.',
@@ -1879,7 +1872,7 @@ function checkAch(){if(!state.unlockedAchievements)state.unlockedAchievements=[]
 function renderAch(){const el=document.getElementById('achList');if(!el)return;el.innerHTML='';ACHIEVEMENTS.forEach(a=>{const u=state.unlockedAchievements&&state.unlockedAchievements.includes(a.id);if(u){const d=document.createElement('div');d.className='ach unlocked';d.textContent='✓ '+a.icon+' '+a.name;el.appendChild(d);return;}if(a.pr){const p=a.pr(state);const w=Math.min(100,Math.round(p.cur/p.target*100));const d=document.createElement('div');d.className='ach-prog';d.innerHTML=`<div class="ap-name"><span>${a.icon}</span><span>${esc(a.name)}</span><span class="ap-num" style="margin-left:auto;">${p.cur} / ${p.target}</span></div><div class="ap-bar"><div class="ap-fill" style="width:${w}%"></div></div>`;el.appendChild(d);}else{const d=document.createElement('div');d.className='ach';d.textContent=a.icon+' '+a.name;el.appendChild(d);}});}
 
 /* ══ SKILLS ══ */
-function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;let pv=null;const av=base.vars?base.vars.filter(v=>u.vars&&u.vars[v.id]):[];if(av.length){pv=document.createElement('span');pv.className='pill pill--var';pv.textContent='🎛 '+av.length+' усл. · бонус +'+varBonusFor(base,u)+'%';}const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);body.append(tit,p1,p2);if(pv)body.appendChild(pv);body.append(pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();}
+function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;let pv=null;const av=base.vars?base.vars.filter(v=>u.vars&&u.vars[v.id]):[];if(av.length){pv=document.createElement('span');pv.className='pill pill--var';pv.textContent='🎛 '+av.length+' усл. · бонус +'+varBonusFor(base,u)+'%';}const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);const pills=document.createElement('div');pills.className='skill-pills';pills.append(p1,p2);if(pv)pills.appendChild(pv);body.append(tit,pills,pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();}
 
 /* ══ MODAL ══ */
 function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const dayDone=(user.trToday||0)>=MAX_APPROACHES_PER_DAY;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);setupVideo();const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';const mm=document.getElementById('modalMistakes');if(mm)mm.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});if(base.mistakes&&base.mistakes.length){const mb=document.createElement('div');mb.className='mistake-box';const mh=document.createElement('h4');mh.textContent='🚫 Частые ошибки';mb.appendChild(mh);const ul=document.createElement('ul');base.mistakes.forEach(m=>{const li=document.createElement('li');li.textContent=m;ul.appendChild(li);});mb.appendChild(ul);if(mm)mm.appendChild(mb);}const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,dayDone);btn.disabled=isMax||dayDone;updateModalDaily();renderModalVars();document.getElementById('modal').classList.add('show');}
@@ -1979,6 +1972,17 @@ function renderModalVars(){
     grid.appendChild(chip);
   });
   box.appendChild(grid);
+  const danger=base.vars.filter(v=>user.vars&&user.vars[v.id]&&v.safety);
+  if(danger.length){
+    const warn=document.createElement('div');warn.className='var-safety';
+    const wh=document.createElement('h4');wh.textContent='⚠️ Безопасность';
+    warn.appendChild(wh);
+    danger.forEach(v=>{
+      const li=document.createElement('p');li.textContent='• '+v.name+': '+v.safety;
+      warn.appendChild(li);
+    });
+    box.appendChild(warn);
+  }
   const btn=document.getElementById('modalTrainBtn');
   if(btn)btn.textContent=trainBtnLabel(skillIsMax(base,user),(user.trToday||0)>=MAX_APPROACHES_PER_DAY);
 }
@@ -4515,7 +4519,7 @@ function musicInit(){
     if(!tracks.length){if(bar)bar.style.display='none';return;}
     mTracks=tracks;
     updateMusicOfflineUI();
-    if(bar)bar.style.display='flex';
+    if(bar)bar.style.display=(moff==='1')?'none':'flex';
     const mOffInp=document.getElementById('mOff');
     if(mOffInp){
       mOffInp.addEventListener('change',()=>{
@@ -4523,8 +4527,10 @@ function musicInit(){
         if(mOffInp.checked){
           if(mAudio){mAudio.pause();mAudio.volume=0;}
           const pb=document.getElementById('mPlay');if(pb)pb.textContent='▶';
+          if(bar)bar.style.display='none';
           toast('Музыка выключена');
         }else{
+          if(bar)bar.style.display='flex';
           if(mAudio){mAudio.volume=parseFloat(document.getElementById('mVol')?.value)||0.5;}
           mPlayIdx(0);
           toast('Музыка включена');
