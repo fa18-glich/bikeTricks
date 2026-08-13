@@ -49,7 +49,7 @@ html[data-theme="light"] body{background-image:radial-gradient(ellipse 60% 40% a
 html[data-theme="light"] .load-bar,html[data-theme="light"] .prog,html[data-theme="light"] .ch-progress-bar,html[data-theme="light"] .upload-progress{background:rgba(10,20,40,.09);}
 html[data-theme="light"] .panel{background:rgba(255,255,255,.92);}
 html[data-theme="light"] .form-card{background:rgba(255,255,255,.8);}
-html[data-theme="light"] .skill-card,html[data-theme="light"] .rec-entry,html[data-theme="light"] .rec-log-wrap,html[data-theme="light"] .ch-card,html[data-theme="light"] .bike-card,html[data-theme="light"] .proof-card,html[data-theme="light"] .pf-hero,html[data-theme="light"] .lb-row,html[data-theme="light"] .why-card,html[data-theme="light"] .notif-card,html[data-theme="light"] .ct-card{background:linear-gradient(160deg,#ffffff,#edf1fa);}
+html[data-theme="light"] .skill-card,html[data-theme="light"] .rec-entry,html[data-theme="light"] .rec-log-wrap,html[data-theme="light"] .ch-card,html[data-theme="light"] .bike-card,html[data-theme="light"] .proof-card,html[data-theme="light"] .pf-hero,html[data-theme="light"] .lb-row,html[data-theme="light"] .why-card,html[data-theme="light"] .notif-card,html[data-theme="light"] .ct-card,html[data-theme="light"] .bg-card{background:linear-gradient(160deg,#ffffff,#edf1fa);}
 html[data-theme="light"] .duel-card{background:linear-gradient(135deg,rgba(107,77,255,.14),rgba(224,36,60,.1));border-color:rgba(107,77,255,.4);}
 html[data-theme="light"] .google-btn,html[data-theme="light"] .field,html[data-theme="light"] .btn-ghost,html[data-theme="light"] .rank-chip,html[data-theme="light"] .tab-btn,html[data-theme="light"] .sub-tab,html[data-theme="light"] .ach,html[data-theme="light"] .pill,html[data-theme="light"] .bike-thumb,html[data-theme="light"] .bike-ph,html[data-theme="light"] .like-btn,html[data-theme="light"] .fi,html[data-theme="light"] .fs,html[data-theme="light"] .pf-stat,html[data-theme="light"] .pf-follow-btn.following,html[data-theme="light"] .pf-row,html[data-theme="light"] .time-row input[type="time"],html[data-theme="light"] .nd-item,html[data-theme="light"] .my-code-box,html[data-theme="light"] .req-card,html[data-theme="light"] .friend-row,html[data-theme="light"] .goal-box,html[data-theme="light"] .step-item{background:rgba(10,20,40,.05);}
 html[data-theme="light"] .pr-btn{background:rgba(10,20,40,.05);}
@@ -541,6 +541,44 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
 .mistake-box ul{margin:0;padding-left:18px;}
 .mistake-box li{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:6px;}
 
+/* VARIATIONS (УСЛОЖНЕНИЯ) */
+.vars-box{margin-top:12px;}
+.var-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.var-head h4{font-size:14px;font-weight:900;}
+.var-head p{font-size:12px;color:var(--muted);flex-basis:100%;margin:0;}
+.var-total{margin-left:auto;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);font-family:var(--fm);}
+.var-total.on{border-color:rgba(76,201,240,.45);color:var(--accent);background:rgba(76,201,240,.1);}
+.var-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+.var-chip{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);cursor:pointer;transition:.2s;font-family:var(--fb);font-size:12px;font-weight:700;text-align:left;}
+.var-chip:hover{border-color:rgba(76,201,240,.35);background:rgba(76,201,240,.06);}
+.var-chip.active{border-color:rgba(76,201,240,.55);background:linear-gradient(135deg,rgba(76,201,240,.18),rgba(124,92,255,.14));color:var(--text);}
+.var-chip.locked{opacity:.55;cursor:not-allowed;}
+.var-ic{font-size:16px;}
+.var-name{flex:1;min-width:0;}
+.var-bd{font-family:var(--fm);font-size:11px;color:var(--good);font-weight:800;flex-shrink:0;}
+.var-chip.active .var-bd{color:#7dff9a;}
+.var-lk{font-size:10px;color:var(--muted);font-family:var(--fm);flex-shrink:0;}
+.pill--var{border-color:rgba(76,201,240,.4);color:var(--accent);background:rgba(76,201,240,.1);}
+
+/* BIKE GUIDE */
+.bg-guide{--bikeC:#b9c3d6;--bikeA:#4cc9f0;--bikeT:#1a2029;--bikeTR:#2e3746;}
+html[data-theme="light"] .bg-guide{--bikeC:#222833;--bikeA:#0e9adf;--bikeT:#39424f;--bikeTR:#4a5565;}
+.bg-grid{display:grid;gap:12px;}
+.bg-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:22px;padding:16px;animation:cardIn .3s ease both;}
+.bg-top{display:grid;grid-template-columns:132px 1fr;gap:14px;align-items:center;}
+.bg-svg{width:132px;height:92px;display:block;}
+.bg-head{min-width:0;}
+.bg-name{font-size:17px;font-weight:900;margin-bottom:4px;}
+.bg-tag{font-size:11px;color:var(--accent);font-weight:800;font-family:var(--fm);}
+.bg-desc{font-size:13px;color:var(--muted);line-height:1.55;margin-top:10px;}
+.bg-lists{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+.bg-lcol h5{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.bg-lcol h5.bg-pros{color:var(--good);}
+.bg-lcol h5.bg-cons{color:var(--danger);}
+.bg-lcol ul{margin:0;padding-left:16px;}
+.bg-lcol li{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:4px;}
+@media(max-width:520px){.bg-top{grid-template-columns:1fr;}.bg-svg{width:100%;height:112px;margin:0 auto;max-width:230px;}}
+
 /* LEVEL UP */
 #lvlUp{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .3s;}
 #lvlUp.show{opacity:1;}
@@ -828,6 +866,11 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
   <!-- MORE -->
   <section id="tab-support" class="tab">
     <div class="panel">
+      <div class="panel-head"><div><h3>🚲 Типы велосипедов</h3><p>Для чего каждый байк, плюсы и минусы — выбирай под свой стиль</p></div></div>
+      <div id="bikeGuide" class="bg-grid bg-guide"></div>
+    </div>
+
+    <div class="panel">
       <div class="panel-head"><div><h3>💡 Зачем трюки?</h3></div></div>
       <div class="why-grid">
         <div class="why-card"><div class="wi">🧠</div><h4>Контроль байка</h4><p>Реакция становится инстинктивной.</p></div>
@@ -951,6 +994,7 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
     <div class="goal-box"><span class="goal-lbl">ТЕКУЩАЯ ЦЕЛЬ:</span><div id="modalGoal"></div></div>
     <div id="modalDaily" style="display:none;text-align:center;font-size:12px;color:var(--muted);margin:8px 0 0;font-family:var(--fm);"></div>
     <div id="modalSteps"></div>
+    <div id="modalVars" class="vars-box"></div>
     <button id="modalTrainBtn" class="btn btn-primary btn-full" style="margin-top:12px;padding:16px;font-size:16px;" onclick="trainCurrent()">💪 ВЫПОЛНИТЬ ПОДХОД (+10%)</button>
   </div>
 </div>
@@ -1196,6 +1240,13 @@ const DEF_SKILLS=[
     {title:'Педалирование',text:'Сразу после рывка крути педали — резко и равномерно, не останавливайся. Темп задают ноги: крутишь быстрее — вилли выше и стабильнее. Не дёргай руль на себя постоянно — это ломает баланс.',img:'image/wh-step4.png'},
     {title:'Баланс',text:'Клонит назад — плавно нажми задний тормоз и чуть подсядь. Клонит вперёд — добавь оборотов педалями. Смотри далеко вперёд, а не на колесо: взгляд держит баланс лучше всего.',img:'image/wh-step4.png'},
     {title:'Гашение',text:'Научись аккуратно опускать колесо задним тормозом, прежде чем пробовать на длину. Резкий рывок со всей силы в начале — путь к перевороту. Дозируй усилие, расти по чуть-чуть.',img:'image/wh-step1.jpg'}
+  ],vars:[
+    {id:'w_lh',icon:'🖐️',name:'Левая рука вверх',bonus:3,req:1,desc:'Отпусти левую руку и вытяни в сторону'},
+    {id:'w_rh',icon:'🖐️',name:'Правая рука вверх',bonus:3,req:1,desc:'Отпусти правую руку'},
+    {id:'w_lf',icon:'🦵',name:'Нога на раму',bonus:6,req:2,desc:'Одна нога с педали — на раму'},
+    {id:'w_nh',icon:'🙌',name:'Руки в стороны',bonus:8,req:2,desc:'Обе руки — без руля'},
+    {id:'w_ey',icon:'😌',name:'С закрытыми глазами',bonus:7,req:2,desc:'Только баланс — без взгляда вперёд'},
+    {id:'w_nf',icon:'🧘',name:'Ноги на раме',bonus:12,req:3,desc:'Обе ноги без педалей — чистое равновесие'}
   ],mistakes:[
     'Руки согнуты и тянут руль с силой — подъём должен идти от рывка корпусом и педалей, а не от рук.',
     'Едут стоя, а не сидя — в вилли нужно сидеть на седле и крутить педали.',
@@ -1208,6 +1259,13 @@ const DEF_SKILLS=[
     {title:'Взрыв',text:'Подайся грудью к рулю и вниз, слегка согни локти — заряди пружину. Затем резко выпрями тело и брось таз назад за седло. Руль держи прямыми руками, он не поднимается силой рук.',img:'image/mn-step1.jpg'},
     {title:'Фиксация',text:'Как только переднее колесо оторвалось — замри. Не наклоняйся дальше назад: вес уже за седлом, руки прямые, корпус статичен. Байк должен «встать» сам.',img:'image/mn-step3.jpg'},
     {title:'Баланс коленями',text:'В мэнуале баланс держат только ноги: вытяни ноги — носок опустится вниз, согни колени — поднимется. Работай ими плавно, как пружинами. Педали почти не крути.',img:'image/mn-step3.jpg'}
+  ],vars:[
+    {id:'m_lh',icon:'🖐️',name:'Левая рука вверх',bonus:3,req:1,desc:'Отпусти левую руку'},
+    {id:'m_rh',icon:'🖐️',name:'Правая рука вверх',bonus:3,req:1,desc:'Отпусти правую руку'},
+    {id:'m_lf',icon:'🦵',name:'Нога на раму',bonus:6,req:2,desc:'Одна нога с педали — на раму'},
+    {id:'m_nh',icon:'🙌',name:'Руки в стороны',bonus:8,req:2,desc:'Обе руки — без руля'},
+    {id:'m_ey',icon:'😌',name:'С закрытыми глазами',bonus:7,req:2,desc:'Только баланс — без взгляда вперёд'},
+    {id:'m_nf',icon:'🧘',name:'Ноги на раме',bonus:12,req:3,desc:'Обе ноги без педалей'}
   ],mistakes:[
     'Руки согнуты в локтях — вес уходит вперёд, и переднее колесо сразу падает.',
     'Слишком сильный рывок — уходишь в переворот, а в мэнуале тормозов для страховки нет.',
@@ -1219,6 +1277,12 @@ const DEF_SKILLS=[
     {title:'Позиция',text:'Расположи шатуны горизонтально: ведущая педаль спереди, свободная — сзади. Встань с седла, колени чуть согнуты, вес равномерно на обеих ногах.',img:'image/ts-step1.jpg'},
     {title:'Тормоза',text:'Зажми обе ручки тормозов — колёса стоят мёртво. С этого момента байк управляется только смещением твоего веса и поворотом руля.',img:'image/ts-step3.jpg'},
     {title:'Микро-движения',text:'Играй весом: чуть наклонился вперёд — надави на переднюю педаль, чуть назад — потяни руль. Движения крошечные, 2–3 см. Поймай точку равновесия и удерживай её, плечи расслабь, дыши.',img:'image/ts-step3.jpg'}
+  ],vars:[
+    {id:'t_h',icon:'🖐️',name:'Одна рука вверх',bonus:3,req:0,desc:'Отпусти руку — держи баланс корпусом'},
+    {id:'t_nh',icon:'🙌',name:'Руки в стороны',bonus:8,req:1,desc:'Обе руки — без руля'},
+    {id:'t_f',icon:'🦵',name:'Нога на раму',bonus:6,req:1,desc:'Одна нога с педали — на раму'},
+    {id:'t_sw',icon:'🔄',name:'Крути руль 180°',bonus:6,req:2,desc:'Разворот руля из стороны в сторону'},
+    {id:'t_ey',icon:'😌',name:'С закрытыми глазами',bonus:7,req:2,desc:'Стоим и балансируем вслепую'}
   ],mistakes:[
     'Колёса не зафиксированы тормозами — байк уезжает вперёд.',
     'Руль стоит прямо, а не повёрнут — без поворота руля балансировать на месте почти невозможно.',
@@ -1230,6 +1294,12 @@ const DEF_SKILLS=[
     {title:'Скуп: подтягиваем заднее',text:'Пока переднее колесо в воздухе, в момент пика резко подтяни педали ногами вверх, как будто подпрыгиваешь на месте, и подожми колени к груди. Заднее колесо подтянется за тобой. Сначала пробуй невысоко, без движения вперёд.',img:'image/bh-step1.jpg'},
     {title:'Соединяем в один прыжок',text:'Делай оба движения слитно: рывок вверх — сразу скуп, без паузы. Ключ — тайминг: педали тянутся в тот момент, когда переднее уже поднялось, но ещё не начало падать. Раньше или позже — и хоп не получается.',img:'image/bh-step1.jpg'},
     {title:'Высота и приземление',text:'Когда поймал тайминг — добавляй амплитуду: выше рывок, сильнее поджим коленей, байк «складывается» под тобой. Приземляйся на оба колеса одновременно, ноги мягкие, как пружины. Начинай с палки в 10 см, потом повышай.',img:'image/bh-step1.jpg'}
+  ],vars:[
+    {id:'b_hi',icon:'📏',name:'Выше планка',bonus:5,req:1,desc:'Подними препятствие ещё на 5–10 см'},
+    {id:'b_180',icon:'🔄',name:'Хоп 180°',bonus:9,req:2,desc:'Разворот на пол-оборота в прыжке'},
+    {id:'b_nh',icon:'🙌',name:'Хоп без рук',bonus:9,req:2,desc:'Обе руки — отпустил руль в воздухе'},
+    {id:'b_ty',icon:'🪨',name:'Тайр-тэп',bonus:7,req:2,desc:'Коснись бордюра задним колесом в прыжке'},
+    {id:'b_360',icon:'🌀',name:'Хоп 360°',bonus:14,req:3,desc:'Полный оборот в воздухе'}
   ],mistakes:[
     'Прыгают, не научившись фронт-лифту — без чистого подъёма переднего хоп не выйдет.',
     'Тянут руль силой рук, а не корпусом — подъём получается рваный и низкий.',
@@ -1242,6 +1312,12 @@ const DEF_SKILLS=[
     {title:'Загрузка',text:'Начни тормозить плавно, одновременно подавая плечи и таз вперёд. Переноси вес на переднее колесо постепенно — это создаёт опору для отрыва зада.',img:'image/st-step1.jpg'},
     {title:'Отрыв',text:'Продолжай жать тормоз, плавно наращивая силу. Заднее поднимется само, когда вес достаточно уйдёт вперёд. Не дёргай рычаг резко — переднее заблокируется, и ты перелетишь через руль.',img:'image/st-step1.jpg'},
     {title:'Баланс и опускание',text:'Когда зад на нужной высоте — слегка ослабь тормоз, чтобы удержать угол. Опускается зад тоже тормозом: отпустил — опустился. Отрабатывай до 45°, потом поднимай выше.',img:'image/st-step1.jpg'}
+  ],vars:[
+    {id:'s_h',icon:'🖐️',name:'Одна рука вверх',bonus:3,req:0,desc:'Отпусти руку — держи вес корпусом'},
+    {id:'s_nh',icon:'🙌',name:'Руки в стороны',bonus:8,req:2,desc:'Обе руки — без руля'},
+    {id:'s_180',icon:'🔄',name:'Стоппи 180°',bonus:9,req:2,desc:'Разворот на переднем колесе'},
+    {id:'s_ey',icon:'😌',name:'С закрытыми глазами',bonus:7,req:2,desc:'Чувствуй баланс без взгляда'},
+    {id:'s_en',icon:'🎯',name:'Стоппи-эндо',bonus:8,req:3,desc:'Зафиксируй переворот на переднем колесе'}
   ],mistakes:[
     'Зажимают передний тормоз резко и намертво — блокировка переднего колеса и перелёт через руль.',
     'Вес не переносят вперёд — тормозят «сидя на месте», и зад не поднимается совсем.',
@@ -1257,7 +1333,7 @@ const SK='mtb_v16';
 function lsKey(){return SK+(currentUser?('_'+currentUser.uid):'_anon');}
 function lsDayKey(k){return k+(currentUser?('_'+currentUser.uid):'_anon');}
 function clearLSPrefix(){try{Object.keys(localStorage).filter(k=>k===SK||k.startsWith(SK+'_')||k==='mtb_dts'||k.startsWith('mtb_dts_')||k==='mtb_wts'||k.startsWith('mtb_wts_')).forEach(k=>localStorage.removeItem(k));}catch(e){}}
-function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],declinedDuels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[]};}
+function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],declinedDuels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[]};}
 let state=loadLS();
 let activeSkillId=null;
 let bikePhotoFile=null;
@@ -1271,8 +1347,8 @@ function loadLS(){
     if(!Array.isArray(s.declinedDuels))s.declinedDuels=[];
     DEF_SKILLS.forEach(ds=>{
       const sk=s.skills.find(x=>x.id===ds.id);
-      if(!sk)s.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0});
-              else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;}
+      if(!sk)s.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}});
+              else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;if(!sk.vars)sk.vars={};}
     });
     return s;
   }}catch(e){}return defState();
@@ -1299,6 +1375,8 @@ function mergeCloudState(c,l){
       if(!ls)return;
       if(ls.lv>cs.lv||(ls.lv===cs.lv&&ls.pr>cs.pr)){cs.lv=ls.lv;cs.pr=ls.pr;}
       if((ls.tr||0)>(cs.tr||0))cs.tr=ls.tr;
+      if(!cs.vars)cs.vars={};
+      if(ls.vars&&typeof ls.vars==='object'){Object.keys(ls.vars).forEach(k=>{if(ls.vars[k])cs.vars[k]=true;});}
     });
     l.skills.forEach(ls=>{if(!out.skills.some(x=>x.id===ls.id))out.skills.push(JSON.parse(JSON.stringify(ls)));});
   }
@@ -1397,8 +1475,8 @@ async function initFB(){
             if(Array.isArray(ls.duels))state.duels=ls.duels;
             DEF_SKILLS.forEach(ds=>{
               const sk=state.skills.find(x=>x.id===ds.id);
-              if(!sk)state.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0});
-      else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;}
+              if(!sk)state.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}});
+      else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;if(!sk.vars)sk.vars={};}
             });
             saveLS();setSyncDot('synced');
           }else{await saveCloud();}
@@ -1685,7 +1763,7 @@ function initApp(){
   setT('myNickDisp',state.nickname||'Гость');
   if(currentUser){setT('userEmailDisp',currentUser.email||'');updateUserUI();}
   setSyncDot(currentUser?'synced':'local');
-  renderSkills();renderRecords();
+  renderSkills();renderRecords();renderBikeGuide();
   initNotifUI();updateStreak();genChallengesIfNeeded();
   if(currentUser){initDuelListener();startDuelRefresh();expireStaleDuels();syncLocalDuels();}
   setInterval(updateChTimer,60000);updateChTimer();
@@ -1790,6 +1868,7 @@ function gotoTab(t){
   if(t==='friends')renderFriends();
   if(t==='duel')renderDuels();
   if(t==='profile'){renderProfile();renderFriendsTab();}
+  if(t==='support')renderBikeGuide();
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>gotoTab(btn.dataset.tab)));
 function switchBikeTab(tab){document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));const b=document.querySelector(`[data-subtab="${tab}"]`);if(b)b.classList.add('active');document.getElementById('bikes-feed').style.display=tab==='feed'?'block':'none';document.getElementById('bikes-add').style.display=tab==='add'?'block':'none';if(tab==='feed')loadBikes();}
@@ -1800,10 +1879,10 @@ function checkAch(){if(!state.unlockedAchievements)state.unlockedAchievements=[]
 function renderAch(){const el=document.getElementById('achList');if(!el)return;el.innerHTML='';ACHIEVEMENTS.forEach(a=>{const u=state.unlockedAchievements&&state.unlockedAchievements.includes(a.id);if(u){const d=document.createElement('div');d.className='ach unlocked';d.textContent='✓ '+a.icon+' '+a.name;el.appendChild(d);return;}if(a.pr){const p=a.pr(state);const w=Math.min(100,Math.round(p.cur/p.target*100));const d=document.createElement('div');d.className='ach-prog';d.innerHTML=`<div class="ap-name"><span>${a.icon}</span><span>${esc(a.name)}</span><span class="ap-num" style="margin-left:auto;">${p.cur} / ${p.target}</span></div><div class="ap-bar"><div class="ap-fill" style="width:${w}%"></div></div>`;el.appendChild(d);}else{const d=document.createElement('div');d.className='ach';d.textContent=a.icon+' '+a.name;el.appendChild(d);}});}
 
 /* ══ SKILLS ══ */
-function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);body.append(tit,p1,p2,pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();}
+function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;let pv=null;const av=base.vars?base.vars.filter(v=>u.vars&&u.vars[v.id]):[];if(av.length){pv=document.createElement('span');pv.className='pill pill--var';pv.textContent='🎛 '+av.length+' усл. · бонус +'+varBonusFor(base,u)+'%';}const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);body.append(tit,p1,p2);if(pv)body.appendChild(pv);body.append(pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();}
 
 /* ══ MODAL ══ */
-function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);setupVideo();const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';const mm=document.getElementById('modalMistakes');if(mm)mm.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});if(base.mistakes&&base.mistakes.length){const mb=document.createElement('div');mb.className='mistake-box';const mh=document.createElement('h4');mh.textContent='🚫 Частые ошибки';mb.appendChild(mh);const ul=document.createElement('ul');base.mistakes.forEach(m=>{const li=document.createElement('li');li.textContent=m;ul.appendChild(li);});mb.appendChild(ul);if(mm)mm.appendChild(mb);}const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,false);btn.disabled=isMax;updateModalDaily();document.getElementById('modal').classList.add('show');}
+function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const dayDone=(user.trToday||0)>=MAX_APPROACHES_PER_DAY;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);setupVideo();const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';const mm=document.getElementById('modalMistakes');if(mm)mm.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});if(base.mistakes&&base.mistakes.length){const mb=document.createElement('div');mb.className='mistake-box';const mh=document.createElement('h4');mh.textContent='🚫 Частые ошибки';mb.appendChild(mh);const ul=document.createElement('ul');base.mistakes.forEach(m=>{const li=document.createElement('li');li.textContent=m;ul.appendChild(li);});mb.appendChild(ul);if(mm)mm.appendChild(mb);}const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,dayDone);btn.disabled=isMax||dayDone;updateModalDaily();renderModalVars();document.getElementById('modal').classList.add('show');}
 function closeModal(){stopLearnBar();mResume();timerReset();document.getElementById('modal').classList.remove('show');document.getElementById('modalVideo').src='';}
 let videoWatching=false,_learnTimer=null;
 function setupVideo(){
@@ -1858,11 +1937,76 @@ function runLearnBar(){
 }
 function stopLearnBar(){if(_learnTimer){clearInterval(_learnTimer);_learnTimer=null;}}
 
+/* ══ УСЛОЖНЕНИЯ (вариации трюка) ══
+   Пользователь сам решает когда включать. Каждое включённое
+   усложнение добавляет бонус % к каждому подходу. */
+function varBonusFor(base,user){
+  if(!base||!base.vars||!user||!user.vars)return 0;
+  let sum=0;
+  base.vars.forEach(v=>{if(user.vars[v.id])sum+=v.bonus;});
+  return sum;
+}
+function skillIsMax(base,user){return base&&user&&user.lv>=base.levels.length-1&&user.pr>=100;}
+function renderModalVars(){
+  const box=document.getElementById('modalVars');if(!box)return;
+  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
+  const user=state.skills.find(s=>s.id===activeSkillId);
+  if(!base||!base.vars||!base.vars.length||!user){box.innerHTML='';box.style.display='none';return;}
+  box.innerHTML='';
+  box.style.display='block';
+  const activeVars=base.vars.filter(v=>user.vars&&user.vars[v.id]);
+  const bonus=varBonusFor(base,user);
+  const head=document.createElement('div');head.className='var-head';
+  const h=document.createElement('h4');h.textContent='⚙️ Усложнения';
+  const p=document.createElement('p');p.textContent='Освоил базу — включай нагрузку. Ты сам решаешь, когда. Включённые дают бонус к каждому подходу.';
+  const tot=document.createElement('span');tot.className='var-total'+(bonus?' on':'');tot.textContent=activeVars.length?('🎛 '+activeVars.length+' · бонус +'+bonus+'%'):'🎛 выкл';
+  head.append(h,tot,p);
+  box.appendChild(head);
+  const grid=document.createElement('div');grid.className='var-grid';
+  base.vars.forEach(v=>{
+    const locked=(user.lv||0)<(v.req||0);
+    const active=!!(user.vars&&user.vars[v.id]);
+    const chip=document.createElement('button');
+    chip.type='button';
+    chip.className='var-chip'+(active?' active':'')+(locked?' locked':'');
+    chip.title=v.desc||v.name;
+    const ic=document.createElement('span');ic.className='var-ic';ic.textContent=v.icon;
+    const nm=document.createElement('span');nm.className='var-name';nm.textContent=v.name;
+    const bd=document.createElement('span');bd.className='var-bd';bd.textContent='+'+v.bonus+'%';
+    chip.append(ic,nm,bd);
+    if(locked){const lk=document.createElement('span');lk.className='var-lk';lk.textContent='🔒 ур.'+(v.req+1);chip.appendChild(lk);}
+    chip.onclick=()=>toggleVar(base.id,v.id);
+    grid.appendChild(chip);
+  });
+  box.appendChild(grid);
+  const btn=document.getElementById('modalTrainBtn');
+  if(btn)btn.textContent=trainBtnLabel(skillIsMax(base,user),(user.trToday||0)>=MAX_APPROACHES_PER_DAY);
+}
+function toggleVar(skillId,varId){
+  const base=DEF_SKILLS.find(s=>s.id===skillId);
+  const user=state.skills.find(s=>s.id===skillId);
+  const v=base&&base.vars?base.vars.find(x=>x.id===varId):null;
+  if(!user||!v)return;
+  if((user.lv||0)<(v.req||0)){toast('🔒 Откроется на '+(v.req<=0?'старте':(v.req+1)+'-м уровне'));return;}
+  if(!user.vars)user.vars={};
+  user.vars[varId]=!user.vars[varId];
+  sfx.tick();
+  toast(user.vars[varId]?('🎛 «'+v.name+'» включено (+'+v.bonus+'%)'):'Усложнение выключено');
+  saveCloudDebounced();
+  renderModalVars();
+  renderSkills();
+}
+
+function approachGain(em,vb){const base=Math.round(10*(em||1));return vb>0?base+Math.max(1,Math.round(base*vb/100)):base;}
 function trainBtnLabel(isMax,dayDone){
   if(isMax)return '✅ МАКСИМУМ ДОСТИГНУТ';
   if(dayDone)return '😴 ЛИМИТ ДНЯ';
+  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
+  const user=state.skills.find(s=>s.id===activeSkillId);
+  const vb=varBonusFor(base,user);
   const em=eventMultFor(activeSkillId);
-  return em>1?'💪 ВЫПОЛНИТЬ ПОДХОД (+'+Math.round(10*em)+'% ×'+em+')':'💪 ВЫПОЛНИТЬ ПОДХОД (+10%)';
+  const gain=approachGain(em,vb);
+  return '💪 ВЫПОЛНИТЬ ПОДХОД (+'+gain+'%)';
 }
 function updateModalDaily(){
   const el=document.getElementById('modalDaily');if(!el)return;
@@ -1871,7 +2015,7 @@ function updateModalDaily(){
   const ev=eventForSkill(activeSkillId);
   el.style.display='block';
   el.textContent=(ev?ev.emoji+' '+ev.title+'! ':'')+'Сегодня: '+used+' / '+MAX_APPROACHES_PER_DAY+' подходов'+(left?' — осталось '+left:'');
-  el.style.color=left<=3?'var(--warn)':left<=0?'var(--danger)':'var(--muted)';
+  el.style.color=left<=0?'var(--danger)':left<=3?'var(--warn)':'var(--muted)';
 }
 
 let _lastTrainTs=0;
@@ -1888,14 +2032,15 @@ function trainCurrent(){
   user.trSession=(user.trSession||0)+1;
   if(!currentUser){try{localStorage.setItem('mtbg_guest_progress','1');}catch(e){}}
   const em=eventMultFor(activeSkillId);
-  const gain=Math.round(10*em);
+  const vb=varBonusFor(base,user);
+  const gain=approachGain(em,vb);
   user.pr+=gain;
   recordTrainToday();
 
   if(user.pr>=100){
     if(user.lv<base.levels.length-1){user.lv++;user.pr=0;sfx.levelUp();showLvlUp('НОВЫЙ УРОВЕНЬ!',base.levels[user.lv],'🔥');toast('🔥 Новый уровень!','toast-xp');}
     else{user.pr=100;sfx.max();showLvlUp('ТРЮК ОСВОЕН!',base.name+' — ты мастер!','🏆',true);toast('🏆 Трюк освоен!','toast-xp');}
-  }else{sfx.tick();toast(em>1?'+'+gain+'% '+getActiveEvent().emoji+' XP ×'+em:'+10% 💪','toast-xp');}
+  }else{sfx.tick();toast('+'+gain+'% '+(vb?'🎛 усложнения':'💪')+(em>1?' · '+getActiveEvent().emoji+' ×'+em:''),'toast-xp');}
 
   const isMax=user.lv>=base.levels.length-1&&user.pr>=100;
   const goals=LVL_GOALS[base.id];const lvIdx=Math.min(user.lv,base.levels.length-1);
@@ -2139,6 +2284,174 @@ function renderChallenges(){
 /* ══════════════════════
    BIKES — загрузка фото
 ══════════════════════ */
+
+/* ══ ГИД ПО ТИПАМ ВЕЛОСИПЕДОВ (вкладка «Ещё») ══
+   SVG-иллюстрации без фона рисуются на лету. */
+const BGC='var(--bikeC)',BGA='var(--bikeA)',BGT='var(--bikeT)',BGTR='var(--bikeTR)';
+function bWheel(x,y,r,tw){const d=Math.round((r-4)*0.707);
+  return `<g transform="translate(${x} ${y})">
+<circle r="${r}" fill="none" stroke="${BGT}" stroke-width="${tw||6}"/>
+<circle r="${r-3}" fill="none" stroke="${BGA}" stroke-width="1.6" opacity=".9"/>
+<circle r="3" fill="${BGC}"/>
+<line x1="0" y1="${-(r-4)}" x2="0" y2="${r-4}" stroke="${BGTR}" stroke-width="1" opacity=".55"/>
+<line x1="${-(r-4)}" y1="0" x2="${r-4}" y2="0" stroke="${BGTR}" stroke-width="1" opacity=".55"/>
+<line x1="${-d}" y1="${-d}" x2="${d}" y2="${d}" stroke="${BGTR}" stroke-width="1" opacity=".55"/>
+<line x1="${d}" y1="${-d}" x2="${-d}" y2="${d}" stroke="${BGTR}" stroke-width="1" opacity=".55"/>
+</g>`;}
+function bL(x1,y1,x2,y2,w){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${BGC}" stroke-width="${w||5}" stroke-linecap="round"/>`;}
+function bPath(d,w){return `<path d="${d}" fill="none" stroke="${BGC}" stroke-width="${w||5}" stroke-linecap="round" stroke-linejoin="round"/>`;}
+function bSaddle(x,y){
+  return `<g>
+<line x1="${x}" y1="${y+10}" x2="${x}" y2="${y-3}" stroke="${BGC}" stroke-width="4" stroke-linecap="round"/>
+<path d="M${x-11} ${y-5} Q${x} ${y-12} ${x+11} ${y-5} L${x+8} ${y} L${x-8} ${y} Z" fill="${BGC}"/>
+</g>`;}
+function bCrank(x,y,ring){
+  return `<g>
+<circle cx="${x}" cy="${y}" r="${ring||11}" fill="none" stroke="${BGC}" stroke-width="2.5"/>
+<circle cx="${x}" cy="${y}" r="4" fill="${BGC}"/>
+<line x1="${x}" y1="${y}" x2="${x+7}" y2="${y+17}" stroke="${BGC}" stroke-width="4" stroke-linecap="round"/>
+<rect x="${x+3}" y="${y+15}" width="10" height="4" rx="2" fill="${BGC}"/>
+<line x1="${x}" y1="${y}" x2="${x-7}" y2="${y-17}" stroke="${BGC}" stroke-width="4" stroke-linecap="round"/>
+<rect x="${x-13}" y="${y-21}" width="10" height="4" rx="2" fill="${BGC}"/>
+</g>`;}
+function bBarFlat(x1,y1,x2,y2){
+  return `<g>
+<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${BGC}" stroke-width="4" stroke-linecap="round"/>
+<line x1="${x1-4}" y1="${y1}" x2="${x1+2}" y2="${y1}" stroke="${BGT}" stroke-width="7" stroke-linecap="round"/>
+<line x1="${x2-2}" y1="${y2}" x2="${x2+4}" y2="${y2}" stroke="${BGT}" stroke-width="7" stroke-linecap="round"/>
+</g>`;}
+const BIKE_TYPES=[
+  {id:'hardtail',name:'Горный (Hardtail)',emoji:'🚵',tag:'MTB · трейл · кросс-кантри',
+   desc:'Универсальный горный байк с амортизационной вилкой спереди и жёстким задом. Золотая середина для трюков, леса и парков.',
+   pros:['Лёгкий и живой в управлении','Точно передаёт усилия на педали','Идеален для трюков и вилли','Проще и дешевле в обслуживании'],
+   cons:['Жёстко на кочках','Сложнее на техничных спусках'],
+   svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+${bWheel(70,118,30,6)}${bWheel(190,118,30,6)}
+<g>${bL(112,112,99,64)}${bL(99,64,158,60)}${bL(158,60,163,82)}${bL(163,82,112,112)}${bL(112,112,70,118)}${bL(99,64,70,118)}</g>
+${bSaddle(98,50)}
+<g>${bL(156,79,172,85,5)}${bL(160,82,187,117,3.5)}${bL(166,82,193,117,3.5)}</g>
+<g>${bL(158,60,155,48,4)}</g>
+${bBarFlat(146,47,177,45)}
+${bCrank(112,112,11)}
+</svg>`},
+  {id:'full',name:'Двухподвес (Full-suspension)',emoji:'🏔️',tag:'MTB · эндуро · даунхилл',
+   desc:'Горный байк с амортизацией спереди и сзади. Держит скорость на разбитых трассах и уверенно гасит приземления.',
+   pros:['Максимальный комфорт на кочках','Уверенность на скорости и прыжках','Заднее колесо не теряет сцепление'],
+   cons:['Тяжелее хардтейла','Дороже в обслуживании','Часть энергии уходит в подвеску'],
+   svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+${bWheel(70,118,30,6)}${bWheel(190,118,30,6)}
+<g>${bL(112,112,99,64)}${bL(99,64,158,60)}${bL(158,60,163,82)}${bL(163,82,112,112)}${bL(112,112,70,118)}${bL(99,64,70,118)}</g>
+${bSaddle(98,50)}
+<g>${bL(156,79,172,85,5)}${bL(160,82,187,117,3.5)}${bL(166,82,193,117,3.5)}</g>
+<g>${bL(106,86,84,96,5)}<line x1="103" y1="88" x2="87" y2="94" stroke="${BGT}" stroke-width="2.5" stroke-linecap="round"/></g>
+${bL(99,64,88,93,4)}
+<g>${bL(158,60,155,48,4)}</g>
+${bBarFlat(146,47,177,45)}
+${bCrank(112,112,11)}
+</svg>`},
+  {id:'road',name:'Шоссейник',emoji:'🏁',tag:'Road · асфальт · скорость',
+   desc:'Лёгкий быстрый велосипед с узкими колёсами и рулём-бараном. Создан для скорости и дальних дистанций по асфальту.',
+   pros:['Очень быстрый и лёгкий','Низкое сопротивление качению','Идеален для дальних покатушек'],
+   cons:['Не для бездорожья и трюков','Жёсткая аэродинамичная посадка','Тонкие колёса боятся ям'],
+   svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+${bWheel(70,116,33,3)}${bWheel(190,116,33,3)}
+<g>${bL(118,110,104,58,4)}${bL(104,58,162,52,4)}${bL(162,52,166,78,4)}${bL(166,78,118,110,4)}${bL(118,110,70,116,4)}${bL(104,58,70,116,4)}</g>
+${bSaddle(102,42)}
+<g>${bL(163,78,188,116,2.5)}${bL(167,78,192,116,2.5)}</g>
+<g>${bL(162,52,158,43,3)}
+<path d="M158 43 C166 40 178 41 180 49 C181 54 174 57 168 55" fill="none" stroke="${BGC}" stroke-width="4" stroke-linecap="round"/>
+<line x1="168" y1="55" x2="172" y2="57" stroke="${BGT}" stroke-width="6" stroke-linecap="round"/></g>
+${bCrank(118,110,13)}
+</svg>`},
+  {id:'dh',name:'Downhill',emoji:'⛰️',tag:'DH · спуски · биг-эйр',
+   desc:'Специализированный байк для экстремальных спусков и больших прыжков. Создан выдерживать самые жёсткие приземления.',
+   pros:['Огромный ход подвески','Создан для прыжков и падений','Максимальная стабильность на скорости'],
+   cons:['Очень тяжёлый','В гору на нём не поедешь','Дорогой и сложный в обслуживании'],
+   svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+${bWheel(70,118,28,9)}${bWheel(190,118,28,9)}
+<g>${bL(114,114,102,62,6)}${bL(102,62,158,56,6)}${bL(158,56,166,88,6)}${bL(166,88,114,114,6)}${bL(114,114,70,118,6)}${bL(102,62,70,118,6)}</g>
+${bSaddle(100,50)}
+<g>${bL(150,64,178,70,6)}${bL(154,82,180,88,6)}${bL(158,88,187,117,4)}${bL(170,88,193,117,4)}</g>
+<g>${bL(158,56,152,46,4)}</g>
+${bBarFlat(140,44,184,43)}
+${bCrank(114,114,12)}
+</svg>`},
+  {id:'enduro',name:'Enduro / Trail',emoji:'🌲',tag:'MTB · трассы · парки',
+   desc:'Компромисс между подъёмом и спуском: двухподвес с большим ходом и геометрией для агрессивного катания по трассам и в парках.',
+   pros:['Едет и вверх, и вниз','Хорошо прыгает','Подходит для парков и трасс'],
+   cons:['Тяжелее трейлового хардтейла','Дороже в обслуживании'],
+   svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+${bWheel(70,118,29,7)}${bWheel(190,118,29,7)}
+<g>${bL(113,113,101,63,5)}${bL(101,63,159,58,5)}${bL(159,58,164,84,5)}${bL(164,84,113,113,5)}${bL(113,113,70,118,5)}${bL(101,63,70,118,5)}</g>
+${bSaddle(100,52)}
+<g>${bL(157,80,172,85,5)}${bL(161,82,187,117,3.5)}${bL(167,82,193,117,3.5)}</g>
+<g>${bL(107,87,85,97,5)}<line x1="104" y1="89" x2="88" y2="95" stroke="${BGT}" stroke-width="2.5" stroke-linecap="round"/></g>
+${bL(101,63,90,93,4)}
+<g>${bL(159,58,156,47,4)}</g>
+${bBarFlat(146,46,178,47)}
+${bCrank(113,113,11)}
+</svg>`},
+  {id:'dirt',name:'Dirt / Street',emoji:'🛹',tag:'Dirt · стрит · памп-треки',
+   desc:'Компактный байк для стрит-райдинга, дерт-джампов и памп-треков. Жёсткий, маневренный, создан для повторения трюков.',
+   pros:['Живой и маневренный','Лёгкий — легко крутиться в воздухе','Не боится приземлений'],
+   cons:['Жёсткий ход','Не для длинных покатушек','Практически один размер'],
+   svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+${bWheel(70,119,29,5)}${bWheel(190,119,29,5)}
+<g>${bL(114,113,100,66,5)}${bL(100,66,156,60,5)}${bL(156,60,161,82,5)}${bL(161,82,114,113,5)}${bL(114,113,70,119,5)}${bL(100,66,70,119,5)}</g>
+${bSaddle(98,56)}
+${bL(161,82,190,119,4)}
+<g>${bL(156,60,154,50,4)}</g>
+${bBarFlat(144,49,176,47)}
+${bCrank(114,113,10)}
+</svg>`},
+  {id:'bmx',name:'BMX',emoji:'🤘',tag:'Street · трюки · скейт-парки',
+   desc:'Классика трюкового мира: маленькие колёса, крепкая рама и одна передача. Создан для скейт-парков и стрита.',
+   pros:['Идеален для обучения трюкам','Крепкий и простой','Малый вес и размер'],
+   cons:['Очень жёсткий','Медленный на дистанции','Низкая посадка — не для далёких поездок'],
+   svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+${bWheel(70,120,24,5.5)}${bWheel(190,120,24,5.5)}
+<g>${bL(118,116,102,72,5)}${bPath('M102 72 Q126 64 150 70',5)}${bL(150,70,153,90,5)}${bL(153,90,118,116,5)}${bL(118,116,70,120,5)}${bL(102,72,70,120,5)}</g>
+${bSaddle(100,60)}
+${bL(153,90,190,120,4)}
+<line x1="61" y1="120" x2="79" y2="120" stroke="${BGT}" stroke-width="4" stroke-linecap="round"/>
+<g>${bL(150,70,148,60,4)}</g>
+${bBarFlat(138,58,170,58)}
+${bCrank(118,116,12)}
+</svg>`},
+  {id:'other',name:'Другой',emoji:'🏙️',tag:'Городской · комьютер · гибрид',
+   desc:'Всё остальное: городские, гибриды, складные. Созданы для комфортного катания по городу, а не для трюков и гонок.',
+   pros:['Комфортная прямая посадка','Багажник и крылья — удобно в городе','Спокойный и предсказуемый'],
+   cons:['Не для трюков','Тяжелее шоссейника','Не рассчитан на прыжки'],
+   svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+${bWheel(70,116,32,4)}${bWheel(190,116,32,4)}
+<g>${bL(116,110,104,58,5)}${bL(104,58,156,62,5)}${bL(156,62,160,80,5)}${bL(160,80,116,110,5)}${bL(116,110,70,116,5)}${bL(104,58,70,116,5)}</g>
+${bSaddle(102,46)}
+${bL(160,80,190,116,3.5)}
+<g>${bL(96,60,58,84,3)}${bL(58,84,96,86,3)}${bL(96,86,70,116,3)}</g>
+<g>${bL(156,62,150,52,3.5)}<path d="M150 52 Q140 46 132 48" fill="none" stroke="${BGC}" stroke-width="4" stroke-linecap="round"/><line x1="132" y1="48" x2="129" y2="51" stroke="${BGT}" stroke-width="6" stroke-linecap="round"/></g>
+${bCrank(116,110,10)}
+</svg>`},
+];
+function renderBikeGuide(){
+  const el=document.getElementById('bikeGuide');if(!el||el.dataset.done)return;
+  el.dataset.done='1';
+  BIKE_TYPES.forEach(bt=>{
+    const card=document.createElement('div');card.className='bg-card';
+    const top=document.createElement('div');top.className='bg-top';
+    top.insertAdjacentHTML('beforeend',bt.svg);
+    const head=document.createElement('div');head.className='bg-head';
+    const name=document.createElement('div');name.className='bg-name';name.textContent=bt.emoji+' '+bt.name;
+    const tag=document.createElement('div');tag.className='bg-tag';tag.textContent=bt.tag;
+    head.append(name,tag);top.appendChild(head);
+    const desc=document.createElement('p');desc.className='bg-desc';desc.textContent=bt.desc;
+    const lists=document.createElement('div');lists.className='bg-lists';
+    const mk=(title,items,cls)=>{const col=document.createElement('div');col.className='bg-lcol';const h=document.createElement('h5');h.className=cls;h.textContent=title;col.appendChild(h);const ul=document.createElement('ul');items.forEach(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});col.appendChild(ul);return col;};
+    lists.append(mk('Плюсы',bt.pros,'bg-pros'),mk('Минусы',bt.cons,'bg-cons'));
+    card.append(top,desc,lists);
+    el.appendChild(card);
+  });
+}
+
 function handleBikePhoto(input){
   const file=input.files[0];if(!file)return;
   // Проверяем тип файла
