@@ -4121,6 +4121,8 @@ let _lastLocalDuelDone=0;
 // Дедуп начисления duelsWon за сессию — чтобы победу не засчитали дважды
 // (локальный путь submitDuelResult + слушатель Firestore)
 const _creditedDuelWins=new Set();
+// Флаг: пользователь сейчас вводит результат дуэли — не перерисовывать список
+let _duelInputActive=false;
 
 function updateDuelHint(){
   const el=document.getElementById('duelHint');if(!el)return;
@@ -4308,6 +4310,8 @@ function duelResultForm(d){
   const wrap=document.createElement('div');wrap.className='duel-form';
   const inp=document.createElement('input');inp.className='field';inp.type='number';inp.min=DUEL_MIN[d.skill]||1;inp.step='0.1';inp.max=DUEL_MAX[d.skill]||1000;
   inp.placeholder='Твой результат ('+SUNITS[d.skill]+')';
+  inp.addEventListener('focus',()=>{_duelInputActive=true;});
+  inp.addEventListener('blur',()=>{_duelInputActive=false;});
   const btn=document.createElement('button');btn.className='btn btn-success';btn.style.cssText='flex:1;padding:10px;font-size:13px;';
   btn.textContent='💾 Сохранить';
   btn.onclick=()=>submitDuelResult(d.id,inp.value);
@@ -4448,7 +4452,7 @@ function initDuelListener(){
       }
       state.duels=merged;
       saveLS();
-      renderDuels();
+      if(!_duelInputActive)renderDuels();
       syncLocalDuels();
     },e=>{
       console.warn('duel listener:',e);
@@ -4471,6 +4475,7 @@ function startDuelRefresh(){
   },10000);
 }
 async function refreshDuels(){
+  if(_duelInputActive)return; // не перерисовываем, пока пользователь вводит результат
   if(!db||!currentUser)return;
   try{
     const q=db.collection('duels').where('status','in',['open','active','done','void']);
@@ -4484,8 +4489,8 @@ async function refreshDuels(){
       const changed=JSON.stringify(merged)!==JSON.stringify(state.duels||[]);
       state.duels=merged;
       saveLS();
-    renderDuels();
-    if(changed)syncLocalDuels();
+      renderDuels();
+      if(changed)syncLocalDuels();
     };
     const snap=await loadOrCache(q,15000,apply);
     apply(snap);
@@ -4502,7 +4507,7 @@ async function syncLocalDuels(){
       d.local=false;
     }catch(e){console.warn('syncLocalDuels:',e);}
   }
-  saveCloud();renderDuels();
+  saveCloud();if(!_duelInputActive)renderDuels();
 }
 /* ══════════════════════════════
    УВЕДОМЛЕНИЯ — исправленная версия
