@@ -85,6 +85,11 @@ The Firebase config (`FB_CFG`) is hardcoded in the inline script of `index.html`
 > 2. Put the key into `const FB_AC_SITE_KEY='...'` in `index.html` (or better: deploy via the `FIREBASE_APPCHECK_SITE_KEY` GitHub secret and inject it at build time).
 > 3. Start with **Monitor** mode in the console, watch for your app's traffic, then switch to **Enforce**.
 >
+> **FCM (push receive):** the SDK is pre-wired (`firebase-messaging-compat.js`, `sw.js` handlers, token saved to `users/{uid}.messagingToken`). It only activates once you set a VAPID key:
+> 1. Firebase Console → Build → Cloud Messaging → Web configuration → Web Push certificates → **Key pair** → copy.
+> 2. Put it into `const FB_VAPID_KEY='...'` in `index.html`.
+> Sending push messages is not wired yet (requires a server / Cloud Functions).
+>
 > **Security rules:** the repo ships with `firestore.rules`. Deploy it to your Firebase project (Firestore → Rules) before going live — it restricts writes to the document owner while keeping public features (leaderboard, bike feed, nickname lookup) working.
 
 ## 💾 Data Model
@@ -201,6 +206,11 @@ npx serve .
 > 1. Firebase Console → Build → App Check → Apps → зарегистрируй веб-приложение на **reCAPTCHA** (v3 или Enterprise) и скопируй site key.
 > 2. Вставь ключ в `const FB_AC_SITE_KEY='...'` в `index.html` (или прокидывай через GitHub-секрет `FIREBASE_APPCHECK_SITE_KEY` при деплое).
 > 3. Сначала включи режим **Monitor** в консоли, убедись, что трафик приложения проходит, потом переключай на **Enforce**.
+>
+> **FCM (приём push):** SDK уже подключён (`firebase-messaging-compat.js`, обработчики в `sw.js`, токен сохраняется в `users/{uid}.messagingToken`). Активируется после вставки VAPID-ключа:
+> 1. Firebase Console → Build → Cloud Messaging → Web configuration → Web Push certificates → **Key pair** → скопируй.
+> 2. Вставь в `const FB_VAPID_KEY='...'` в `index.html`.
+> Отправка push пока не подключена (нужен сервер / Cloud Functions).
 >
 > **Правила безопасности:** в репозитории есть `firestore.rules`. Разверни их в своём проекте (Firestore → Rules) перед запуском — они ограничивают запись только владельцем документа, сохраняя публичные функции (лидерборд, лента байков, поиск по коду).
 

@@ -23,6 +23,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 <script src="music/songs.js"></script>
 <style>
 :root{
@@ -1070,8 +1071,11 @@ const FB_CFG={
 };
 // Site key для App Check (reCAPTCHA). Пустое значение = App Check выключен.
 // Вставь ключ из Firebase Console → App Check → Apps, и включи enforcement в консоли.
-const FB_AC_SITE_KEY='';
-let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st=null;
+const FB_AC_SITE_KEY='6LcwoYUtAAAAACrDlhQ7QBUZaaKVZBg8OfNPAiTN';
+// VAPID key для FCM push-уведомлений. Вставь из Firebase Console → Cloud Messaging →
+// Web configuration (Web Push certificates → Key pair). Пустое значение = FCM выключен.
+const FB_VAPID_KEY='';
+let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st=null,ms=null;
 
 /* ══ UTILS ══ */
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -1439,6 +1443,7 @@ async function initFB(){
     db=firebase.firestore();
     auth=firebase.auth();
     try{st=firebase.storage&&firebase.storage()?firebase.storage():null;}catch(e){st=null;}
+    try{ms=firebase.messaging&&firebase.messaging()?firebase.messaging():null;}catch(e){ms=null;}
     // App Check (reCAPTCHA). Работает только если задан FB_AC_SITE_KEY и SDK подключён.
     // Enforcement включается в консоли Firebase — до этого токены просто отправляются.
     try{
@@ -1507,6 +1512,7 @@ async function initFB(){
           try{localStorage.removeItem('mtbg_guest_progress');}catch(e){}
           setTimeout(()=>notifyModal('✅ Гостевой прогресс перенесён','Твой прогресс из гостевого режима объединён с аккаунтом: навыки, рекорды, ачивки и серия 🔥 сохранены.'),700);
         }
+        if(('Notification' in window)&&Notification.permission==='granted')setTimeout(setupFCM,4000);
       }else{
         currentUser=null;
         stopDuelListener();
@@ -4375,6 +4381,19 @@ async function syncLocalDuels(){
 ══════════════════════════════ */
 let notifInt=null;
 
+// FCM: регистрируем токен устройства в users/{uid}.messagingToken.
+// Отправка push пока не подключена (нужен сервер) — это только приём.
+async function setupFCM(){
+  if(!ms||!FB_VAPID_KEY||!currentUser||!db)return;
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  try{
+    const token=await ms.getToken({vapidKey:FB_VAPID_KEY});
+    if(token){
+      try{await db.collection('users').doc(currentUser.uid).set({messagingToken:token},{merge:true});}catch(e){console.warn('FCM token save:',e);}
+    }
+  }catch(e){console.warn('FCM setup:',e);}
+}
+
 function initNotifUI(){
   if(!state.notif)state.notif={enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]};
   const tog=document.getElementById('notifToggle');
@@ -4396,7 +4415,7 @@ async function requestNotifPermission(){
   if(perm==='granted'){
     state.notif.enabled=true;
     document.getElementById('notifToggle').checked=true;
-    saveCloud();scheduleNotif();updateNotifStatus();
+    saveCloud();scheduleNotif();updateNotifStatus();setupFCM();
     toast('✅ Уведомления включены!');
     // Показываем тестовое уведомление
     new Notification('MTB Skills Pro 🚵‍♂️',{body:'Уведомления работают! 🔥',icon:location.origin+'/image/icon-192.png'});
