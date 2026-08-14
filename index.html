@@ -1881,7 +1881,7 @@ function gotoTab(t){
   if(t==='support')renderBikeGuide();
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>gotoTab(btn.dataset.tab)));
-function switchBikeTab(tab){document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));const b=document.querySelector(`[data-subtab="${tab}"]`);if(b)b.classList.add('active');document.getElementById('bikes-feed').style.display=tab==='feed'?'block':'none';document.getElementById('bikes-add').style.display=tab==='add'?'block':'none';if(tab==='feed')loadBikes();}
+function switchBikeTab(tab,keepForm){document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));const b=document.querySelector(`[data-subtab="${tab}"]`);if(b)b.classList.add('active');document.getElementById('bikes-feed').style.display=tab==='feed'?'block':'none';document.getElementById('bikes-add').style.display=tab==='add'?'block':'none';if(tab==='add'&&!keepForm)resetBikeForm();if(tab==='feed')loadBikes();}
 document.querySelectorAll('#tab-support details').forEach(d=>d.addEventListener('click',e=>{if(!e.target.closest('summary'))d.open=false;}));
 
 /* ══ ACH ══ */
@@ -2515,6 +2515,7 @@ async function uploadBikePhotoToStorage(file,path){
 }
 
 let bikesCache=[];
+let editingBikeId=null;
 let _bikeFilterTimer=null;
 document.addEventListener('input',e=>{
   if(e.target.id==='bikeFilter'){clearTimeout(_bikeFilterTimer);_bikeFilterTimer=setTimeout(renderBikes,200);}
@@ -2572,7 +2573,7 @@ function renderBikes(){
     else if(hasLiked){likeBtn.onclick=()=>unlikeBike(b.id,likeBtn);}
     else{likeBtn.onclick=()=>likeBike(b.id,likeBtn);}
     info.appendChild(likeBtn);
-    if(isOwn){const del=document.createElement('button');del.className='btn btn-danger';del.style.cssText='padding:5px 10px;font-size:11px;margin-top:6px;';del.textContent='🗑 Удалить';del.onclick=()=>confirmAction('Удалить '+b.name+'?','Навсегда.',()=>deleteBike(b.id));info.appendChild(del);}
+    if(isOwn){const ed=document.createElement('button');ed.className='btn btn-ghost';ed.style.cssText='padding:5px 10px;font-size:11px;margin-top:6px;margin-right:6px;';ed.textContent='✏️ Изменить';ed.onclick=()=>openBikeEdit(b.id);info.appendChild(ed);const del=document.createElement('button');del.className='btn btn-danger';del.style.cssText='padding:5px 10px;font-size:11px;margin-top:6px;';del.textContent='🗑 Удалить';del.onclick=()=>confirmAction('Удалить '+b.name+'?','Навсегда.',()=>deleteBike(b.id));info.appendChild(del);}
     card.append(thumb,info);feed.appendChild(card);
   });
 }
@@ -2585,19 +2586,50 @@ async function likeBike(id,btn){
   btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});const b=bikesCache.find(x=>x.id===id);if(b){if(!Array.isArray(b.likedBy))b.likedBy=[];if(!b.likedBy.includes(currentUser.uid))b.likedBy.push(currentUser.uid);}sfx.tick();btn.className='like-btn liked';btn.innerHTML='❤️ '+(b&&b.likedBy?b.likedBy.length:0);btn.onclick=()=>unlikeBike(id,btn);btn.disabled=false;toast('❤️');}catch(e){btn.disabled=false;toast('Ошибка: '+e.message);}}
   async function unlikeBike(id,btn){if(!currentUser||!db)return;btn.disabled=true;try{await db.collection('bikes').doc(id).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});const b=bikesCache.find(x=>x.id===id);if(b)b.likedBy=(Array.isArray(b.likedBy)?b.likedBy:[]).filter(u=>u!==currentUser.uid);btn.className='like-btn';btn.innerHTML='🤍 '+(b&&b.likedBy?b.likedBy.length:0);btn.onclick=()=>likeBike(id,btn);btn.disabled=false;}catch(e){btn.disabled=false;toast('Ошибка: '+e.message);}}
 
+function openBikeEdit(id){
+  const b=bikesCache.find(x=>x.id===id);if(!b)return;
+  editingBikeId=id;
+  switchBikeTab('add',true);
+  const name=document.getElementById('bikeName');if(name)name.value=b.name||'';
+  const type=document.getElementById('bikeType');if(type)type.value=b.type||'';
+  const purl=document.getElementById('bikePhotoUrl');
+  if(purl)purl.value=(b.photoUrl&&!b.photoUrl.startsWith('data:'))?b.photoUrl:'';
+  const fi=document.getElementById('bikeFileInput');if(fi)fi.value='';
+  const pv=document.getElementById('bikePreview');
+  if(b.photoUrl){pv.src=b.photoUrl;pv.style.display='block';}else{pv.style.display='none';}
+  const h=document.querySelector('#bikes-add .panel-head h3');if(h)h.textContent='✏️ Редактировать: '+b.name;
+  const sb=document.getElementById('bikeSubmitBtn');if(sb)sb.textContent='Сохранить изменения ✅';
+  bikePhotoFile=null;
+}
+
+function resetBikeForm(){
+  editingBikeId=null;
+  const name=document.getElementById('bikeName');if(name)name.value='';
+  const type=document.getElementById('bikeType');if(type)type.selectedIndex=0;
+  const purl=document.getElementById('bikePhotoUrl');if(purl)purl.value='';
+  const fi=document.getElementById('bikeFileInput');if(fi)fi.value='';
+  const pv=document.getElementById('bikePreview');if(pv){pv.removeAttribute('src');pv.style.display='none';}
+  const h=document.querySelector('#bikes-add .panel-head h3');if(h)h.textContent='➕ Добавить байк';
+  const sb=document.getElementById('bikeSubmitBtn');if(sb)sb.textContent='Добавить в гараж 🚲';
+  bikePhotoFile=null;
+}
+
 async function addBike(){
   if(!currentUser){toast('Сначала войди!');return;}
   const name=document.getElementById('bikeName').value.trim();
   const type=document.getElementById('bikeType').value;
   const urlInput=document.getElementById('bikePhotoUrl').value.trim();
   if(!name)return toast('Напиши модель байка!');
-  if(!bikePhotoFile&&!urlInput)return toast('Добавь фото (из галереи или ссылку)!');
+  if(!editingBikeId&&!bikePhotoFile&&!urlInput)return toast('Добавь фото (из галереи или ссылку)!');
 
   const btn=document.getElementById('bikeSubmitBtn');
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Загружаю...';
 
   try{
-    let photoUrl=urlInput,photoPath='';
+    const old=editingBikeId?bikesCache.find(x=>x.id===editingBikeId):null;
+    let photoUrl=urlInput||(old&&old.photoUrl)||'';
+    let photoPath=(old&&old.photoPath)||'';
+    const oldPath=photoPath;
     // Если выбрали файл — сжимаем и грузим в Firebase Storage, base64 только как фоллбэк
     if(bikePhotoFile){
       try{
@@ -2616,31 +2648,41 @@ async function addBike(){
     // Лимит документа Firestore — 1MB — применим только к base64, Storage-URL не лимитирован
     if(photoUrl&&photoUrl.startsWith('data:')&&photoUrl.length>900*1024){
       toast('Фото слишком тяжёлое для базы (лимит ~1MB). Выбери файл поменьше.');
-      btn.disabled=false;btn.textContent='Добавить в гараж 🚲';
+      btn.disabled=false;btn.textContent=editingBikeId?'Сохранить изменения ✅':'Добавить в гараж 🚲';
       return;
     }
 
-    await db.collection('bikes').add({
-      name,type,photoUrl,photoPath,
-      ownerId:currentUser.uid,
-      ownerNick:state.nickname||currentUser.displayName||'Аноним',
-      likedBy:[],likes:0,
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
+    if(editingBikeId){
+      await db.collection('bikes').doc(editingBikeId).update({
+        name,type,photoUrl,photoPath,
+        ownerNick:state.nickname||currentUser.displayName||'Аноним'
+      });
+      if(oldPath&&oldPath!==photoPath&&st){
+        try{await st.ref(oldPath).delete();}catch(e){console.warn('deleteBike old photo:',e);}
+      }
+      const b=bikesCache.find(x=>x.id===editingBikeId);
+      if(b){b.name=name;b.type=type;b.photoUrl=photoUrl;b.photoPath=photoPath;b.ownerNick=state.nickname||currentUser.displayName||'Аноним';}
+    }else{
+      await db.collection('bikes').add({
+        name,type,photoUrl,photoPath,
+        ownerId:currentUser.uid,
+        ownerNick:state.nickname||currentUser.displayName||'Аноним',
+        likedBy:[],likes:0,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
 
+    const wasEdit=!!editingBikeId;
     // Сброс формы
-    document.getElementById('bikeName').value='';
-    document.getElementById('bikePhotoUrl').value='';
-    document.getElementById('bikeFileInput').value='';
-    document.getElementById('bikePreview').style.display='none';
-    bikePhotoFile=null;
+    resetBikeForm();
 
-    sfx.save();toast('🚲 Байк добавлен!');confetti(25);
+    sfx.save();toast(wasEdit?'✏️ Байк обновлён!':'🚲 Байк добавлен!');
+    if(!wasEdit)confetti(25);
     btn.disabled=false;btn.textContent='Добавить в гараж 🚲';
     switchBikeTab('feed');loadBikes();
   }catch(e){
     toast('Ошибка: '+e.message);
-    btn.disabled=false;btn.textContent='Добавить в гараж 🚲';
+    btn.disabled=false;btn.textContent=editingBikeId?'Сохранить изменения ✅':'Добавить в гараж 🚲';
   }
 }
 
