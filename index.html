@@ -718,7 +718,11 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
   <!-- SKILLS -->
   <section id="tab-skills" class="tab active">
     <div class="helmet-banner"><span style="font-size:28px;flex-shrink:0;">⛑️</span><p><strong>Катайся только в шлеме!</strong> Без шлема — никаких трюков. Это не просьба, это правило.</p></div>
-    <div class="panel">
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-subtab="skills" onclick="switchSkillTab('skills')">🎯 Навыки</button>
+      <button class="sub-tab" data-subtab="master" onclick="switchSkillTab('master')" id="masterSubTab" style="display:none;">🏆 Master Mode</button>
+    </div>
+    <div id="skills-skills" class="panel">
       <div class="panel-head"><div><h3>Прогресс</h3><p>Добивай до 100% для перехода на новый этап</p></div></div>
       <div id="streakBanner" class="streak-banner" style="display:none"><div class="streak-fire">🔥</div><div><h4 id="streakText">0 дней</h4><p id="streakSub"></p></div></div>
       <div class="stats-grid">
@@ -729,6 +733,10 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
       </div>
       <div style="margin-bottom:16px;"><span class="sec-label">🏅 Ачивки</span><div id="achList" class="ach-row"></div></div>
       <div id="skillsList" class="skills-list"></div>
+    </div>
+    <div id="skills-master" class="panel" style="display:none;">
+      <div class="panel-head"><div><h3>🏆 Master Mode</h3><p>Разблокируется после прохождения всех 5 трюков на максимум</p></div></div>
+      <div id="masterContent" class="master-content"></div>
     </div>
   </section>
 
@@ -1136,6 +1144,16 @@ const sfx={
 function confetti(n=55){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const cols=['#4cc9f0','#7c5cff','#32d74b','#fbbf24','#ff453a','#f0f4ff'];for(let i=0;i<n;i++){const el=document.createElement('div');el.className='cf';const sz=Math.random()*10+5;el.style.cssText=`left:${Math.random()*100}vw;width:${sz}px;height:${sz*.5}px;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${Math.random()*2+2}s;animation-delay:${Math.random()*.5}s;transform:rotate(${Math.random()*360}deg);`;document.body.appendChild(el);el.addEventListener('animationend',()=>el.remove());}}
 let lvlT=null;
 function showLvlUp(title,sub,emoji,isMax){const ov=document.getElementById('lvlUp');setT('lvlEmoji',emoji||'🔥');setT('lvlTitle',title);setT('lvlSub',sub||'');ov.classList.add('show');confetti(isMax?90:50);clearTimeout(lvlT);lvlT=setTimeout(()=>ov.classList.remove('show'),2200);}
+function showMasterUnlockModal(){
+  const ov=document.getElementById('lvlUp');if(!ov)return;
+  setT('lvlEmoji','🏆');
+  setT('lvlTitle','Master Mode Разблокирован!');
+  setT('lvlSub','Все 5 трюков пройдены на максимум. Добро пожаловать в Master Mode!');
+  ov.classList.add('show');
+  confetti(150);
+  clearTimeout(lvlT);
+  lvlT=setTimeout(()=>ov.classList.remove('show'),4000);
+}
 let confirmCb=null;
 function confirmAction(title,text,cb){confirmCb=cb;document.getElementById('confirmCont').innerHTML=`<div class="conf-ov" onclick="if(event.target===this)closeConf()"><div class="conf-box"><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="conf-acts"><button class="btn btn-ghost" style="flex:1;" onclick="closeConf()">Отмена</button><button class="btn btn-danger" style="flex:1;" onclick="execConf()">Да</button></div></div></div>`;}
 function closeConf(){document.getElementById('confirmCont').innerHTML='';confirmCb=null;}
@@ -1301,7 +1319,11 @@ const DEF_SKILLS=[
   ],vars:[
     {id:'w_lh',icon:'🖐️',name:'Левая рука вверх',bonus:3,req:1,desc:'Отпусти левую руку и вытяни в сторону'},
     {id:'w_lf',icon:'🦵',name:'Нога на раму',bonus:6,req:2,desc:'Одна нога с педали — на раму'},
-    {id:'w_nf',icon:'🧘',name:'Ноги на раме',bonus:12,req:3,desc:'Обе ноги без педалей — чистое равновесие',safety:'Ноги на раме — не снять ногу мгновенно. Не делай на скорости, палец держи на тормозе'}
+    {id:'w_nf',icon:'🧘',name:'Ноги на раме',bonus:12,req:3,desc:'Обе ноги без педалей — чистое равновесие',safety:'Ноги на раме — не снять ногу мгновенно. Не делай на скорости, палец держи на тормозе'},
+    {id:'w_hd',icon:'🤙',name:'Хендраг',bonus:15,req:2,desc:'Вилли на одной руке (рука на седле/раме)',safety:'Требует уверенного баланса. Палец на тормозе!'},
+    {id:'w_fl',icon:'🦩',name:'Фламинго',bonus:20,req:3,desc:'Вилли на одной ноге (другая согнута за спиной)',safety:'Высокий риск переворота. Только на защите.'},
+    {id:'w_1h',icon:'🪑',name:'Сидя на раме',bonus:10,req:1,desc:'Вилли сидя на раме/заднем седле',safety:'Центр тяжести смещён — легче перевернуться назад.'},
+    {id:'w_sw',icon:'🔄',name:'Свитч (сменя хвата)',bonus:15,req:2,desc:'Смена хвата руля во время вилли',safety:'Требует координации. Палец на тормозе!'}
   ],mistakes:[
     'Руки согнуты и тянут руль с силой — подъём должен идти от рывка корпусом и педалей, а не от рук.',
     'Едут стоя, а не сидя — в вилли нужно сидеть на седле и крутить педали.',
@@ -1380,7 +1402,7 @@ const SK='mtb_v16';
 function lsKey(){return SK+(currentUser?('_'+currentUser.uid):'_anon');}
 function lsDayKey(k){return k+(currentUser?('_'+currentUser.uid):'_anon');}
 function clearLSPrefix(){try{Object.keys(localStorage).filter(k=>k===SK||k.startsWith(SK+'_')||k==='mtb_dts'||k.startsWith('mtb_dts_')||k==='mtb_wts'||k.startsWith('mtb_wts_')).forEach(k=>localStorage.removeItem(k));}catch(e){}}
-function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],declinedDuels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[]};}
+function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],declinedDuels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[],masterXP:0,masterRank:0,masterUnlocked:false};}
 let state=loadLS();
 let activeSkillId=null;
 let bikePhotoFile=null;
@@ -1390,6 +1412,7 @@ function loadLS(){
     ['records','challenges','completedChallenges','proofs','proofReactions','unlockedAchievements','duels'].forEach(k=>{if(!s[k])s[k]=k==='records'?{}:[];});
     if(!s.challengeXP)s.challengeXP=0;if(!s.duelsWon)s.duelsWon=0;
     if(!s.weeklyXpStart)s.weeklyXpStart=0;if(!s.weeklyXpStartTs)s.weeklyXpStartTs=0;if(!s.nicknameChangedAt)s.nicknameChangedAt=0;
+    if(!s.masterXP)s.masterXP=0;if(!s.masterRank)s.masterRank=0;if(!s.masterUnlocked)s.masterUnlocked=false;
     if(!Array.isArray(s.following))s.following=[];
     if(!Array.isArray(s.declinedDuels))s.declinedDuels=[];
     DEF_SKILLS.forEach(ds=>{
@@ -1399,6 +1422,17 @@ function loadLS(){
     });
     return s;
   }}catch(e){}return defState();
+}
+function isAllMax(){
+  return state.skills.every(s=>s.lv>=3&&s.pr>=100);
+}
+function unlockMasterMode(){
+  if(state.masterUnlocked)return;
+  if(!isAllMax())return;
+  state.masterUnlocked=true;
+  state.masterRank=1;
+  saveCloud();
+  showMasterUnlockModal();
 }
 function saveLS(){
   try{localStorage.setItem(lsKey(),JSON.stringify(state));return;}
@@ -1415,6 +1449,8 @@ function mergeCloudState(c,l){
   const addNums=k=>{if(typeof l[k]==='number'&&(l[k]||0)>(out[k]||0))out[k]=l[k];};
   const unionArr=k=>{if(Array.isArray(l[k])){const s=new Set(Array.isArray(out[k])?out[k]:[]);l[k].forEach(x=>s.add(x));out[k]=Array.from(s);}};
   if(!out.nickname&&l.nickname){out.nickname=l.nickname;if(l.nicknameChangedAt)out.nicknameChangedAt=l.nicknameChangedAt;}
+  addNums('masterXP');addNums('masterRank');
+  if(l.masterUnlocked)out.masterUnlocked=true;
   if(Array.isArray(l.skills)){
     if(!Array.isArray(out.skills))out.skills=[];
     out.skills.forEach(cs=>{
@@ -1971,14 +2007,68 @@ function gotoTab(t){
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>gotoTab(btn.dataset.tab)));
 function switchBikeTab(tab,keepForm){document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));const b=document.querySelector(`[data-subtab="${tab}"]`);if(b)b.classList.add('active');document.getElementById('bikes-feed').style.display=tab==='feed'?'block':'none';document.getElementById('bikes-add').style.display=tab==='add'?'block':'none';if(tab==='add'&&!keepForm)resetBikeForm();if(tab==='feed')loadBikes();}
+function switchSkillTab(tab){
+  document.querySelectorAll('#tab-skills .sub-tab').forEach(t=>t.classList.remove('active'));
+  const b=document.querySelector(`#tab-skills [data-subtab="${tab}"]`);if(b)b.classList.add('active');
+  document.getElementById('skills-skills').style.display=tab==='skills'?'block':'none';
+  document.getElementById('skills-master').style.display=tab==='master'?'block':'none';
+  if(tab==='master')renderMasterTab();
+}
 document.querySelectorAll('#tab-support details').forEach(d=>d.addEventListener('click',e=>{if(!e.target.closest('summary'))d.open=false;}));
 
 /* ══ ACH ══ */
-function checkAch(){if(!state.unlockedAchievements)state.unlockedAchievements=[];let n=false;ACHIEVEMENTS.forEach(a=>{if(!state.unlockedAchievements.includes(a.id)&&a.check(state)){state.unlockedAchievements.push(a.id);n=true;setTimeout(()=>{sfx.ach();showLvlUp('АЧИВКА!',a.name,a.icon);},400);}});if(n)saveCloud();renderAch();}
+function checkAch(){if(!state.unlockedAchievements)state.unlockedAchievements=[];let n=false;ACHIEVEMENTS.forEach(a=>{if(!state.unlockedAchievements.includes(a.id)&&a.check(state)){state.unlockedAchievements.push(a.id);n=true;setTimeout(()=>{sfx.ach();showLvlUp('АЧИВКА!',a.name,a.icon);},400);}});if(n)saveCloud();renderAch();unlockMasterMode();}
 function renderAch(){const el=document.getElementById('achList');if(!el)return;el.innerHTML='';ACHIEVEMENTS.forEach(a=>{const u=state.unlockedAchievements&&state.unlockedAchievements.includes(a.id);if(u){const d=document.createElement('div');d.className='ach unlocked';d.textContent='✓ '+a.icon+' '+a.name;el.appendChild(d);return;}if(a.pr){const p=a.pr(state);const w=Math.min(100,Math.round(p.cur/p.target*100));const d=document.createElement('div');d.className='ach-prog';d.innerHTML=`<div class="ap-name"><span>${a.icon}</span><span>${esc(a.name)}</span><span class="ap-num" style="margin-left:auto;">${p.cur} / ${p.target}</span></div><div class="ap-bar"><div class="ap-fill" style="width:${w}%"></div></div>`;el.appendChild(d);}else{const d=document.createElement('div');d.className='ach';d.textContent=a.icon+' '+a.name;el.appendChild(d);}});}
 
 /* ══ SKILLS ══ */
 function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;let pv=null;const av=base.vars?base.vars.filter(v=>u.vars&&u.vars[v.id]):[];if(av.length){pv=document.createElement('span');pv.className='pill pill--var';pv.textContent='🎛 '+av.length+' усл. · бонус +'+varBonusFor(base,u)+'%';}const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);const pills=document.createElement('div');pills.className='skill-pills';pills.append(p1,p2);if(pv)pills.appendChild(pv);body.append(tit,pills,pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();}
+function renderMasterTab(){
+  const el=document.getElementById('masterContent');if(!el)return;
+  if(!state.masterUnlocked){
+    const completed=state.skills.filter(s=>s.lv>=3&&s.pr>=100).length;
+    el.innerHTML=`<div class="master-lock"><div class="lock-icon">🔒</div><h3>Master Mode заблокирован</h3><p>Пройди все 5 трюков на максимум (lv 3 + 100%)</p><div class="lock-progress">${completed}/5 навыков пройдено</div></div>`;
+    return;
+  }
+  const ranks=['Street Beast 🐺','Pro Rider 🏁','Legend 🏆','MTB God 👑'];
+  const xp=state.masterXP||0;
+  const rankIdx=Math.min(Math.floor(xp/50000),ranks.length-1);
+  const nextThreshold=[10000,50000,150000,Infinity][rankIdx];
+  const progress=nextThreshold===Infinity?100:Math.min(100,Math.round((xp/(nextThreshold))*100));
+  el.innerHTML=`
+    <div class="master-header">
+      <div class="master-rank">${ranks[rankIdx]}</div>
+      <div class="master-xp">${xp.toLocaleString()} / ${nextThreshold===Infinity?'MAX':nextThreshold.toLocaleString()} Master XP</div>
+      <div class="master-prog"><div class="bar" style="width:${progress}%"></div></div>
+    </div>
+    <div class="master-grid">
+      <button class="master-btn" onclick="openFreeTraining()">🎓 Free Training</button>
+      <button class="master-btn" onclick="openMasterRecords()">👻 Master Records</button>
+      <button class="master-btn" onclick="openMasterChallenges()">⚔️ Master Challenges</button>
+    </div>
+    <div class="master-weekly">
+      <h4>📅 Недельный мастер-челлендж</h4>
+      <div id="weeklyMasterChallenge"></div>
+    </div>
+  `;
+  renderWeeklyMasterChallenge();
+}
+function renderWeeklyMasterChallenge(){
+  const el=document.getElementById('weeklyMasterChallenge');if(!el)return;
+  const challenges=[
+    {id:'wc1',text:'Вилли → Мэнуал → Стоппи за один заезд',xp:500,type:'combo',skills:['wh','mn','st']},
+    {id:'wc2',text:'Удерживай вилли 60 сек подряд',xp:400,type:'time',skill:'wh',target:60},
+    {id:'wc3',text:'100 подходов на вилли за неделю',xp:600,type:'approaches',skill:'wh',target:100},
+    {id:'wc4',text:'Стоппи ровно 45° (3 раза)',xp:350,type:'precision',skill:'st',target:3},
+  ];
+  const week=Math.floor(Date.now()/604800000);
+  const ch=challenges[week%challenges.length];
+  el.innerHTML=`<div class="weekly-challenge-card">
+    <span class="wc-type">${ch.type==='combo'?'🔗 Комбо':ch.type==='time'?'⏱️ Время':ch.type==='approaches'?'🔢 Подходы':'🎯 Точность'}</span>
+    <p class="wc-text">${ch.text}</p>
+    <span class="wc-reward">+${ch.xp} Master XP</span>
+    <button class="btn btn-primary btn-full" onclick="startWeeklyMaster('${ch.id}')">Начать</button>
+  </div>`;
+}
 
 /* ══ MODAL ══ */
 function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const dayDone=(user.trToday||0)>=MAX_APPROACHES_PER_DAY;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);setupVideo();const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';const mm=document.getElementById('modalMistakes');if(mm)mm.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});if(base.mistakes&&base.mistakes.length){const mb=document.createElement('div');mb.className='mistake-box';const mh=document.createElement('h4');mh.textContent='🚫 Частые ошибки';mb.appendChild(mh);const ul=document.createElement('ul');base.mistakes.forEach(m=>{const li=document.createElement('li');li.textContent=m;ul.appendChild(li);});mb.appendChild(ul);if(mm)mm.appendChild(mb);}const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,dayDone);btn.disabled=isMax||dayDone;updateModalDaily();renderModalVars();document.getElementById('modal').classList.add('show');}
@@ -2109,7 +2199,7 @@ function toggleVar(skillId,varId){
 
 function approachGain(em,vb){const base=Math.round(10*(em||1));return vb>0?base+Math.max(1,Math.round(base*vb/100)):base;}
 function trainBtnLabel(isMax,dayDone){
-  if(isMax)return '✅ МАКСИМУМ ДОСТИГНУТ';
+  if(isMax)return state.masterUnlocked?'🎓 Free Training (XP x0.1)':'🔒 Master Mode закрыт';
   if(dayDone)return '😴 ЛИМИТ ДНЯ';
   const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
   const user=state.skills.find(s=>s.id===activeSkillId);
@@ -2131,37 +2221,82 @@ function updateModalDaily(){
 let _lastTrainTs=0;
 function trainCurrent(){
   const user=state.skills.find(s=>s.id===activeSkillId);
-  if(user&&(user.trToday||0)>=MAX_APPROACHES_PER_DAY){toast('Лимит на сегодня исчерпан, отдохни! 😴');return;}
+  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
+  const isMax=user.lv>=base.levels.length-1&&user.pr>=100;
+  const isFreeTraining=isMax&&state.masterUnlocked;
+  
+  // Free Training: без дневного лимита, уменьшенный XP (10%)
+  if(!isFreeTraining){
+    if(user&&(user.trToday||0)>=MAX_APPROACHES_PER_DAY){toast('Лимит на сегодня исчерпан, отдохни! 😴');return;}
+  }
   const now=Date.now();
   if(now-_lastTrainTs<2000){toast('Подожди секунду...');return;}
   _lastTrainTs=now;
-  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
   if(!user||!base)return;
+  
   user.tr++;
-  user.trToday=(user.trToday||0)+1;
+  if(!isFreeTraining){
+    user.trToday=(user.trToday||0)+1;
+  }
   user.trSession=(user.trSession||0)+1;
   if(!currentUser){try{localStorage.setItem('mtbg_guest_progress','1');}catch(e){}}
   const em=eventMultFor(activeSkillId);
   const vb=varBonusFor(base,user);
-  const gain=approachGain(em,vb);
+  const baseGain=approachGain(em,vb);
+  const gain=isFreeTraining?Math.max(1,Math.round(baseGain*0.1)):baseGain; // 10% XP в Free Training
   user.pr+=gain;
   recordTrainToday();
 
   if(user.pr>=100){
     if(user.lv<base.levels.length-1){user.lv++;user.pr=0;sfx.levelUp();showLvlUp('НОВЫЙ УРОВЕНЬ!',base.levels[user.lv],'🔥');toast('🔥 Новый уровень!','toast-xp');}
     else{user.pr=100;sfx.max();showLvlUp('ТРЮК ОСВОЕН!',base.name+' — ты мастер!','🏆',true);toast('🏆 Трюк освоен!','toast-xp');}
-  }else{sfx.tick();toast('+'+gain+'% '+(vb?'🎛 усложнения':'💪')+(em>1?' · '+getActiveEvent().emoji+' ×'+em:''),'toast-xp');}
+  }else{
+    const msg='+'+gain+'% '+(isFreeTraining?'🎓 Free Training':(vb?'🎛 усложнения':'💪'))+(em>1?' · '+getActiveEvent().emoji+' ×'+em:'');
+    sfx.tick();toast(msg,'toast-xp');
+  }
+  if(isFreeTraining){
+    state.masterXP=(state.masterXP||0)+Math.max(1,Math.round(baseGain*0.2));
+    updateMasterRank();
+  }
 
-  const isMax=user.lv>=base.levels.length-1&&user.pr>=100;
+  const isMaxNow=user.lv>=base.levels.length-1&&user.pr>=100;
   const goals=LVL_GOALS[base.id];const lvIdx=Math.min(user.lv,base.levels.length-1);
-  setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));
+  setT('modalGoal',isMaxNow?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));
   const dayDone=(user.trToday||0)>=MAX_APPROACHES_PER_DAY;
-  const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,dayDone);btn.disabled=isMax||dayDone;updateModalDaily();
+  const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMaxNow,dayDone);btn.disabled=!isFreeTraining&&(isMaxNow||dayDone);updateModalDaily();
   ['totalPoints','totalTrainings','openLevels','avgProgress'].forEach(popSt);
 
-  // Проверяем и автозасчитываем AUTO-челленджи
   saveCloudDebounced();renderSkills();
   checkAutoCompleteChallenge();
+}
+function updateMasterRank(){
+  const xp=state.masterXP||0;
+  const ranks=['Street Beast 🐺','Pro Rider 🏁','Legend 🏆','MTB God 👑'];
+  const thresholds=[0,10000,50000,150000];
+  let newRank=0;
+  for(let i=thresholds.length-1;i>=0;i--){if(xp>=thresholds[i]){newRank=i;break;}}
+  if(newRank!==state.masterRank){
+    state.masterRank=newRank;
+    if(newRank>0){toast('🎉 Новый мастер-ранг: '+['Street Beast 🐺','Pro Rider 🏁','Legend 🏆','MTB God 👑'][newRank]);}
+  }
+}
+function openFreeTraining(){
+  if(!state.masterUnlocked){toast('🔒 Master Mode закрыт');return;}
+  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
+  if(!base)return;
+  toast('🎓 Free Training: тренируйся без лимитов! XP x0.1, Master XP x0.2');
+}
+function openMasterRecords(){
+  if(!state.masterUnlocked){toast('🔒 Master Mode закрыт');return;}
+  toast('👻 Master Records: скоро...');
+}
+function openMasterChallenges(){
+  if(!state.masterUnlocked){toast('🔒 Master Mode закрыт');return;}
+  toast('⚔️ Master Challenges: скоро...');
+}
+function startWeeklyMaster(id){
+  if(!state.masterUnlocked){toast('🔒 Master Mode закрыт');return;}
+  toast('⚔️ Мастер-челлендж запущен!');
 }
 
 /* ══ RECORDS ══ */
@@ -3576,6 +3711,15 @@ function buildProfileHero(p){
   const hero=document.createElement('div');hero.className='pf-hero';
   if(p.photo){const img=document.createElement('img');img.className='pf-avatar';img.src=p.photo;img.alt='';img.onerror=()=>{img.style.display='none';};hero.appendChild(img);}
   else{const init=document.createElement('div');init.className='pf-avatar-init';init.textContent=((p.nick||'?')[0]||'?').toUpperCase();hero.appendChild(init);}
+  // Avatar edit button for own profile
+  if(currentUser&&p.nick===state.nickname){
+    const editBtn=document.createElement('button');
+    editBtn.className='pf-avatar-edit';
+    editBtn.title='Сменить аватар';
+    editBtn.innerHTML='✏️';
+    editBtn.onclick=()=>openAvatarUpload();
+    hero.appendChild(editBtn);
+  }
   const nick=document.createElement('div');nick.className='pf-nick';nick.textContent=p.nick||'Без имени';
   hero.appendChild(nick);
   if(p.rank){const r=document.createElement('div');r.className='pf-rank';r.textContent=p.rank+(p.extra?' · '+p.extra:'');hero.appendChild(r);}
@@ -3632,9 +3776,41 @@ async function renderProfile(){
   const g=document.createElement('div');g.id='myVidGrid';g.className='pf-vids';vp.appendChild(g);
   root.appendChild(vp);
   renderMyVids();
+renderMyVids();
 }
+function openAvatarUpload(){
+  if(!currentUser||!db){toast('Войди для смены аватара');return;}
+  promptApp('Новый аватар','Вставь ссылку на изображение или загрузи файл',state.avatarURL||'',async(url)=>{
+    if(!url)return;
+    const fileInput=document.createElement('input');
+    fileInput.type='file';
+    fileInput.accept='image/*';
+    fileInput.style.display='none';
+    fileInput.onchange=async(e)=>{
+      const file=e.target.files[0];
+      if(!file)return;
+      if(file.size>2*1024*1024){toast('Файл слишком большой. Макс. 2МБ');return;}
+      if(!file.type.startsWith('image/')){toast('Только изображения');return;}
+      toast('Загружаем аватар...');
+      try{
+        const path='avatars/'+currentUser.uid+'.jpg';
+        const ref=st.ref(path);
+        await ref.put(file);
+        const url=await ref.getDownloadURL();
+        await currentUser.updateProfile({photoURL:url});
+        await db.collection('users').doc(currentUser.uid).update({photoURL:url});
+        state.avatarURL=url;
+        toast('✅ Аватар обновлён!');
+        renderProfile();
+      }catch(e){console.error(e);toast('Ошибка загрузки: '+e.message);}
+    };
+    document.body.appendChild(fileInput);
+    fileInput.click();
+    document.body.removeChild(fileInput);
+  });
+}
+function openAvatarUpload(){openAvatarUpload();}
 async function renderFollowingList(){
-  const el=document.getElementById('myFollowingList');if(!el)return;
   const following=state.following||[];
   el.innerHTML='';
   if(!following.length){const d=document.createElement('div');d.className='pf-empty';d.textContent='Пока ни на кого не подписан. Найди райдеров в ленте видео!';el.appendChild(d);return;}
