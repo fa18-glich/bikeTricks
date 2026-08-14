@@ -287,6 +287,17 @@ table.rec-log tr:last-child td{border-bottom:none;}
 .upload-progress{height:4px;border-radius:999px;background:rgba(255,255,255,.08);margin:8px 0;overflow:hidden;display:none;}
 .upload-progress>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .3s;}
 
+/* Велик-спиннер */
+.bike-spinner{width:56px;height:56px;animation:bikeSpin 1.2s linear infinite;}
+@keyframes bikeSpin{to{transform:rotate(360deg);}}
+.bike-spinner svg{width:100%;height:100%;}
+.loading-wrap{display:grid;place-items:center;gap:10px;color:var(--muted);font-family:var(--fm);font-size:13px;}
+
+/* Pull-to-refresh улучшенный */
+.tt-ptr .ptr-ic{font-size:20px;}
+.tt-ptr.refresh .ptr-ic{animation:ptrspin 1s linear infinite;}
+@keyframes ptrspin{to{transform:rotate(360deg);}}
+
 /* PROOFS */
 .proof-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:22px;padding:14px;margin-bottom:12px;animation:cardIn .3s ease both;}
 .proof-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
@@ -1157,7 +1168,28 @@ async function copyText(txt){
   }
 }
 let toastT=null;
-function toast(msg,cls){const el=document.getElementById('toast');el.textContent=msg;el.className='toast'+(cls?' '+cls:'');void el.offsetWidth;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3000);}
+let toastQueue=[];
+let toastShowing=false;
+function toast(msg,cls){
+  toastQueue.push({msg,cls});
+  processToastQueue();
+}
+function processToastQueue(){
+  if(toastShowing||toastQueue.length===0)return;
+  toastShowing=true;
+  const {msg,cls}=toastQueue.shift();
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast'+(cls?' '+cls:'');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>{
+    el.classList.remove('show');
+    toastShowing=false;
+    setTimeout(processToastQueue,150);
+  },3000);
+}
 
 let _saveTimer=null;
 function saveCloudDebounced(ms=1500){clearTimeout(_saveTimer);_saveTimer=setTimeout(()=>saveCloud(),ms);}
@@ -1801,6 +1833,27 @@ async function doChangeNick(n){
   state.nickname=v;state.nicknameChangedAt=Date.now();saveCloud();setT('myNickDisp',state.nickname);setT('welcomeText','Привет, '+state.nickname+' 👋');toast('Ник обновлён! Изменить можно через неделю.');
 }
 
+function setupBackButtonHandler(){
+  const openModals=()=>Array.from(document.querySelectorAll('.modal.show, .modal[style*="display: block"], #proofModal.show, #bikeModal.show, #nickModal.show, #authModal.show, #profileModal.show, #duelModal.show, #playerModal.show, #confirmModal.show')).filter(m=>m.style.display!=='none'&&!m.classList.contains('hidden'));
+  window.addEventListener('popstate',()=>{
+    const modals=openModals();
+    if(modals.length){
+      history.pushState(null,'',location.href);
+      const last=modals[modals.length-1];
+      if(last.id==='proofModal')closeProofModal();
+      else if(last.id==='bikeModal')closeBikeModal();
+      else if(last.id==='nickModal')closeNickModal();
+      else if(last.id==='authModal')closeAuthModal();
+      else if(last.id==='profileModal')closeProfile();
+      else if(last.id==='duelModal')closeDuelModal();
+      else if(last.id==='playerModal')closePlayer();
+      else if(last.id==='confirmModal')closeConfirm();
+      else last.classList.remove('show'), last.style.display='none';
+    }
+  });
+  history.pushState(null,'',location.href);
+}
+
 function initApp(){
   document.getElementById('authScreen').style.display='none';
   document.getElementById('nickScreen').style.display='none';
@@ -1815,6 +1868,7 @@ function initApp(){
   genPWA();
   if(currentUser){syncProofs();startFriendListeners();setupPresence();startNewVideosListener();}
   setupPullToRefresh();
+  setupBackButtonHandler();
   initTheme();
   updateGuestUI();
   startDayRollover();
@@ -2582,7 +2636,7 @@ async function loadBikes(){
   const feed=document.getElementById('globalBikeFeed');if(!feed)return;
   if(bikesLoading)return;
   bikesLoading=true;
-  feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--fm);">Загрузка...</div>';
+  feed.innerHTML='<div class="loading-wrap"><div class="bike-spinner"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="50" opacity="0.35"/><circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="40 123" opacity="0.9"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="1.2s" repeatCount="indefinite"/></circle></svg></div><div>Загрузка байков…</div></div>';
   if(!db){feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;">Firebase не подключён</div>';bikesLoading=false;return;}
   try{
     const apply=s=>{bikesCache=s.docs.map(d=>({id:d.id,...d.data()}));renderBikes();};
@@ -3039,7 +3093,7 @@ async function fetchVideos(){
 }
 async function loadVideos(){
   const el=document.getElementById('proofFeed');if(!el)return;
-  el.innerHTML='<div style="height:100%;display:grid;place-items:center;color:var(--muted);font-family:var(--fm);font-size:13px;">Загрузка ленты...</div>';
+  el.innerHTML='<div class="loading-wrap" style="height:100%"><div class="bike-spinner"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="50" opacity="0.35"/><circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="40 123" opacity="0.9"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="1.2s" repeatCount="indefinite"/></circle></svg></div><div>Загрузка ленты…</div></div>';
   videosCache=await fetchVideos();
   renderProofs();
 }
@@ -3105,7 +3159,8 @@ async function loadMoreVideos(){
 function setupPullToRefresh(){
   const el=document.getElementById('proofFeed');if(!el||el.dataset.ptr)return;
   el.dataset.ptr='1';
-  const ptr=document.createElement('div');ptr.className='tt-ptr';ptr.innerHTML='<span class="ptr-ic">🔄</span><span class="ptr-tx" style="margin-left:6px;">Потяни вниз</span>';
+  const ptr=document.createElement('div');ptr.className='tt-ptr';
+  ptr.innerHTML='<span class="ptr-ic"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="125" stroke-dashoffset="30" opacity="0.35"/><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="30 95" opacity="0.95"><animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="1s" repeatCount="indefinite"/></circle></svg></span><span class="ptr-tx" style="margin-left:8px;">Потяни вниз</span>';
   el.appendChild(ptr);el.__ptr=ptr;
   const tx=()=>ptr.querySelector('.ptr-tx');
   const THRESHOLD=60,MAX=72;
@@ -3305,6 +3360,12 @@ function renderProofs(){
     const lCnt=document.createElement('span');lCnt.className='tt-cnt';lCnt.textContent=v.likes||0;
     likeBtn.append(lIc,lCnt);likeBtn.onclick=()=>toggleLike(v,likeBtn,lIc,lCnt);
     rail.appendChild(likeBtn);
+    // Share button
+    const shBtn=document.createElement('button');shBtn.className='tt-action';shBtn.title='Поделиться';
+    const shIc=document.createElement('span');shIc.className='tt-ic';shIc.textContent='🔗';
+    shBtn.appendChild(shIc);
+    shBtn.onclick=(e)=>{e.stopPropagation();shareProof(v);};
+    rail.appendChild(shBtn);
     if(!v.isOwn&&currentUser){
       const rb=document.createElement('button');rb.className='tt-action tt-rate-btn';rb.title='Оценить трюк';
       const rIc=document.createElement('span');rIc.className='tt-ic';rIc.textContent='⭐';
@@ -3355,6 +3416,19 @@ function renderProofs(){
     },{root:el,rootMargin:'200px 0px 0px 0px'});
     loadMoreObserver.observe(sent);
   }
+}
+function shareProof(v){
+  const url=location.origin+location.pathname+'#video-'+(v.vidDocId||v.key||v.pid);
+  const title=v.title||'Трюк';
+  const text=title+' — '+v.author;
+  if(navigator.share){
+    navigator.share({title,text,url}).catch(()=>copyToClipboard(url));
+  }else{
+    copyToClipboard(url);
+  }
+}
+function copyToClipboard(text){
+  navigator.clipboard.writeText(text).then(()=>toast('Ссылка скопирована 🔗')).catch(()=>toast('Не удалось скопировать'));
 }
 async function toggleLike(v,btn,ic,cnt){
   if(!currentUser){toast('Войди чтобы лайкать');return;}
@@ -4019,7 +4093,7 @@ function renderFriendsTab(){
   }
   switchFriendsSub(friendsCurrentSub);
 }
-async function renderFriends(){const el=document.getElementById('friendFeed');if(!el)return;el.innerHTML='<div style="text-align:center;color:var(--muted);padding:20px;">Загрузка...</div>';const myPts=calcXP();const filterText=(document.getElementById('friendFilter')?.value||'').toLowerCase();const sortBy=document.getElementById('friendSort')?.value||'pts';let all=[{id:'_me',name:(state.nickname||'Я')+' 👈',pts:myPts,isMe:true}];if(db&&currentUser){try{const rows=await getLeaderboardCache();rows.forEach(u=>{if(u.uid!==currentUser.uid&&u.nickname)all.push({id:u.id,name:u.nickname,pts:u.pts||0});});}catch(e){console.warn('renderFriends:',e);}}if(filterText)all=all.filter(f=>f.name.toLowerCase().includes(filterText));if(sortBy==='name')all.sort((a,b)=>a.name.localeCompare(b.name));else all.sort((a,b)=>b.pts-a.pts);el.innerHTML='';const medals=['🥇','🥈','🥉'];all.forEach((f,i)=>{const row=document.createElement('div');row.className='lb-row';row.style.animationDelay=i*.04+'s';if(f.isMe)row.style.cssText+='border-color:rgba(76,201,240,.4);background:linear-gradient(160deg,rgba(76,201,240,.06),rgba(124,92,255,.04));';const pl=document.createElement('div');pl.className='lb-place';pl.textContent=i<3?medals[i]:'#'+(i+1);const info=document.createElement('div');info.className='lb-info';const h4=document.createElement('h4');h4.textContent=f.name;const sub=document.createElement('span');sub.textContent=f.pts+' XP';info.append(h4,sub);const pts=document.createElement('div');pts.className='lb-pts';pts.textContent=f.pts;row.append(pl,info,pts);el.appendChild(row);});}
+async function renderFriends(){const el=document.getElementById('friendFeed');if(!el)return;el.innerHTML='<div class="loading-wrap"><div class="bike-spinner"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="50" opacity="0.35"/><circle cx="32" cy="32" r="26" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="40 123" opacity="0.9"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="1.2s" repeatCount="indefinite"/></circle></svg></div><div>Загрузка друзей…</div></div>';const myPts=calcXP();const filterText=(document.getElementById('friendFilter')?.value||'').toLowerCase();const sortBy=document.getElementById('friendSort')?.value||'pts';let all=[{id:'_me',name:(state.nickname||'Я')+' 👈',pts:myPts,isMe:true}];if(db&&currentUser){try{const rows=await getLeaderboardCache();rows.forEach(u=>{if(u.uid!==currentUser.uid&&u.nickname)all.push({id:u.id,name:u.nickname,pts:u.pts||0});});}catch(e){console.warn('renderFriends:',e);}}if(filterText)all=all.filter(f=>f.name.toLowerCase().includes(filterText));if(sortBy==='name')all.sort((a,b)=>a.name.localeCompare(b.name));else all.sort((a,b)=>b.pts-a.pts);el.innerHTML='';const medals=['🥇','🥈','🥉'];all.forEach((f,i)=>{const row=document.createElement('div');row.className='lb-row';row.style.animationDelay=i*.04+'s';if(f.isMe)row.style.cssText+='border-color:rgba(76,201,240,.4);background:linear-gradient(160deg,rgba(76,201,240,.06),rgba(124,92,255,.04));';const pl=document.createElement('div');pl.className='lb-place';pl.textContent=i<3?medals[i]:'#'+(i+1);const info=document.createElement('div');info.className='lb-info';const h4=document.createElement('h4');h4.textContent=f.name;const sub=document.createElement('span');sub.textContent=f.pts+' XP';info.append(h4,sub);const pts=document.createElement('div');pts.className='lb-pts';pts.textContent=f.pts;row.append(pl,info,pts);el.appendChild(row);});}
 let _friendFilterTimer=null;
 document.getElementById('friendFilter')?.addEventListener('input',()=>{clearTimeout(_friendFilterTimer);_friendFilterTimer=setTimeout(renderFriends,250);});
 document.getElementById('friendSort')?.addEventListener('change',renderFriends);
