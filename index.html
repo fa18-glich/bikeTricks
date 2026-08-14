@@ -17,14 +17,7 @@
 <link rel="manifest" href="manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
-<script src="music/songs.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 <style>
 :root{
   --bg:#090b0f;--panel:#13161e;--card:#1c2030;
@@ -1056,6 +1049,12 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <div id="confirmCont"></div>
 
+<script src="music/songs.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script>
 'use strict';
 
@@ -1072,10 +1071,7 @@ const FB_CFG={
 // Site key для App Check (reCAPTCHA). Пустое значение = App Check выключен.
 // Вставь ключ из Firebase Console → App Check → Apps, и включи enforcement в консоли.
 const FB_AC_SITE_KEY='6LcwoYUtAAAAACrDlhQ7QBUZaaKVZBg8OfNPAiTN';
-// VAPID key для FCM push-уведомлений. Вставь из Firebase Console → Cloud Messaging →
-// Web configuration (Web Push certificates → Key pair). Пустое значение = FCM выключен.
-const FB_VAPID_KEY='';
-let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st=null,ms=null;
+let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st=null;
 
 /* ══ UTILS ══ */
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -1083,7 +1079,20 @@ function setT(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
 function setLoadText(t){setT('loadText',t);}
 function withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('firestore_timeout')),ms))]);}
 // Серверный запрос с таймаутом и фоллбэком на локальный кэш Firestore (офлайн-режим)
-async function loadOrCache(q,ms){try{return await withTimeout(q.get(),ms||15000);}catch(e){console.warn('loadOrCache: сервер не ответил, берём из кэша',e);return await q.get({source:'cache'});}}
+// Кэш-сначала: мгновенно отдаём результат из локального кэша Firestore (вкладка открывается без
+// ожидания сети), а в фоне догружаем свежие данные с сервера и зовём onFresh(snapshot).
+// Если кэша нет — ждём сервер с таймаутом, иначе фоллбэк на ошибку.
+async function loadOrCache(q,ms,onFresh){
+  const msTimeout=ms||15000;
+  try{
+    const c=await q.get({source:'cache'});
+    if(!c.empty){
+      if(onFresh)withTimeout(q.get(),msTimeout).then(s=>{if(s&&(!s.metadata||!s.metadata.fromCache))onFresh(s);}).catch(()=>{});
+      return c;
+    }
+  }catch(e){}
+  return withTimeout(q.get(),msTimeout);
+}
 function showMsg(msg,type){const e=document.getElementById('authMsg');e.textContent=msg;e.className='auth-msg '+(type||'err');}
 function clearMsg(){const e=document.getElementById('authMsg');e.className='auth-msg';}
 
@@ -1443,7 +1452,6 @@ async function initFB(){
     db=firebase.firestore();
     auth=firebase.auth();
     try{st=firebase.storage&&firebase.storage()?firebase.storage():null;}catch(e){st=null;}
-    try{ms=firebase.messaging&&firebase.messaging()?firebase.messaging():null;}catch(e){ms=null;}
     // App Check (reCAPTCHA). Работает только если задан FB_AC_SITE_KEY и SDK подключён.
     // Enforcement включается в консоли Firebase — до этого токены просто отправляются.
     try{
@@ -1479,21 +1487,42 @@ async function initFB(){
       if(user){
         currentUser=user;setLoadText('Загружаю данные...');
         try{
-          const doc=await withTimeout(db.collection('users').doc(user.uid).get(),15000);
-          if(doc.exists){
-          const ls=JSON.parse(localStorage.getItem(lsKey())||localStorage.getItem(SK)||'{}');
-          // Одноразовая миграция со старого общего ключа: переносим и удаляем его,
-          // чтобы данные одного аккаунта не перетекали в другой при входе
-          if(localStorage.getItem(SK))localStorage.removeItem(SK);
-          // Мерж: облако — база, но локальный оффлайн-прогресс не теряем
-            state=Array.isArray(ls.skills)?mergeCloudState(doc.data(),ls):{...defState(),...doc.data()};
+          // Кэш-сначала: возвращающимся пользователям открываем сразу из локального кэша,
+          // свежие данные догружаем в фоне (иначе вход ждёт сеть до 15с)
+          let doc=null;
+          try{doc=await db.collection('users').doc(user.uid).get({source:'cache'});}catch(e){doc=null;}
+          if(!doc||!doc.exists){
+            try{doc=await withTimeout(db.collection('users').doc(user.uid).get(),15000);}catch(e){doc=null;}
+          }
+          const buildFromDoc=d=>{
+            const ls=JSON.parse(localStorage.getItem(lsKey())||localStorage.getItem(SK)||'{}');
+            // Одноразовая миграция со старого общего ключа: переносим и удаляем его,
+            // чтобы данные одного аккаунта не перетекали в другой при входе
+            if(localStorage.getItem(SK))localStorage.removeItem(SK);
+            // Мерж: облако — база, но локальный оффлайн-прогресс не теряем
+            state=Array.isArray(ls.skills)?mergeCloudState(d.data(),ls):{...defState(),...d.data()};
             if(Array.isArray(ls.duels))state.duels=ls.duels;
             DEF_SKILLS.forEach(ds=>{
               const sk=state.skills.find(x=>x.id===ds.id);
               if(!sk)state.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}});
-      else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;if(!sk.vars)sk.vars={};}
+              else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;if(!sk.vars)sk.vars={};}
             });
             saveLS();setSyncDot('synced');
+          };
+          if(doc&&doc.exists){
+            buildFromDoc(doc);
+            if(doc.metadata&&doc.metadata.fromCache){
+              // Фоновое обновление с сервера после быстрого открытия из кэша
+              withTimeout(db.collection('users').doc(user.uid).get(),15000).then(rd=>{
+                if(rd&&rd.exists&&(!rd.metadata||!rd.metadata.fromCache)){
+                  buildFromDoc(rd);
+                  resetDailyCountersIfNeeded();
+                  renderSkills();renderRecords();renderAch();renderProfileIfOpen();updateStreak();
+                  const dt=document.querySelector('.tab-btn[data-tab="duels"]');
+                  if(dt&&dt.classList.contains('active'))renderDuels();
+                }
+              }).catch(()=>{});
+            }
           }else{await saveCloud();}
         }catch(e){
           console.warn('Cloud load:',e);setSyncDot('error');
@@ -1512,7 +1541,6 @@ async function initFB(){
           try{localStorage.removeItem('mtbg_guest_progress');}catch(e){}
           setTimeout(()=>notifyModal('✅ Гостевой прогресс перенесён','Твой прогресс из гостевого режима объединён с аккаунтом: навыки, рекорды, ачивки и серия 🔥 сохранены.'),700);
         }
-        if(('Notification' in window)&&Notification.permission==='granted')setTimeout(setupFCM,4000);
       }else{
         currentUser=null;
         stopDuelListener();
@@ -2543,9 +2571,9 @@ async function loadBikes(){
   feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-family:var(--fm);">Загрузка...</div>';
   if(!db){feed.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;">Firebase не подключён</div>';bikesLoading=false;return;}
   try{
-    const snap=await loadOrCache(db.collection('bikes').orderBy('createdAt','desc').limit(50));
-    bikesCache=snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderBikes();
+    const apply=s=>{bikesCache=s.docs.map(d=>({id:d.id,...d.data()}));renderBikes();};
+    const snap=await loadOrCache(db.collection('bikes').orderBy('createdAt','desc').limit(50),15000,apply);
+    apply(snap);
   }catch(e){
     console.error('loadBikes:',e);
     const raw=e.message||'';
@@ -2979,12 +3007,16 @@ async function fetchVideos(){
     try{
       let q=db.collection('videos').orderBy('createdAt','desc');
       if(vidSeg==='mine'&&currentUser)q=q.where('ownerId','==',currentUser.uid);
-      const snap=await loadOrCache(q.limit(vidLimit));
-      items=snap.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
-      vidCursor=snap.docs.length?snap.docs[snap.docs.length-1]:null;
-      vidHasMore=snap.docs.length===vidLimit;
-      const cloudPids={};items.forEach(v=>{if(v.pid)cloudPids[v.pid]=1;});
-      (state.proofs||[]).filter(p=>!cloudPids[p.id]).forEach(p=>items.unshift(vidFromLocal(p)));
+      const build=s=>{
+        const list=s.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
+        vidCursor=s.docs.length?s.docs[s.docs.length-1]:null;
+        vidHasMore=s.docs.length===vidLimit;
+        const cloudPids={};list.forEach(v=>{if(v.pid)cloudPids[v.pid]=1;});
+        (state.proofs||[]).filter(p=>!cloudPids[p.id]).forEach(p=>list.unshift(vidFromLocal(p)));
+        return list;
+      };
+      const snap=await loadOrCache(q.limit(vidLimit),15000,s=>{try{videosCache=build(s);renderProofs();}catch(e){}});
+      items=build(snap);
     }catch(e){console.warn('loadVideos:',e);items=(state.proofs||[]).map(vidFromLocal);}
   }else{
     items=(state.proofs||[]).map(vidFromLocal);
@@ -3043,12 +3075,15 @@ async function loadMoreVideos(){
   try{
     let q=db.collection('videos').orderBy('createdAt','desc');
     if(vidSeg==='mine'&&currentUser)q=q.where('ownerId','==',currentUser.uid);
-    const snap=await loadOrCache(q.startAfter(vidCursor).limit(vidLimit));
-    if(snap.empty){vidHasMore=false;return;}
-    const add=snap.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
-    videosCache=videosCache.concat(add);
-    vidCursor=snap.docs[snap.docs.length-1];
-    vidHasMore=snap.docs.length===vidLimit;
+    const build=s=>{
+      if(s.empty){vidHasMore=false;return;}
+      const add=s.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
+      videosCache=videosCache.concat(add);
+      vidCursor=s.docs[s.docs.length-1];
+      vidHasMore=s.docs.length===vidLimit;
+    };
+    const snap=await loadOrCache(q.startAfter(vidCursor).limit(vidLimit),15000,s=>{try{build(s);renderProofs();}catch(e){}});
+    build(snap);
   }catch(e){console.warn('loadMore:',e);vidHasMore=false;}
   finally{loadingMore=false;}
   renderProofs();
@@ -3978,9 +4013,13 @@ let _lbCache=null,_lbCacheTs=0;
 async function getLeaderboardCache(){
   const now=Date.now();
   if(_lbCache&&now-_lbCacheTs<30000)return _lbCache;
-  const snap=await loadOrCache(db.collection('leaderboard').orderBy('pts','desc').limit(50));
-  const arr=[];
-  snap.docs.forEach(d=>{const u=d.data();if(u.nickname)arr.push({id:d.id,uid:u.uid,nickname:u.nickname,pts:u.pts||0});});
+  const build=s=>{
+    const arr=[];
+    s.docs.forEach(d=>{const u=d.data();if(u.nickname)arr.push({id:d.id,uid:u.uid,nickname:u.nickname,pts:u.pts||0});});
+    return arr;
+  };
+  const snap=await loadOrCache(db.collection('leaderboard').orderBy('pts','desc').limit(50),15000,s=>{_lbCache=build(s);_lbCacheTs=Date.now();renderFriends();});
+  const arr=build(snap);
   _lbCache=arr;_lbCacheTs=now;
   return arr;
 }
@@ -4347,18 +4386,21 @@ async function refreshDuels(){
   if(!db||!currentUser)return;
   try{
     const q=db.collection('duels').where('status','in',['open','active','done','void']);
-    const snap=await loadOrCache(q);
-    const map={};
-    (state.duels||[]).forEach(d=>map[d.id]=d);
-    const cloudIds=new Set();
-    snap.docs.forEach(d=>{cloudIds.add(d.id);map[d.id]={id:d.id,...d.data()};});
-    const declined=new Set(state.declinedDuels||[]);
-    const merged=Object.values(map).filter(d=>!declined.has(d.id)&&(cloudIds.has(d.id)||d.local));
-    const changed=JSON.stringify(merged)!==JSON.stringify(state.duels||[]);
-    state.duels=merged;
-    saveLS();
+    const apply=s=>{
+      const map={};
+      (state.duels||[]).forEach(d=>map[d.id]=d);
+      const cloudIds=new Set();
+      s.docs.forEach(d=>{cloudIds.add(d.id);map[d.id]={id:d.id,...d.data()};});
+      const declined=new Set(state.declinedDuels||[]);
+      const merged=Object.values(map).filter(d=>!declined.has(d.id)&&(cloudIds.has(d.id)||d.local));
+      const changed=JSON.stringify(merged)!==JSON.stringify(state.duels||[]);
+      state.duels=merged;
+      saveLS();
     renderDuels();
     if(changed)syncLocalDuels();
+    };
+    const snap=await loadOrCache(q,15000,apply);
+    apply(snap);
   }catch(e){console.warn('refreshDuels:',e);}
 }
 // Локально созданные офлайн-дуэли досинхронизируем в облако при появлении сети
@@ -4381,19 +4423,6 @@ async function syncLocalDuels(){
 ══════════════════════════════ */
 let notifInt=null;
 
-// FCM: регистрируем токен устройства в users/{uid}.messagingToken.
-// Отправка push пока не подключена (нужен сервер) — это только приём.
-async function setupFCM(){
-  if(!ms||!FB_VAPID_KEY||!currentUser||!db)return;
-  if(!('Notification' in window)||Notification.permission!=='granted')return;
-  try{
-    const token=await ms.getToken({vapidKey:FB_VAPID_KEY});
-    if(token){
-      try{await db.collection('users').doc(currentUser.uid).set({messagingToken:token},{merge:true});}catch(e){console.warn('FCM token save:',e);}
-    }
-  }catch(e){console.warn('FCM setup:',e);}
-}
-
 function initNotifUI(){
   if(!state.notif)state.notif={enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]};
   const tog=document.getElementById('notifToggle');
@@ -4415,7 +4444,7 @@ async function requestNotifPermission(){
   if(perm==='granted'){
     state.notif.enabled=true;
     document.getElementById('notifToggle').checked=true;
-    saveCloud();scheduleNotif();updateNotifStatus();setupFCM();
+    saveCloud();scheduleNotif();updateNotifStatus();
     toast('✅ Уведомления включены!');
     // Показываем тестовое уведомление
     new Notification('MTB Skills Pro 🚵‍♂️',{body:'Уведомления работают! 🔥',icon:location.origin+'/image/icon-192.png'});
