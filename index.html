@@ -2513,6 +2513,13 @@ async function uploadBikePhotoToStorage(file,path){
   await ref.put(file);
   return ref.getDownloadURL();
 }
+async function uploadMediaToStorage(file,path,onProg){
+  const ref=st.ref(path);
+  const task=ref.put(file);
+  if(onProg&&task.on)task.on('state_changed',s=>{if(s&&s.totalBytes)onProg(s.bytesTransferred/s.totalBytes);});
+  await task;
+  return ref.getDownloadURL();
+}
 
 let bikesCache=[];
 let editingBikeId=null;
@@ -2736,23 +2743,54 @@ function ytId(url){
 }
 async function pushProofToCloud(proof){
   if(!db||!currentUser)return;
-  if(!proof.ytId&&!proof.vidUrl)return;
+  if(!proof.ytId&&!proof.vidUrl&&!(proof.photoUrls&&proof.photoUrls.length))return;
   try{
     const ref=db.collection('videos').doc(currentUser.uid+'_'+proof.id);
     const s=await ref.get();
+    const media={
+      vidUrl:proof.vidUrl||'',
+      vidPath:proof.vidPath||'',
+      photoUrls:Array.isArray(proof.photoUrls)?proof.photoUrls:[],
+      photoPaths:Array.isArray(proof.photoPaths)?proof.photoPaths:[]
+    };
     if(!s.exists){
       await ref.set({
         pid:proof.id,ownerId:currentUser.uid,ownerNick:state.nickname||'Аноним',
-        title:proof.title,skill:proof.skill||'wh',ytId:proof.ytId||'',vidUrl:proof.vidUrl||'',vidPath:proof.vidPath||'',
+        title:proof.title,skill:proof.skill||'wh',ytId:proof.ytId||'',
+        ...media,
         likedBy:[],likes:0,ratedBy:{},ratingSum:0,ratingCount:0,
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
+    }else if(media.vidUrl||media.photoUrls.length){
+      await ref.update(media);
     }
   }catch(e){console.warn('pushProofToCloud:',e);}
 }
 async function syncProofs(){
   if(!db||!currentUser)return;
-  for(const p of state.proofs||[]){await pushProofToCloud(p);}
+  for(const p of state.proofs||[]){
+    await pushProofToCloud(p);
+    // Дозагрузка медиа старых локальных записей, у которых ещё нет копии в Storage
+    if(st){
+      try{
+        if(p.localVid&&!p.vidPath){
+          const blob=await idbGet(p.id);
+          if(blob){
+            p.vidPath='videos/'+currentUser.uid+'/'+p.id+'.mp4';
+            p.vidUrl=await uploadMediaToStorage(blob,p.vidPath);
+            saveCloud();await pushProofToCloud(p);
+          }
+        }else if(p.photos&&p.photos.length&&!p.photoUrls){
+          const urls=[],paths=[];
+          for(let i=0;i<p.photos.length;i++){
+            const blob=await idbGet(p.photos[i]);
+            if(blob){const k='videos/'+currentUser.uid+'/'+p.id+'_'+i+'.jpg';paths.push(k);urls.push(await uploadMediaToStorage(blob,k));}
+          }
+          if(urls.length){p.photoPaths=paths;p.photoUrls=urls;saveCloud();await pushProofToCloud(p);}
+        }
+      }catch(e){console.warn('syncProofs media:',e);}
+    }
+  }
 }
 async function addProof(){
   const rawTitle=document.getElementById('proofTitle').value.trim();
@@ -2769,7 +2807,7 @@ async function addProof(){
   if(state.proofs.length>=20){toast('Максимум 20 записей. Удали старые.');return;}
   const id=Date.now().toString();
   btn.disabled=true;btn.textContent='⏳ Загружаю…';
-  let vidUrl='',vidPath='',localVid=false,photos=[];
+  let vidUrl='',vidPath='',localVid=false,photos=[],photoUrls=[],photoPaths=[];
   if(proofFile){
     showProg('Сохраняю видео на устройстве…');
     try{
@@ -2793,8 +2831,33 @@ async function addProof(){
       btn.disabled=false;btn.textContent='Загрузить 🎥';return;
     }
   }
+  // Дублируем медиа в Firebase Storage, чтобы друзья видели трюк в ленте.
+  // Локальная копия остаётся источником для своих постов (офлайн + мгновенный превью).
+  if(st&&currentUser){
+    const bar=document.getElementById('proofProgBar');
+    const setP=p=>{if(bar)bar.style.width=Math.round(p*100)+'%';};
+    try{
+      if(proofFile){
+        showProg('Загружаю видео на сервер…');
+        const vname=id+(/\.(mp4|webm|mov|m4v)$/i.test(proofFile.name)?'.'+proofFile.name.match(/\.(mp4|webm|mov|m4v)$/i)[1]:'.mp4');
+        vidPath='videos/'+currentUser.uid+'/'+vname;
+        vidUrl=await uploadMediaToStorage(proofFile,vidPath,setP);
+      }else if(photoFiles.length){
+        showProg('Загружаю фото на сервер…');
+        for(let i=0;i<photoFiles.length;i++){
+          const k='videos/'+currentUser.uid+'/'+id+'_'+i+'.jpg';
+          setP(i/photoFiles.length);
+          const u=await uploadMediaToStorage(photoFiles[i],k);
+          photoUrls.push(u);photoPaths.push(k);
+        }
+      }
+    }catch(e){
+      console.warn('Cloud media upload failed:',e);
+      toast('Не удалось загрузить медиа на сервер — пока видно только тебе (локальная копия сохранена).');
+    }
+  }
   hideProg();
-  const proof={id,title,skill,ytId:ytid||'',vidUrl,vidPath,localVid,photos,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0};
+  const proof={id,title,skill,ytId:ytid||'',vidUrl,vidPath,localVid,photos,photoUrls,photoPaths,author:state.nickname,date:new Date().toISOString(),likes:0,fires:0};
   state.proofs.unshift(proof);
   document.getElementById('proofTitle').value='';
   document.getElementById('proofUrl').value='';
@@ -2879,6 +2942,8 @@ function vidFromCloud(d){
     ratingCount:rc,ratingSum:vals.reduce((a,b)=>a+b,0),
     ratingAvg:rc?Math.round(vals.reduce((a,b)=>a+b,0)/rc*10)/10:null,
     ownerId:d.ownerId,isOwn:currentUser&&d.ownerId===currentUser.uid,
+    photos:Array.isArray(d.photoUrls)?d.photoUrls.map(u=>({key:'',url:u})):[],
+    photoPaths:Array.isArray(d.photoPaths)?d.photoPaths:[],
     local:false,pid:d.pid||'',vidDocId:d.id
   };
 }
@@ -2892,7 +2957,8 @@ function vidFromLocal(p){
     key:'local_'+p.id,ytId:p.ytId||'',vidUrl:p.vidUrl||(p.localVid?(vidURLMap[p.id]||''):'')||'',vidPath:p.vidPath||'',localVid:!!p.localVid,title:p.title,skill:p.skill||'wh',
     author:p.author||'',ts:new Date(p.date||Date.now()).getTime(),
     likes:p.likes||0,liked:my.includes('likes'),
-    photos:(p.photos||[]).map(k=>({key:k,url:''})),
+    photos:(p.photos||[]).map((k,i)=>({key:k,url:(p.photoUrls&&p.photoUrls[i])||''})),
+    photoPaths:Array.isArray(p.photoPaths)?p.photoPaths:[],
     ratedBy:ratings,myRating:currentUser?(ratings[currentUser.uid]||0):0,
     ratingCount:rc,ratingSum:vals.reduce((a,b)=>a+b,0),
     ratingAvg:rc?Math.round(vals.reduce((a,b)=>a+b,0)/rc*10)/10:null,
@@ -3115,7 +3181,8 @@ function renderProofs(){
         const sl=document.createElement('div');sl.className='tp-slide';
         const img=document.createElement('img');img.alt='Фото '+(i+1);img.loading='lazy';
         sl.appendChild(img);track.appendChild(sl);
-        idbGet(ph.key).then(blob=>{if(blob&&sl.isConnected){const u=URL.createObjectURL(blob);urls[i]=u;img.src=u;}}).catch(()=>{});
+        if(ph.url){urls[i]=ph.url;img.src=ph.url;}
+        else if(ph.key){idbGet(ph.key).then(blob=>{if(blob&&sl.isConnected){const u=URL.createObjectURL(blob);urls[i]=u;img.src=u;}}).catch(()=>{});}
       });
       pc.appendChild(track);
       const dots=document.createElement('div');dots.className='tp-dots';
@@ -3316,6 +3383,14 @@ function deleteProofItem(v){
     saveCloud();
     if(db&&v.vidDocId){
       try{await db.collection('videos').doc(v.vidDocId).delete();}catch(e){console.warn('del vid:',e);}
+    }
+    if(st&&currentUser){
+      const paths=[];
+      if(v.vidPath)paths.push(v.vidPath);
+      if(Array.isArray(v.photoPaths))paths.push(...v.photoPaths);
+      for(const p of paths){
+        try{await st.ref(p).delete();}catch(e){console.warn('del storage:',e);}
+      }
     }
     if(v.localVid){
       try{await idbDel(v.pid);}catch(e){console.warn('del local:',e);}
