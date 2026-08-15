@@ -1,10 +1,14 @@
-const CACHE = 'mtb-skills-v10';
+const CACHE = 'mtb-skills-v11';
 const PRECACHE = ['./', './index.html', './manifest.json', './image/icon-192.png', './image/icon-512.png',
   './image/wh-cover.png', './image/wh-step1.jpg', './image/wh-step4.png',
   './image/mn-cover.jpg', './image/mn-step1.jpg', './image/mn-step3.jpg',
   './image/ts-cover.png', './image/ts-step1.jpg', './image/ts-step3.jpg',
   './image/bh-cover.png', './image/bh-step1.jpg',
-  './image/st-cover.png', './image/st-step1.jpg'];
+  './image/st-cover.png', './image/st-step1.jpg',
+  './image/bike-types/hardtail.jpg', './image/bike-types/full.jpg',
+  './image/bike-types/road.jpg', './image/bike-types/dh.jpg',
+  './image/bike-types/enduro.jpg', './image/bike-types/dirt.jpg',
+  './image/bike-types/bmx.jpg', './image/bike-types/other.jpg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
