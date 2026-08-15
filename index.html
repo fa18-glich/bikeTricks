@@ -138,6 +138,8 @@ select.field{cursor:pointer;}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--warn);transition:background .3s;}
 .sync-dot.synced{background:var(--good);}
 .sync-dot.error{background:var(--danger);}
+.sync-dot.pending{background:var(--warn);animation:syncBlink 1.2s infinite;}
+@keyframes syncBlink{0%,100%{opacity:1;}50%{opacity:.3;}}
 
 /* TABS */
 .tabs{display:flex;gap:6px;margin:0 0 16px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
@@ -264,6 +266,42 @@ table.rec-log tr:last-child td{border-bottom:none;}
 .ch-complete-btn.ready{background:linear-gradient(135deg,var(--good),#28a745);color:white;}
 .ch-complete-btn.not-ready{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--line);}
 .ch-complete-btn.trust-btn{background:linear-gradient(135deg,var(--accent2),#5a3dbf);color:white;}
+
+/* MASTER MODE */
+.master-content{display:grid;gap:14px;}
+.master-lock{text-align:center;padding:28px 16px;background:linear-gradient(160deg,rgba(32,38,56,.9),rgba(18,22,34,.9));border:1px solid var(--line);border-radius:22px;}
+.master-lock .lock-icon{font-size:42px;margin-bottom:10px;}
+.master-lock h3{font-family:var(--fd);letter-spacing:2px;margin:0 0 8px;font-size:20px;}
+.master-lock p{color:var(--muted);margin:0 0 14px;font-size:14px;}
+.lock-progress{display:inline-flex;align-items:center;gap:10px;background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.3);border-radius:99px;padding:8px 16px;font-weight:800;font-size:14px;color:var(--accent);}
+.master-header{text-align:center;padding:20px 14px;background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:22px;}
+.master-rank{font-family:var(--fd);font-size:24px;letter-spacing:1px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.master-xp{color:var(--muted);font-size:13px;margin-top:6px;}
+.master-prog{height:10px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden;}
+.master-prog .bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .5s;}
+.master-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.master-btn{padding:16px 8px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(32,38,56,.9),rgba(18,22,34,.9));color:var(--text);cursor:pointer;font-family:var(--fb);font-size:13px;transition:.2s;}
+.master-btn:hover{transform:translateY(-2px);border-color:rgba(76,201,240,.4);}
+.master-btn:active{transform:scale(.96);}
+.master-weekly{background:linear-gradient(160deg,rgba(32,38,56,.9),rgba(18,22,34,.9));border:1px solid var(--line);border-radius:22px;padding:14px;}
+.master-weekly h4{font-family:var(--fd);letter-spacing:1px;margin:0 0 10px;font-size:15px;}
+.weekly-challenge-card{border:1px solid rgba(76,201,240,.25);border-radius:16px;padding:14px;}
+.wc-type{display:inline-block;font-size:11px;font-weight:800;color:var(--accent);background:rgba(76,201,240,.1);border-radius:99px;padding:4px 10px;margin-bottom:8px;}
+.wc-text{font-size:14px;margin:0 0 8px;line-height:1.4;}
+.wc-reward{font-size:12px;color:var(--good);font-weight:700;}
+.master-modal-grid{display:grid;gap:12px;}
+.master-skill-row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);cursor:pointer;transition:.2s;}
+.master-skill-row:hover{border-color:rgba(76,201,240,.4);background:rgba(76,201,240,.05);}
+.master-skill-row:active{transform:scale(.98);}
+.master-skill-row img{width:56px;height:56px;object-fit:cover;border-radius:12px;}
+.master-skill-row .ms-name{font-family:var(--fb);font-size:15px;}
+.master-skill-row .ms-lvl{font-size:11px;color:var(--muted);margin-top:2px;}
+.master-rec-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);}
+.master-rec-item .rec-icon{font-size:22px;}
+.master-rec-item .rec-name{font-weight:700;font-size:14px;}
+.master-rec-item .rec-best{color:var(--accent);font-weight:800;font-size:16px;}
+.master-rec-item .rec-hint{font-size:11px;color:var(--muted);margin-top:2px;}
+.master-empty{text-align:center;color:var(--muted);padding:24px 12px;font-size:14px;}
 
 /* BIKES */
 .bikes-grid{display:grid;gap:14px;}
@@ -637,6 +675,7 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
     <img src="image/icon.png" class="load-logo" alt="MTB">
     <div class="load-bar"><div class="load-fill"></div></div>
     <p class="load-text" id="loadText">Подключение...</p>
+    <button id="loadGuestBtn" class="btn btn-ghost btn-full" style="display:none;margin-top:14px;" onclick="enterGuest()">⚡ Продолжить без аккаунта</button>
   </div>
 </div>
 
@@ -687,7 +726,7 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
 <canvas id="particles"></canvas>
 
 <div class="app">
-  <div id="offlineBanner" class="offline-banner" style="display:none;">📡 Нет связи — показываю сохранённые данные</div>
+  <div id="offlineBanner" class="offline-banner" style="display:none;">📡 Нет связи — данные сохраняются локально и синхронизируются автоматически</div>
   <header class="topbar">
     <div class="brand">
       <div class="brand-badge"><img src="image/icon.png" style="width:60px;height:60px;object-fit:cover;" alt="logo"/></div>
@@ -720,7 +759,7 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
     <div class="helmet-banner"><span style="font-size:28px;flex-shrink:0;">⛑️</span><p><strong>Катайся только в шлеме!</strong> Без шлема — никаких трюков. Это не просьба, это правило.</p></div>
     <div class="sub-tabs">
       <button class="sub-tab active" data-subtab="skills" onclick="switchSkillTab('skills')">🎯 Навыки</button>
-      <button class="sub-tab" data-subtab="master" onclick="switchSkillTab('master')" id="masterSubTab" style="display:none;">🏆 Master Mode</button>
+      <button class="sub-tab" data-subtab="master" onclick="switchSkillTab('master')" id="masterSubTab">🏆 Master Mode</button>
     </div>
     <div id="skills-skills" class="panel">
       <div class="panel-head"><div><h3>Прогресс</h3><p>Добивай до 100% для перехода на новый этап</p></div></div>
@@ -1020,6 +1059,13 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
   </div>
 </div>
 
+<div id="masterModal" class="modal">
+  <div class="modal-card">
+    <div class="modal-head"><h2 id="masterModalTitle">🏆 Master Mode</h2><button class="btn btn-ghost" style="padding:8px 12px;" onclick="closeMasterModal()" aria-label="Закрыть">✕</button></div>
+    <div id="masterModalBody" class="master-modal-grid"></div>
+  </div>
+</div>
+
 <div id="proofModal" class="modal">
   <div class="modal-card">
     <div class="modal-head"><h2>🎬 Загрузить видео</h2><button class="btn btn-ghost" style="padding:8px 12px;" onclick="closeProofModal()" aria-label="Закрыть">✕</button></div>
@@ -1091,7 +1137,7 @@ const FB_CFG={
 // Site key для App Check (reCAPTCHA). Пустое значение = App Check выключен.
 // Вставь ключ из Firebase Console → App Check → Apps, и включи enforcement в консоли.
 const FB_AC_SITE_KEY='6LcwoYUtAAAAACrDlhQ7QBUZaaKVZBg8OfNPAiTN';
-let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st=null;
+let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st=null,appBooted=false,_pendingSync=false;
 
 /* ══ UTILS ══ */
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -1402,7 +1448,7 @@ const SK='mtb_v16';
 function lsKey(){return SK+(currentUser?('_'+currentUser.uid):'_anon');}
 function lsDayKey(k){return k+(currentUser?('_'+currentUser.uid):'_anon');}
 function clearLSPrefix(){try{Object.keys(localStorage).filter(k=>k===SK||k.startsWith(SK+'_')||k==='mtb_dts'||k.startsWith('mtb_dts_')||k==='mtb_wts'||k.startsWith('mtb_wts_')).forEach(k=>localStorage.removeItem(k));}catch(e){}}
-function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],declinedDuels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[],masterXP:0,masterRank:0,masterUnlocked:false};}
+function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],declinedDuels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[],masterXP:0,masterRank:0,masterUnlocked:false,masterChallenges:{},masterChallengeCount:{}};}
 let state=loadLS();
 let activeSkillId=null;
 let bikePhotoFile=null;
@@ -1413,6 +1459,8 @@ function loadLS(){
     if(!s.challengeXP)s.challengeXP=0;if(!s.duelsWon)s.duelsWon=0;
     if(!s.weeklyXpStart)s.weeklyXpStart=0;if(!s.weeklyXpStartTs)s.weeklyXpStartTs=0;if(!s.nicknameChangedAt)s.nicknameChangedAt=0;
     if(!s.masterXP)s.masterXP=0;if(!s.masterRank)s.masterRank=0;if(!s.masterUnlocked)s.masterUnlocked=false;
+    if(!s.masterChallenges)s.masterChallenges={};
+    if(!s.masterChallengeCount)s.masterChallengeCount={};
     if(!Array.isArray(s.following))s.following=[];
     if(!Array.isArray(s.declinedDuels))s.declinedDuels=[];
     DEF_SKILLS.forEach(ds=>{
@@ -1505,8 +1553,16 @@ async function saveCloud(){
       uid:currentUser.uid,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
+    _pendingSync=false;
     setSyncDot('synced');
-  }catch(e){console.warn('saveCloud:',e);setSyncDot('error');saveLS();}
+  }catch(e){
+    console.warn('saveCloud:',e);
+    // Оффлайн или Firebase заблокирован — помечаем, что есть несинхронизированные
+    // изменения, и досинхронизируем при восстановлении соединения
+    _pendingSync=true;
+    setSyncDot(navigator.onLine?'error':'pending');
+    saveLS();
+  }
 }
 function calcXP(){return state.skills.reduce((s,u)=>s+(u.lv*100)+u.pr,0)+(state.challengeXP||0);}
 function setSyncDot(s){const e=document.getElementById('syncDot');if(e)e.className='sync-dot '+s;}
@@ -1536,8 +1592,16 @@ async function initFB(){
     // Таймаут — якщо Firebase не відповідає за 12 секунд, показуємо екран авторизації
     fbTimeout=setTimeout(()=>{
       console.error('Firebase timeout — показуємо екран авторизації');
-      hideLoad();showAuthScr();
+      hideLoad();
+      if(!appBooted)showAuthScr();
     },12000);
+    // Швидкий гостовий запуск: якщо Firebase завис (App Check, блокування реклами,
+    // Tracking Protection) — не тримаємо юзера на спінері. Через ~2.5с показуємо
+    // кнопку «Продовжити без аккаунта» прямо на екрані завантаження.
+    setTimeout(()=>{
+      const gb=document.getElementById('loadGuestBtn');
+      if(gb&&!appBooted)gb.style.display='block';
+    },2500);
 
     // Оффлайн-режим Firestore (одна вкладка: multi-tab пишет служебные ключи в localStorage
     // и при переполнении ломает SDK — «INTERNAL ASSERTION FAILED: Unexpected state»)
@@ -1546,10 +1610,12 @@ async function initFB(){
       else if(e.code==='unimplemented')console.warn('Persistence не поддерживается');
     });
 
-    // Проверяем redirect ПЕРЕД onAuthStateChanged — иначе race condition
+    // Проверяем redirect ПЕРЕД onAuthStateChanged — иначе race condition.
+    // getRedirectResult может висеть вечно, если сеть/App Check заблокированы —
+    // ограничиваем ожидание, чтобы юзер не застрял на спінері.
     try{
       setLoadText('Проверяю Google вход...');
-      await auth.getRedirectResult();
+      await withTimeout(auth.getRedirectResult(),5000);
     }catch(re){console.warn('getRedirectResult:',re.code||re.message);}
     redirectHandled=true;
 
@@ -1615,7 +1681,8 @@ async function initFB(){
       }else{
         currentUser=null;
         stopDuelListener();
-        hideLoad();showAuthScr();
+        hideLoad();
+        if(!appBooted)showAuthScr();
       }
     });
   }catch(e){
@@ -1625,7 +1692,8 @@ async function initFB(){
     if(errMsg.includes('app-check')||e.code==='firebase-app-check-token-is-invalid'||errMsg.includes('App Check')){
       toast('⚠️ App Check блокирует запросы. Отключи Enforce в Firebase Console → App Check');
     }
-    hideLoad();showAuthScr();
+    hideLoad();
+    if(!appBooted)showAuthScr();
   }
 }
 
@@ -1889,6 +1957,7 @@ function setupBackButtonHandler(){
 }
 
 function initApp(){
+  appBooted=true;
   document.getElementById('authScreen').style.display='none';
   document.getElementById('nickScreen').style.display='none';
   setT('welcomeText',currentUser?('Привет, '+state.nickname+' 👋'):'Гостевой режим 👋');
@@ -2052,20 +2121,77 @@ function renderMasterTab(){
 }
 function renderWeeklyMasterChallenge(){
   const el=document.getElementById('weeklyMasterChallenge');if(!el)return;
-  const challenges=[
-    {id:'wc1',text:'Вилли → Мэнуал → Стоппи за один заезд',xp:500,type:'combo',skills:['wh','mn','st']},
-    {id:'wc2',text:'Удерживай вилли 60 сек подряд',xp:400,type:'time',skill:'wh',target:60},
-    {id:'wc3',text:'100 подходов на вилли за неделю',xp:600,type:'approaches',skill:'wh',target:100},
-    {id:'wc4',text:'Стоппи ровно 45° (3 раза)',xp:350,type:'precision',skill:'st',target:3},
-  ];
+  const challenges=MASTER_CHALLENGES;
   const week=Math.floor(Date.now()/604800000);
   const ch=challenges[week%challenges.length];
+  const done=state.masterChallenges&&state.masterChallenges[ch.id];
+  const doneBtn=done?`<button class="btn btn-success btn-full" disabled>✅ Выполнено +${ch.xp} XP</button>`:`<button class="btn btn-primary btn-full" onclick="startWeeklyMaster('${ch.id}')">Начать</button>`;
   el.innerHTML=`<div class="weekly-challenge-card">
-    <span class="wc-type">${ch.type==='combo'?'🔗 Комбо':ch.type==='time'?'⏱️ Время':ch.type==='approaches'?'🔢 Подходы':'🎯 Точность'}</span>
+    <span class="wc-type">${ch.type==='combo'?'🔗 Комбо':ch.type==='time'?'⏱️ Время':ch.type==='approaches'?'🔢 Подходы':ch.type==='precision'?'🎯 Точность':ch.type==='run'?'🏁 Заезд':'🎲 Рандом'}</span>
     <p class="wc-text">${ch.text}</p>
     <span class="wc-reward">+${ch.xp} Master XP</span>
-    <button class="btn btn-primary btn-full" onclick="startWeeklyMaster('${ch.id}')">Начать</button>
+    ${doneBtn}
   </div>`;
+}
+const MASTER_CHALLENGES=[
+  {id:'wc1',text:'Вилли → Мэнуал → Стоппи за один заезд',xp:500,type:'combo',skills:['wh','mn','st']},
+  {id:'wc2',text:'Удерживай вилли 60 сек подряд',xp:400,type:'time',skill:'wh',target:60},
+  {id:'wc3',text:'100 подходов на вилли за неделю',xp:600,type:'approaches',skill:'wh',target:100},
+  {id:'wc4',text:'Стоппи ровно 45° (3 раза)',xp:350,type:'precision',skill:'st',target:3},
+  {id:'wc5',text:'Мэнуал 30 метров без касания',xp:450,type:'run',skill:'mn',target:30},
+];
+function masterChallengeDone(id){
+  if(!state.masterChallenges)state.masterChallenges={};
+  return state.masterChallenges[id]||false;
+}
+function completeMasterChallenge(id,auto=false){
+  const ch=MASTER_CHALLENGES.find(c=>c.id===id);if(!ch)return;
+  if(masterChallengeDone(id))return;
+  if(!state.masterChallenges)state.masterChallenges={};
+  state.masterChallenges[id]=true;
+  state.masterXP=(state.masterXP||0)+ch.xp;
+  updateMasterRank();
+  saveCloud();
+  sfx.levelUp();
+  toast((auto?'🤖 Авто: ':'')+'🏆 Мастер-челлендж «'+ch.text+'»! +'+ch.xp+' Master XP');
+  renderMasterTab();renderWeeklyMasterChallenge();
+}
+/* ══ MASTER MODAL ══ */
+function openMasterModal(title){
+  document.getElementById('masterModalTitle').textContent=title;
+  document.getElementById('masterModalBody').innerHTML='';
+  document.getElementById('masterModal').classList.add('show');
+}
+function closeMasterModal(){
+  document.getElementById('masterModal').classList.remove('show');
+  document.getElementById('masterModalBody').innerHTML='';
+}
+function renderMasterChallengesModal(){
+  const body=document.getElementById('masterModalBody');if(!body)return;
+  body.innerHTML='';
+  MASTER_CHALLENGES.forEach(ch=>{
+    const done=masterChallengeDone(ch.id);
+    const row=document.createElement('div');
+    row.className='ch-card';
+    row.style.cssText='padding:14px;border:1px solid var(--line);border-radius:16px;';
+    row.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span class="wc-type">${ch.type==='combo'?'🔗 Комбо':ch.type==='time'?'⏱️ Время':ch.type==='approaches'?'🔢 Подходы':ch.type==='precision'?'🎯 Точность':ch.type==='run'?'🏁 Заезд':'🎲 Рандом'}</span><span class="wc-reward">+${ch.xp} XP</span></div><p style="font-size:14px;margin:0 0 10px;line-height:1.4;">${ch.text}</p>${done?'<button class="btn btn-success btn-full" disabled>✅ Выполнено</button>':'<button class="btn btn-primary btn-full" onclick="startWeeklyMaster(\''+ch.id+'\')">Начать</button>'}`;
+    body.appendChild(row);
+  });
+  const hint=document.createElement('p');
+  hint.className='master-empty';
+  hint.textContent='💡 Free Training (XP x0.1) начисляет Master XP за каждый подход. Челленджи дают бонусы за выполнение цели.';
+  body.appendChild(hint);
+}
+function startWeeklyMaster(id){
+  if(!state.masterUnlocked){toast('🔒 Master Mode закрыт');return;}
+  const ch=MASTER_CHALLENGES.find(c=>c.id===id);if(!ch)return;
+  if(masterChallengeDone(id)){toast('✅ Челлендж уже выполнен');return;}
+  closeMasterModal();
+  // Открываем тренировку нужного навыка (для комбо — первый трюк)
+  const skillId=(ch.skills&&ch.skills[0])||ch.skill||'wh';
+  openModal(skillId);
+  state.masterActiveChallenge=id;
+  toast('⚔️ Мастер-челлендж: '+ch.text);
 }
 
 /* ══ MODAL ══ */
@@ -2255,6 +2381,13 @@ function trainCurrent(){
   if(isFreeTraining){
     state.masterXP=(state.masterXP||0)+Math.max(1,Math.round(baseGain*0.2));
     updateMasterRank();
+    // Прогресс активного мастер-челленджа (подходы за неделю)
+    const mc=state.masterActiveChallenge?MASTER_CHALLENGES.find(c=>c.id===state.masterActiveChallenge):null;
+    if(mc&&mc.type==='approaches'&&mc.skill===activeSkillId){
+      if(!state.masterChallengeCount)state.masterChallengeCount={};
+      state.masterChallengeCount[mc.id]=(state.masterChallengeCount[mc.id]||0)+1;
+      if(state.masterChallengeCount[mc.id]>=mc.target)completeMasterChallenge(mc.id,true);
+    }
   }
 
   const isMaxNow=user.lv>=base.levels.length-1&&user.pr>=100;
@@ -2280,21 +2413,58 @@ function updateMasterRank(){
 }
 function openFreeTraining(){
   if(!state.masterUnlocked){toast('🔒 Master Mode закрыт');return;}
-  const base=DEF_SKILLS.find(s=>s.id===activeSkillId);
-  if(!base)return;
-  toast('🎓 Free Training: тренируйся без лимитов! XP x0.1, Master XP x0.2');
+  openMasterModal('🎓 Free Training');
+  const body=document.getElementById('masterModalBody');if(!body)return;
+  body.innerHTML='';
+  const hint=document.createElement('p');
+  hint.className='master-empty';
+  hint.textContent='Без дневного лимита. XP ×0.1, Master XP ×0.2 за подход. Выбери трюк:';
+  hint.style.textAlign='left';
+  body.appendChild(hint);
+  DEF_SKILLS.forEach(base=>{
+    const row=document.createElement('div');
+    row.className='master-skill-row';
+    row.onclick=()=>{closeMasterModal();openModal(base.id);};
+    const img=document.createElement('img');
+    img.src=base.image;img.loading='lazy';
+    const nm=document.createElement('div');
+    const name=document.createElement('div');name.className='ms-name';name.textContent=base.name;
+    const lvl=document.createElement('div');lvl.className='ms-lvl';
+    lvl.textContent='✅ Максимум — Free Training (без лимита)';
+    nm.append(name,lvl);
+    row.append(img,nm);
+    body.appendChild(row);
+  });
 }
 function openMasterRecords(){
   if(!state.masterUnlocked){toast('🔒 Master Mode закрыт');return;}
-  toast('👻 Master Records: скоро...');
+  openMasterModal('👻 Master Records');
+  const body=document.getElementById('masterModalBody');if(!body)return;
+  body.innerHTML='';
+  REC_SKILLS.forEach(rs=>{
+    const data=state.records[rs.id]||[];
+    const best=data.length?Math.max(...data.map(r=>r.val)):0;
+    const item=document.createElement('div');
+    item.className='master-rec-item';
+    const left=document.createElement('div');
+    left.innerHTML=`<div class="rec-icon">${rs.icon}</div><div class="rec-name">${esc(rs.name)}</div><div class="rec-hint">${best?'Замеров: '+data.length:'Нет записей — добавь в Рекордах'}</div>`;
+    const right=document.createElement('div');
+    right.className='rec-best';
+    right.textContent=best?(best+(best>999?'':' '+rs.unit)):'—';
+    item.append(left,right);
+    body.appendChild(item);
+  });
+  const btn=document.createElement('button');
+  btn.className='btn btn-ghost btn-full';
+  btn.style.marginTop='4px';
+  btn.textContent='📊 Открыть журнал рекордов';
+  btn.onclick=()=>{closeMasterModal();gotoTab('records');};
+  body.appendChild(btn);
 }
 function openMasterChallenges(){
   if(!state.masterUnlocked){toast('🔒 Master Mode закрыт');return;}
-  toast('⚔️ Master Challenges: скоро...');
-}
-function startWeeklyMaster(id){
-  if(!state.masterUnlocked){toast('🔒 Master Mode закрыт');return;}
-  toast('⚔️ Мастер-челлендж запущен!');
+  openMasterModal('⚔️ Master Challenges');
+  renderMasterChallengesModal();
 }
 
 /* ══ RECORDS ══ */
@@ -5010,6 +5180,7 @@ musicInit();
 
 /* ══ EVENTS ══ */
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('masterModal').addEventListener('click',function(e){if(e.target===this)closeMasterModal();});
 document.getElementById('nickInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')setNickname();});
 document.getElementById('authEmail')?.addEventListener('keydown',e=>{if(e.key==='Enter')handleEmailAuth();});
 document.getElementById('authPass')?.addEventListener('keydown',e=>{if(e.key==='Enter')handleEmailAuth();});
@@ -5018,6 +5189,12 @@ document.getElementById('authPass')?.addEventListener('keydown',e=>{if(e.key==='
 function updateOfflineBanner(){
   const b=document.getElementById('offlineBanner');if(!b)return;
   b.style.display=navigator.onLine?'none':'block';
+  if(navigator.onLine&&_pendingSync&&currentUser&&db){
+    // Соединение восстановилось — досинхронизируем накопленные оффлайн-изменения
+    console.info('Online: синхронизирую накопленные изменения');
+    setSyncDot('');
+    setTimeout(()=>saveCloud(),600);
+  }
 }
 window.addEventListener('online',updateOfflineBanner);
 window.addEventListener('offline',updateOfflineBanner);
