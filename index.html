@@ -1619,9 +1619,7 @@ async function saveCloud(){
     saveLS();
   }
 }
-let _pendingSync=false;
 let _offlineQueue=[];
-let _saveTimer=null;
 
 async function flushOfflineQueue(){
   if(!db||!currentUser||!_offlineQueue.length||!navigator.onLine)return;
@@ -1682,12 +1680,23 @@ async function initFB(){
       if(!appBooted)showAuthScr();
     },12000);
     // Швидкий гостовий запуск: якщо Firebase завис (App Check, блокування реклами,
-    // Tracking Protection) — не тримаємо юзера на спінері. Через ~2.5с показуємо
+    // Tracking Protection) — не тримаємо юзера на спінері. Через ~1.5с показуємо
     // кнопку «Продовжити без аккаунта» прямо на екрані завантаження.
+    let loadCycle=0;
+    const loadTexts=['Подключение к Firebase...','Проверяю настройки...','Инициализирую приложение...','Почти готово...'];
+    const loadCycler=setInterval(()=>{
+      if(appBooted){clearInterval(loadCycler);return;}
+      loadCycle=(loadCycle+1)%loadTexts.length;
+      setLoadText(loadTexts[loadCycle]);
+    },1200);
     setTimeout(()=>{
       const gb=document.getElementById('loadGuestBtn');
-      if(gb&&!appBooted)gb.style.display='block';
-    },2500);
+      if(gb&&!appBooted){
+        gb.style.display='block';
+        clearInterval(loadCycler);
+        setLoadText('Firebase не отвечает. Можно продолжить без аккаунта.');
+      }
+    },1500);
 
     // Оффлайн-режим Firestore (одна вкладка: multi-tab пишет служебные ключи в localStorage
     // и при переполнении ломает SDK — «INTERNAL ASSERTION FAILED: Unexpected state»)
@@ -1701,11 +1710,20 @@ async function initFB(){
     // ограничиваем ожидание, чтобы юзер не застрял на спінері.
     try{
       setLoadText('Проверяю Google вход...');
-      await withTimeout(auth.getRedirectResult(),5000);
+      await withTimeout(auth.getRedirectResult(),3000);
     }catch(re){console.warn('getRedirectResult:',re.code||re.message);}
     redirectHandled=true;
 
+    // Гарантированный фоллбек: если onAuthStateChanged не сработает за 4 сек — гостевой режим
+    const authFallback=setTimeout(()=>{
+      if(!appBooted){
+        console.warn('onAuthStateChanged timeout — авто-гость');
+        enterGuest();
+      }
+    },4000);
+
     auth.onAuthStateChanged(async user=>{
+      clearTimeout(authFallback);
       if(fbTimeout){clearTimeout(fbTimeout);fbTimeout=null;}
       if(user){
         currentUser=user;setLoadText('Загружаю данные...');
@@ -1715,14 +1733,11 @@ async function initFB(){
           let doc=null;
           try{doc=await db.collection('users').doc(user.uid).get({source:'cache'});}catch(e){doc=null;}
           if(!doc||!doc.exists){
-            try{doc=await withTimeout(db.collection('users').doc(user.uid).get(),15000);}catch(e){doc=null;}
+            try{doc=await withTimeout(db.collection('users').doc(user.uid).get(),10000);}catch(e){doc=null;}
           }
           const buildFromDoc=d=>{
             const ls=JSON.parse(localStorage.getItem(lsKey())||localStorage.getItem(SK)||'{}');
-            // Одноразовая миграция со старого общего ключа: переносим и удаляем его,
-            // чтобы данные одного аккаунта не перетекали в другой при входе
             if(localStorage.getItem(SK))localStorage.removeItem(SK);
-            // Мерж: облако — база, но локальный оффлайн-прогресс не теряем
             state=Array.isArray(ls.skills)?mergeCloudState(d.data(),ls):{...defState(),...d.data()};
             if(Array.isArray(ls.duels))state.duels=ls.duels;
             DEF_SKILLS.forEach(ds=>{
@@ -1735,14 +1750,11 @@ async function initFB(){
           if(doc&&doc.exists){
             buildFromDoc(doc);
             if(doc.metadata&&doc.metadata.fromCache){
-              // Фоновое обновление с сервера после быстрого открытия из кэша
-              withTimeout(db.collection('users').doc(user.uid).get(),15000).then(rd=>{
+              withTimeout(db.collection('users').doc(user.uid).get(),10000).then(rd=>{
                 if(rd&&rd.exists&&(!rd.metadata||!rd.metadata.fromCache)){
                   buildFromDoc(rd);
                   resetDailyCountersIfNeeded();
                   renderSkills();renderRecords();renderAch();renderProfileIfOpen();updateStreak();
-                  const dt=document.querySelector('.tab-btn[data-tab="duels"]');
-                  if(dt&&dt.classList.contains('active'))renderDuels();
                 }
               }).catch(()=>{});
             }
@@ -1774,12 +1786,9 @@ async function initFB(){
   }catch(e){
     console.error('FB init:',e);
     if(fbTimeout){clearTimeout(fbTimeout);fbTimeout=null;}
-    const errMsg=e.message||'';
-    if(errMsg.includes('app-check')||e.code==='firebase-app-check-token-is-invalid'||errMsg.includes('App Check')){
-      toast('⚠️ App Check блокирует запросы. Отключи Enforce в Firebase Console → App Check');
-    }
-    hideLoad();
-    if(!appBooted)showAuthScr();
+    // Любая ошибка в initFB -> гостевой режим
+    console.warn('initFB error -> auto guest');
+    enterGuest();
   }
 }
  
@@ -1893,7 +1902,7 @@ const Safe={
   // Безопасный append: текст вместо innerHTML
   appendText(parent,text){parent.appendChild(document.createTextNode(text));},
   // Экранирование для атрибутов
-  attr(val){return String(val).replace(/"/g,'"').replace(/'/g,''').replace(/</g,'<').replace(/>/g,'>');},
+  attr(val){return String(val).replace(/"/g,'"').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');},
   // Безопасный рендер списка элементов
   list(items,renderFn){const frag=document.createDocumentFragment();items.forEach(i=>frag.appendChild(renderFn(i)));return frag;}
 };

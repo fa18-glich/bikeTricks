@@ -1,5 +1,5 @@
 // Service Worker - Offline First с Workbox-подобной логикой
-const CACHE_NAME='mtb-skills-v1';
+const CACHE_NAME='mtb-skills-v2';
 const STATIC_ASSETS=[
   '/',
   '/index.html',
