@@ -1256,7 +1256,10 @@ function processToastQueue(){
 }
 
 let _saveTimer=null;
-function saveCloudDebounced(ms=1500){clearTimeout(_saveTimer);_saveTimer=setTimeout(()=>saveCloud(),ms);}
+function saveCloudDebounced(ms=1500){
+  if(_saveTimer)clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(()=>saveCloud(),ms);
+}
 function popSt(id){const el=document.getElementById(id);if(!el)return;el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
 
 /* ══ STATIC DATA ══ */
@@ -1268,12 +1271,14 @@ const REC_SKILLS=[
   {id:'ts',name:'Трекстенд',unit:'секунд',icon:'⏱️',max:86400,hint:'макс. 24ч'},
   {id:'bh',name:'Банни-хоп',unit:'см высота',icon:'🦘',max:250,hint:'макс. 250см'},
   {id:'st',name:'Стоппи',unit:'метров',icon:'🎯',max:500,hint:'макс. 500м'},
+  {id:'dp',name:'Дроп',unit:'м высоты',icon:'🪂',max:50,hint:'макс. 50м'},
+  {id:'air',name:'Трамплин / Эйр',unit:'м дистанции',icon:'🛩️',max:50,hint:'макс. 50м'},
 ];
 // Максимум цели в дуэлях — реалистичный потолок (меньше чем рекорды)
-const DUEL_MAX={wh:1000,mn:500,ts:600,bh:150,st:300};
-const DUEL_MIN={wh:5,mn:5,ts:3,bh:15,st:5};
-const SNAMES={wh:'Вилли',mn:'Мэнуал',ts:'Трекстенд',bh:'Банни-хоп',st:'Стоппи'};
-const SUNITS={wh:'метров',mn:'метров',ts:'секунд',bh:'см',st:'метров'};
+const DUEL_MAX={wh:1000,mn:500,ts:600,bh:150,st:300,dp:15,air:20};
+const DUEL_MIN={wh:5,mn:5,ts:3,bh:15,st:5,dp:1,air:2};
+const SNAMES={wh:'Вилли',mn:'Мэнуал',ts:'Трекстенд',bh:'Банни-хоп',st:'Стоппи',dp:'Дроп',air:'Трамплин / Эйр'};
+const SUNITS={wh:'метров',mn:'метров',ts:'секунд',bh:'см',st:'метров',dp:'м',air:'м'};
 const ACHIEVEMENTS=[
   {id:'first',name:'Первый подход',icon:'🌱',check:s=>s.skills.some(x=>x.tr>0),pr:s=>({cur:s.skills.reduce((a,x)=>a+x.tr,0),target:1})},
   {id:'str3',name:'3 дня подряд',icon:'🔥',check:s=>s.streak>=3,pr:s=>({cur:s.streak||0,target:3})},
@@ -1439,6 +1444,45 @@ const DEF_SKILLS=[
     'Скорость слишком низкая — на маленькой скорости стоппи не встанет, нужен разгон.',
     'Пугаются подъёма и бросают тормоз — зад резко падает и дёргает руль. Отпускай плавно.'
   ]},
+  {id:'dp',name:'Дроп',image:'image/dp-cover.png',levels:['Изи левл (малый дроп 30–50 см)','Уровень 2 (средний 60–100 см)','Уровень 3 (большой 1.2–1.5 м)','Босс Red Bull (галлоп 2+ м)'],video:'https://www.youtube.com/embed/4Qw4w9WgXcQ',steps:[
+    {title:'Подготовка и разгон',text:'Выбери дроп с чистой, ровной приземкой (без корней, камней, зазоров). Разгон ~15–25 км/ч — скорость даёт стабильность в полёте и позволяет мягче приземлиться. Пальцы на тормозах (палец на заднем — страховка), корпус расслаблен, ноги чуть согнуты, взгляд вперёд на приземление.',img:'image/dp-step1.jpg'},
+    {title:'Отрыв от края (Key moment!)',text:'На 1–2 метра до края начни плавно выпрямляться и сбрасывать таз назад. Переднее колесо должно оторваться ДО края — это главное правило. Если оторвётся ПОСЛЕ — уйдёшь носом вниз. Не тормози на краю! Торможение убивает скорость и заваливает нос.',img:'image/dp-step1.jpg'},
+    {title:'Полёт и баланс',text:'В воздухе байк выравнивается сам, если ты не дергаешь руль. Ноги — твои пружины: слегка согнуты в коленях, готовые к амортизации. Манипулируй носом байка весом корпуса: наклонился вперёд — нос опустится, откинулся назад — поднимется. Смотри строго на точку приземления, НЕ под колёса.',img:'image/dp-step4.png'},
+    {title:'Приземление и катапультирование',text:'Встречай приземление НОГАМИ, а не сиденьем. Сначала касается заднее колесо (или оба синхронно), ноги мягкие — амортизируй удар так, будто прыгаешь с высоты. Не блокируй тормоз при касании — катапультируйся вперёд. После приземления не сядь сразу — покатай стоять, стабилизируй байк.',img:'image/dp-step4.png'}
+  ],vars:[
+    {id:'dp_big',icon:'📏',name:'Выше дроп',bonus:5,req:1,desc:'Подними высоту дропа на 30–50 см'},
+    {id:'dp_180',icon:'🔄',name:'Дроп 180°',bonus:10,req:2,desc:'Разворот на пол-оборота в полёте',safety:'Недокрут на большой высоте — травмы. Начинай с малых дропов на траве.'},
+    {id:'dp_manual',icon:'🏄',name:'Мэнуал в полёте',bonus:8,req:2,desc:'Удерживай мэнуал в полёте до приземления'},
+    {id:'dp_nofoot',icon:'🦵',name:'Нога в воздухе',bonus:12,req:3,desc:'Сними ногу с педали в полёте (ну-футер)',safety:'Только на малых дропах с мягкой приземкой.'},
+    {id:'dp_nohand',icon:'🤙',name:'Рука в воздухе',bonus:15,req:3,desc:'Отпусти руку в полёте (ну-хендер)',safety:'Требует уверенного баланса. Только на защите.'}
+  ],mistakes:[
+    'Тормозят на краю дропа — теряют скорость и заваливают переднее колесо.',
+    'Не выпрямляют корпус заранее — переднее колесо не успевает оторваться ДО края.',
+    'Дёргают руль в воздухе — байк косится и приземляется криво.',
+    'Приземляются на переднее колесо или жёстко на седло — перелёт через руль или удар по позвоночнику.',
+    'Смотрят вниз под колесо — теряют ориентацию в пространстве.',
+    'Сразу садятся на седло после приземления — байк неустойчив, покатай стоять 5–10 м.'
+  ]},
+  {id:'air',name:'Трамплин / Эйр',image:'image/air-cover.png',levels:['Изи левл (таблица)','Уровень 2 (ну-футер/ну-хендер)','Уровень 3 (360° / бэкфлип)','Босс Red Bull (комбо: 360+ну-футер)'],video:'https://www.youtube.com/embed/7Qw4w9WgXcQ',steps:[
+    {title:'Подготовка и безопасность',text:'Начинай ТОЛЬКО на эирбаге, футе или мягком трамплине с мягкой приземкой. Шлем (фулфейс), защита коленей/локтей, защита грудной клетки — ОБЯЗАТЕЛЬНО. Осмотри трамплин: нет ли трещин, ровна ли таблица, чиста ли приземка.',img:'image/air-step1.jpg'},
+    {title:'Базовый прыжок (таблица)',text:'Разгон ~20–25 км/ч. На подходе стой стоять, ноги согнуты, корпус чуть вперёд. На наборе трамплина — сжимай байк ногами, не тяни руль. На вершине (лип) — резко разожми ноги (пуш), отталкиваясь от трамплина. В полёте стяни байк к себе: согни колени, прижми седло к груди. Приземляйся на оба колеса синхронно, ноги мягкие.',img:'image/air-step1.jpg'},
+    {title:'Первые трюки: ну-футер / ну-хендер',text:'После уверенной таблицы — учи ну-футер (снимаешь ногу с педали в полёте) и ну-хендер (отпускаешь руку). Делай это на вершине полёта, когда байк максимально сжат. Начни с малой амплитуды: ногу/руку на 10–15 см. ВОЗВРАЩАЙ на место ЗАРАНЕЕ — за 0.5 сек до приземления. Смотри на приземление, а не на ногу/руку.',img:'image/air-step4.png'},
+    {title:'Продвинутые: 360° и флипы',text:'360°: на липе инициируй поворот корпусом и взглядом — смотри за плечо в сторону вращения. Руль тянется за корпусом. Крути компактно: ноги прижаты, корпус сжат. Выходи из вращения заранее — найди приземление взглядом. Бэкфлип: нужен крутой трамплин (лип 60°+). На липе брось корпус назад, ноги подтяни к груди, взгляд за спину. Не «кидай» байк — пусть он вернётся сам за счёт инерции.',img:'image/air-step4.png'}
+  ],vars:[
+    {id:'air_table',icon:'📋',name:'Чистая таблица',bonus:5,req:0,desc:'Идеально ровная таблица без наклонов'},
+    {id:'air_nofoot',icon:'🦵',name:'Ну-футер',bonus:8,req:1,desc:'Сними ногу с педали в полёте'},
+    {id:'air_nohand',icon:'🤙',name:'Ну-хендер',bonus:8,req:1,desc:'Отпусти руку в полёте'},
+    {id:'air_360',icon:'🔄',name:'360°',bonus:15,req:2,desc:'Полный оборот в воздухе',safety:'Только на эирбаге/футе. Начинай с 180°.'},
+    {id:'air_backflip',icon:'🤸',name:'Бэкфлип',bonus:20,req:3,desc:'Полный сальто назад',safety:'ОЧЕНЬ ОПАСНО. Только под присмотром коуча, на футе/эйрбаге, в полной защите.'},
+    {id:'air_combo',icon:'⭐',name:'Комбо (360+ну-футер)',bonus:25,req:3,desc:'Комбинированный трюк',safety:'Только для профи. Риск травмы максимален.'}
+  ],mistakes:[
+    'Прыгают без защиты — на трамплинах травмы серьёзные (переломи, сотрясения, переломы позвоночника).',
+    'Не делают пуш на липе — просто катятся вверх и падают носом вниз (dead sailor).',
+    'Дёргают руль в полёте — байк косится, приземление неконтролируемое.',
+    'Смотрят на ногу/руку при трюке, а не на приземление — теряют ориентацию.',
+    'Возвращают ногу/руку ПОСЛЕ приземления — гарантированный разлет.',
+    'Пытают бэкфлип на обычном трамплине без фута — риск ударить головой о землю.'
+  ]},
 ];
 
 /* ══ STATE ══ */
@@ -1539,30 +1583,69 @@ async function saveCloud(){
   saveLS();
   if(!db||!currentUser)return;
   try{
-    // Глубокое копирование чтобы не мутировать state
     const toSave=JSON.parse(JSON.stringify(state));
-    // Не сохраняем в users:
-    // duels — отдельная коллекция; trSession — runtime; proofReactions может быть большим
     delete toSave.duels;
     if(Array.isArray(toSave.proofReactions))toSave.proofReactions={};
     if(Array.isArray(toSave.skills))toSave.skills=toSave.skills.map(s=>({...s,trSession:0}));
-    await db.collection('users').doc(currentUser.uid).set({...toSave,code:currentUser.uid.substring(0,12),uid:currentUser.uid,photoURL:currentUser.photoURL||null},{merge:true});
+    const userDoc=db.collection('users').doc(currentUser.uid);
+    const now=firebase.firestore.FieldValue.serverTimestamp();
+    // merge + serverTimestamp для updatedAt — безопасный мердж без перезаписи чужих полей
+    await userDoc.set({
+      ...toSave,
+      code:currentUser.uid.substring(0,12),
+      uid:currentUser.uid,
+      photoURL:currentUser.photoURL||null,
+      updatedAt:now,
+      lastSyncAt:now
+    },{merge:true});
     await db.collection('leaderboard').doc(currentUser.uid).set({
       nickname:state.nickname,
       pts:calcXP(),
       uid:currentUser.uid,
-      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
+      updatedAt:now
+    },{merge:true});
+    // Сбрасываем очередь офлайн-операций
     _pendingSync=false;
+    _offlineQueue=[];
     setSyncDot('synced');
   }catch(e){
     console.warn('saveCloud:',e);
-    // Оффлайн или Firebase заблокирован — помечаем, что есть несинхронизированные
-    // изменения, и досинхронизируем при восстановлении соединения
     _pendingSync=true;
+    _offlineQueue=_offlineQueue||[];
+    // Добавляем в очередь для повторной отправки
+    _offlineQueue.push({action:'saveCloud',data:JSON.parse(JSON.stringify(state)),ts:Date.now()});
+    if(_offlineQueue.length>50)_offlineQueue.shift(); // защита от переполнения
     setSyncDot(navigator.onLine?'error':'pending');
     saveLS();
   }
+}
+let _pendingSync=false;
+let _offlineQueue=[];
+let _saveTimer=null;
+
+async function flushOfflineQueue(){
+  if(!db||!currentUser||!_offlineQueue.length||!navigator.onLine)return;
+  const queue=[..._offlineQueue];
+  _offlineQueue=[];
+  for(const op of queue){
+    try{
+      if(op.action==='saveCloud'){
+        const toSave=JSON.parse(JSON.stringify(op.data));
+        delete toSave.duels;
+        if(Array.isArray(toSave.proofReactions))toSave.proofReactions={};
+        if(Array.isArray(toSave.skills))toSave.skills=toSave.skills.map(s=>({...s,trSession:0}));
+        await db.collection('users').doc(currentUser.uid).set({
+          ...toSave,
+          code:currentUser.uid.substring(0,12),
+          uid:currentUser.uid,
+          photoURL:currentUser.photoURL||null,
+          updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+          lastSyncAt:firebase.firestore.FieldValue.serverTimestamp()
+        },{merge:true});
+      }
+    }catch(e){console.warn('flushOfflineQueue:',e); _offlineQueue.push(op);}
+  }
+  if(!_offlineQueue.length){_pendingSync=false;setSyncDot('synced');}
 }
 function calcXP(){return state.skills.reduce((s,u)=>s+(u.lv*100)+u.pr,0)+(state.challengeXP||0);}
 function setSyncDot(s){const e=document.getElementById('syncDot');if(e)e.className='sync-dot '+s;}
@@ -1579,13 +1662,16 @@ async function initFB(){
     db=firebase.firestore();
     auth=firebase.auth();
     try{st=firebase.storage&&firebase.storage()?firebase.storage():null;}catch(e){st=null;}
-    // App Check (reCAPTCHA). Работает только если задан FB_AC_SITE_KEY и SDK подключён.
-    // Enforcement включается в консоли Firebase — до этого токены просто отправляются.
+    // App Check (reCAPTCHA Enterprise). В проде — НЕ enforce (true), чтобы не блокировать
+    // запросы при блокировке reCAPTCHA адблоками/корп. фаерволами.
+    // Enforce включать ТОЛЬКО в консоли Firebase App Check после проверки метрик.
     try{
       if(FB_AC_SITE_KEY&&firebase.appCheck){
         if(location.hostname==='localhost'&&typeof self!=='undefined')self.FIREBASE_APPCHECK_DEBUG_TOKEN=true;
-        firebase.appCheck().activate(FB_AC_SITE_KEY,true);
-        console.info('App Check активирован');
+        // isTokenAutoRefreshEnabled=true по умолчанию; enforce=false — токены шлём, но не блокируем
+        firebase.appCheck().activate(FB_AC_SITE_KEY,false);
+        firebase.appCheck().setTokenAutoRefreshEnabled(true);
+        console.info('App Check активирован (non-enforcing)');
       }
     }catch(ac){console.warn('App Check init:',ac);}
 
@@ -1696,7 +1782,169 @@ async function initFB(){
     if(!appBooted)showAuthScr();
   }
 }
-
+ 
+/* ══ SERVICE WORKER (offline-first) ══ */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
+}
+ 
+/* ══ REACTIVE STORE (simple) ══ */
+const Store=(function(){
+  const subs=new Map();
+  const stateObj={};
+  function set(path,value){
+    const keys=path.split('.');
+    let cur=stateObj;
+    for(let i=0;i<keys.length-1;i++){
+      if(!cur[keys[i]])cur[keys[i]]={};
+      cur=cur[keys[i]];
+    }
+    cur[keys[keys.length-1]]=value;
+    const cb=subs.get(path);
+    if(cb)cb(value);
+  }
+  function get(path){
+    if(!path)return stateObj;
+    return path.split('.').reduce((o,k)=>(o||{})[k],stateObj);
+  }
+  function on(path,cb){subs.set(path,cb);return()=>subs.delete(path);}
+  function batch(updates){Object.entries(updates).forEach(([p,v])=>set(p,v));}
+  return{set,get,on,batch,raw:()=>stateObj};
+})();
+ 
+/* ══ CLEANUP UTILITIES ══ */
+const Cleanup={
+  _timers:new Set(),
+  _listeners:new Map(), // element -> [{event,handler,options}]
+  _abortControllers:new Set(),
+ 
+  timer(fn,ms){
+    const id=setTimeout(fn,ms);
+    this._timers.add(id);
+    return id;
+  },
+  clearTimer(id){clearTimeout(id);this._timers.delete(id);},
+ 
+  interval(fn,ms){
+    const id=setInterval(fn,ms);
+    this._timers.add(id);
+    return id;
+  },
+  clearInterval(id){clearInterval(id);this._timers.delete(id);},
+ 
+  on(el,event,handler,options){
+    if(!el)return;
+    el.addEventListener(event,handler,options);
+    if(!this._listeners.has(el))this._listeners.set(el,[]);
+    this._listeners.get(el).push({event,handler,options});
+  },
+  off(el,event,handler){
+    if(!el||!this._listeners.has(el))return;
+    el.removeEventListener(event,handler);
+    const arr=this._listeners.get(el).filter(x=>!(x.event===event&&x.handler===handler));
+    if(arr.length)this._listeners.set(el,arr);
+    else this._listeners.delete(el);
+  },
+  offAll(el){
+    if(!el||!this._listeners.has(el))return;
+    for(const {event,handler,options} of this._listeners.get(el)){
+      el.removeEventListener(event,handler,options);
+    }
+    this._listeners.delete(el);
+  },
+ 
+  abortController(){
+    const ac=new AbortController();
+    this._abortControllers.add(ac);
+    return ac;
+  },
+  abortAll(){
+    for(const ac of this._abortControllers)ac.abort();
+    this._abortControllers.clear();
+  },
+ 
+  clearAll(){
+    for(const id of this._timers){clearTimeout(id);clearInterval(id);}
+    this._timers.clear();
+    for(const [el,arr] of this._listeners){
+      for(const {event,handler,options} of arr)el.removeEventListener(event,handler,options);
+    }
+    this._listeners.clear();
+    this.abortAll();
+  }
+};
+ 
+// Автоочистка при unload / pagehide / beforeunload
+window.addEventListener('pagehide',()=>Cleanup.clearAll());
+window.addEventListener('beforeunload',()=>Cleanup.clearAll());
+ 
+// Хук для модальных окон: авто-очистка при закрытии
+function withCleanup(fn){
+  const ac=Cleanup.abortController();
+  try{fn(ac.signal);}finally{Cleanup._abortControllers.delete(ac);}
+}
+ 
+/* ══ XSS SAFE HELPERS ══ */
+const Safe={
+  // Безопасное создание элемента с текстом
+  text(tag,text,cls){const el=document.createElement(tag);el.textContent=text;if(cls)el.className=cls;return el;},
+  html(tag,html,cls){const el=document.createElement(tag);el.innerHTML=html;if(cls)el.className=cls;return el;},
+  // Безопасный append: текст вместо innerHTML
+  appendText(parent,text){parent.appendChild(document.createTextNode(text));},
+  // Экранирование для атрибутов
+  attr(val){return String(val).replace(/"/g,'"').replace(/'/g,''').replace(/</g,'<').replace(/>/g,'>');},
+  // Безопасный рендер списка элементов
+  list(items,renderFn){const frag=document.createDocumentFragment();items.forEach(i=>frag.appendChild(renderFn(i)));return frag;}
+};
+ 
+// Удобная замена innerHTML -> textContent для частых паттернов
+function setText(el,text){if(el)el.textContent=text;}
+function setHTML(el,html){if(el)el.innerHTML=html;}
+ 
+/* ══ OFFLINE QUEUE FLUSH on online ══ */
+window.addEventListener('online',async()=>{
+  setSyncDot('pending');
+  await flushOfflineQueue();
+  // Пробуем подгрузить свежие данные
+  if(currentUser&&db){
+    try{
+      const doc=await db.collection('users').doc(currentUser.uid).get({source:'server'});
+      if(doc.exists){
+        const buildFromDoc=d=>{
+          state=mergeCloudState(d.data(),{});
+          saveLS();setSyncDot('synced');
+          renderSkills();renderRecords();renderAch();renderProfileIfOpen();updateStreak();
+        };
+        buildFromDoc(doc);
+      }
+    }catch(e){console.warn('online refresh:',e);}
+  }
+});
+ 
+/* ══ MERGE CLOUD STATE (helper) ══ */
+function mergeCloudState(cloud,local){
+  // Облако — база, локальные оффлайн-изменения мержим поверх
+  const merged={...cloud};
+  // Массивы мержим по id (skills, proofs, duels и т.д.)
+  const arrayFields=['skills','proofs','duels','challenges','completedChallenges','unlockedAchievements'];
+  for(const key of arrayFields){
+    const c=Array.isArray(cloud[key])?cloud[key]:[];
+    const l=Array.isArray(local[key])?local[key]:[];
+    const map=new Map(c.map(x=>[x.id,x]));
+    for(const item of l){
+      if(item.id)map.set(item.id,{...map.get(item.id),...item});
+    }
+    merged[key]=[...map.values()];
+  }
+  // Объекты мержим shallow
+  const objFields=['records','challengeXP','masterXP','masterRank','masterUnlocked','masterChallenges','masterChallengeCount','nickname','streak','lastTrainDate','notif','friendRequestsSent','friendRequestsReceived','following','duelsWon','weeklyXpStart','weeklyXpStartTs','nicknameChangedAt'];
+  for(const key of objFields){
+    if(local[key]!==undefined)merged[key]=local[key];
+  }
+  return merged;
+}
+ 
 /* ══ AUTH ══ */
 function switchAuthTab(mode){
   authMode=mode;clearMsg();
@@ -2793,11 +3041,11 @@ ${bBarFlat(140,44,184,43)}
 ${bCrank(114,114,12)}
 </svg>`,
     photoUrl: './image/bike-types/dh.jpg'},
-  {id:'enduro',name:'Enduro / Trail',emoji:'🌲',tag:'MTB · трассы · парки',
-   desc:'Компромисс между подъёмом и спуском: двухподвес с большим ходом и геометрией для агрессивного катания по трассам и в парках.',
-   pros:['Едет и вверх, и вниз','Хорошо прыгает','Подходит для парков и трасс'],
-   cons:['Тяжелее трейлового хардтейла','Дороже в обслуживании'],
-   svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+{id:'enduro',name:'Enduro / Trail',emoji:'🌲',tag:'MTB · трассы · парки',
+    desc:'Компромисс между подъёмом и спуском: двухподвес с большим ходом и геометрией для агрессивного катания по трассам и в парках.',
+    pros:['Едет и вверх, и вниз','Хорошо прыгает','Подходит для парков и трасс'],
+    cons:['Тяжелее трейлового хардтейла','Дороже в обслуживании'],
+    svg:`<svg class="bg-svg" viewBox="0 0 260 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 ${bWheel(70,118,29,7)}${bWheel(190,118,29,7)}
 <g>${bL(113,113,101,63,5)}${bL(101,63,159,58,5)}${bL(159,58,164,84,5)}${bL(164,84,113,113,5)}${bL(113,113,70,118,5)}${bL(101,63,70,118,5)}</g>
 ${bSaddle(100,52)}
@@ -2808,7 +3056,7 @@ ${bL(101,63,90,93,4)}
 ${bBarFlat(146,46,178,47)}
 ${bCrank(113,113,11)}
 </svg>`,
-    photoUrl: './image/bike-types/enduro.jpg'},
+    photoUrl: 'https://enduro-mtb.com/wp-content/uploads/2021/06/SantaCruz_Bronson_END_News00003.jpg'},
   {id:'dirt',name:'Dirt / Street',emoji:'🛹',tag:'Dirt · стрит · памп-треки',
    desc:'Компактный байк для стрит-райдинга, дерт-джампов и памп-треков. Жёсткий, маневренный, создан для повторения трюков.',
    pros:['Живой и маневренный','Лёгкий — легко крутиться в воздухе','Не боится приземлений'],
@@ -2852,7 +3100,7 @@ ${bL(160,80,190,116,3.5)}
 ${bCrank(116,110,10)}
 </svg>`,
     photoUrl: './image/bike-types/other.jpg'},
-];
+  ];
 function renderBikeGuide(){
   const el=document.getElementById('bikeGuide');if(!el||el.dataset.done)return;
   el.dataset.done='1';
@@ -3951,33 +4199,51 @@ async function renderProfile(){
 }
 function openAvatarUpload(){
   if(!currentUser||!db){toast('Войди для смены аватара');return;}
-  promptApp('Новый аватар','Вставь ссылку на изображение или загрузи файл',state.avatarURL||'',async(url)=>{
+  const el=document.getElementById('confirmCont');
+  el.innerHTML=`<div class="conf-ov" onclick="if(event.target===this)closeConf()"><div class="conf-box"><h3>📸 Новый аватар</h3><div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+    <button class="btn btn-primary" onclick="pickAvatarFromGallery()" style="flex:1;">📁 Выбрать из галереи</button>
+    <button class="btn btn-secondary" onclick="promptAvatarUrl()" style="flex:1;">🔗 Вставить ссылку</button>
+    <button class="btn btn-ghost" onclick="closeConf()" style="flex:1;">Отмена</button>
+  </div></div></div>`;
+}
+function pickAvatarFromGallery(){
+  if(!currentUser||!db){toast('Войди для смены аватара');return;}
+  closeConf();
+  const fileInput=document.createElement('input');
+  fileInput.type='file';
+  fileInput.accept='image/*';
+  fileInput.capture='environment';
+  fileInput.onchange=async(e)=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    if(file.size>2*1024*1024){toast('Файл слишком большой. Макс. 2МБ');return;}
+    if(!file.type.startsWith('image/')){toast('Только изображения');return;}
+    toast('Загружаем аватар...');
+    try{
+      const path='avatars/'+currentUser.uid+'.jpg';
+      const ref=st.ref(path);
+      await ref.put(file);
+      const url=await ref.getDownloadURL();
+      await currentUser.updateProfile({photoURL:url});
+      await db.collection('users').doc(currentUser.uid).update({photoURL:url});
+      state.avatarURL=url;
+      toast('✅ Аватар обновлён!');
+      renderProfile();
+    }catch(e){console.error(e);toast('Ошибка загрузки: '+e.message);}
+  };
+  fileInput.click();
+}
+function promptAvatarUrl(){
+  closeConf();
+  promptApp('Новый аватар','Вставь прямую ссылку на изображение (https://...)',state.avatarURL||'',async(url)=>{
     if(!url)return;
-    const fileInput=document.createElement('input');
-    fileInput.type='file';
-    fileInput.accept='image/*';
-    fileInput.style.display='none';
-    fileInput.onchange=async(e)=>{
-      const file=e.target.files[0];
-      if(!file)return;
-      if(file.size>2*1024*1024){toast('Файл слишком большой. Макс. 2МБ');return;}
-      if(!file.type.startsWith('image/')){toast('Только изображения');return;}
-      toast('Загружаем аватар...');
-      try{
-        const path='avatars/'+currentUser.uid+'.jpg';
-        const ref=st.ref(path);
-        await ref.put(file);
-        const url=await ref.getDownloadURL();
-        await currentUser.updateProfile({photoURL:url});
-        await db.collection('users').doc(currentUser.uid).update({photoURL:url});
-        state.avatarURL=url;
-        toast('✅ Аватар обновлён!');
-        renderProfile();
-      }catch(e){console.error(e);toast('Ошибка загрузки: '+e.message);}
-    };
-    document.body.appendChild(fileInput);
-    fileInput.click();
-    document.body.removeChild(fileInput);
+    try{
+      await currentUser.updateProfile({photoURL:url});
+      await db.collection('users').doc(currentUser.uid).update({photoURL:url});
+      state.avatarURL=url;
+      toast('✅ Аватар обновлён!');
+      renderProfile();
+    }catch(e){console.error(e);toast('Ошибка: '+e.message);}
   });
 }
 let _nickCache={};
