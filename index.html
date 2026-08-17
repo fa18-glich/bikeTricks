@@ -1889,29 +1889,6 @@ const Cleanup={
 window.addEventListener('pagehide',()=>Cleanup.clearAll());
 window.addEventListener('beforeunload',()=>Cleanup.clearAll());
  
-// Хук для модальных окон: авто-очистка при закрытии
-function withCleanup(fn){
-  const ac=Cleanup.abortController();
-  try{fn(ac.signal);}finally{Cleanup._abortControllers.delete(ac);}
-}
- 
-/* ══ XSS SAFE HELPERS ══ */
-const Safe={
-  // Безопасное создание элемента с текстом
-  text(tag,text,cls){const el=document.createElement(tag);el.textContent=text;if(cls)el.className=cls;return el;},
-  html(tag,html,cls){const el=document.createElement(tag);el.innerHTML=html;if(cls)el.className=cls;return el;},
-  // Безопасный append: текст вместо innerHTML
-  appendText(parent,text){parent.appendChild(document.createTextNode(text));},
-  // Экранирование для атрибутов
-  attr(val){return String(val).replace(/"/g,'"').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');},
-  // Безопасный рендер списка элементов
-  list(items,renderFn){const frag=document.createDocumentFragment();items.forEach(i=>frag.appendChild(renderFn(i)));return frag;}
-};
- 
-// Удобная замена innerHTML -> textContent для частых паттернов
-function setText(el,text){if(el)el.textContent=text;}
-function setHTML(el,html){if(el)el.innerHTML=html;}
- 
 /* ══ OFFLINE QUEUE FLUSH on online ══ */
 window.addEventListener('online',async()=>{
   setSyncDot('pending');
@@ -1933,28 +1910,6 @@ window.addEventListener('online',async()=>{
 });
  
 /* ══ MERGE CLOUD STATE (helper) ══ */
-function mergeCloudState(cloud,local){
-  // Облако — база, локальные оффлайн-изменения мержим поверх
-  const merged={...cloud};
-  // Массивы мержим по id (skills, proofs, duels и т.д.)
-  const arrayFields=['skills','proofs','duels','challenges','completedChallenges','unlockedAchievements'];
-  for(const key of arrayFields){
-    const c=Array.isArray(cloud[key])?cloud[key]:[];
-    const l=Array.isArray(local[key])?local[key]:[];
-    const map=new Map(c.map(x=>[x.id,x]));
-    for(const item of l){
-      if(item.id)map.set(item.id,{...map.get(item.id),...item});
-    }
-    merged[key]=[...map.values()];
-  }
-  // Объекты мержим shallow
-  const objFields=['records','challengeXP','masterXP','masterRank','masterUnlocked','masterChallenges','masterChallengeCount','nickname','streak','lastTrainDate','notif','friendRequestsSent','friendRequestsReceived','following','duelsWon','weeklyXpStart','weeklyXpStartTs','nicknameChangedAt'];
-  for(const key of objFields){
-    if(local[key]!==undefined)merged[key]=local[key];
-  }
-  return merged;
-}
- 
 /* ══ AUTH ══ */
 function switchAuthTab(mode){
   authMode=mode;clearMsg();
@@ -2346,7 +2301,7 @@ function checkAch(){if(!state.unlockedAchievements)state.unlockedAchievements=[]
 function renderAch(){const el=document.getElementById('achList');if(!el)return;el.innerHTML='';ACHIEVEMENTS.forEach(a=>{const u=state.unlockedAchievements&&state.unlockedAchievements.includes(a.id);if(u){const d=document.createElement('div');d.className='ach unlocked';d.textContent='✓ '+a.icon+' '+a.name;el.appendChild(d);return;}if(a.pr){const p=a.pr(state);const w=Math.min(100,Math.round(p.cur/p.target*100));const d=document.createElement('div');d.className='ach-prog';d.innerHTML=`<div class="ap-name"><span>${a.icon}</span><span>${esc(a.name)}</span><span class="ap-num" style="margin-left:auto;">${p.cur} / ${p.target}</span></div><div class="ap-bar"><div class="ap-fill" style="width:${w}%"></div></div>`;el.appendChild(d);}else{const d=document.createElement('div');d.className='ach';d.textContent=a.icon+' '+a.name;el.appendChild(d);}});}
 
 /* ══ SKILLS ══ */
-function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;let pv=null;const av=base.vars?base.vars.filter(v=>u.vars&&u.vars[v.id]):[];if(av.length){pv=document.createElement('span');pv.className='pill pill--var';pv.textContent='🎛 '+av.length+' усл. · бонус +'+varBonusFor(base,u)+'%';}const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);const pills=document.createElement('div');pills.className='skill-pills';pills.append(p1,p2);if(pv)pills.appendChild(pv);body.append(tit,pills,pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();const masterTab=document.getElementById('masterSubTab');if(masterTab&&state.masterUnlocked)masterTab.style.display='inline-flex';}
+function renderSkills(){let pts=0,trs=0,lvls=0,prg=0;const list=document.getElementById('skillsList');if(!list)return;list.innerHTML='';state.skills.forEach((u,idx)=>{const base=DEF_SKILLS.find(s=>s.id===u.id);if(!base)return;const isMax=u.lv>=base.levels.length-1&&u.pr>=100;pts+=(u.lv*100)+u.pr;trs+=u.tr;lvls+=u.lv;prg+=u.pr;const card=document.createElement('div');card.className='skill-card';card.style.animationDelay=idx*.06+'s';const vis=document.createElement('div');vis.className='skill-visual';const img=document.createElement('img');img.src=base.image;img.loading='lazy';img.onerror=()=>{img.style.display='none';vis.style.background='linear-gradient(135deg,rgba(76,201,240,.2),rgba(124,92,255,.2))';};vis.appendChild(img);const body=document.createElement('div');body.className='skill-body';const tit=document.createElement('h3');tit.className='skill-title';tit.textContent=base.name;const p1=document.createElement('span');p1.className='pill';p1.textContent=base.levels[Math.min(u.lv,base.levels.length-1)];const p2=document.createElement('span');p2.className='pill';p2.textContent='Попыток: '+u.tr;let pv=null;const av=base.vars?base.vars.filter(v=>u.vars&&u.vars[v.id]):[];if(av.length){pv=document.createElement('span');pv.className='pill pill--var';pv.textContent='🎛 '+av.length+' усл. · бонус +'+varBonusFor(base,u)+'%';}const pb=document.createElement('div');pb.className='prog';const pbi=document.createElement('div');pbi.style.width=u.pr+'%';pb.appendChild(pbi);const btn=document.createElement('button');btn.className='btn btn-ghost';btn.style.cssText='padding:8px;font-size:12px;width:100%;';btn.textContent=isMax?'✅ МАКСИМУМ':'🎯 ТРЕНИРОВАТЬ';btn.onclick=()=>openModal(base.id);const pills=document.createElement('div');pills.className='skill-pills';pills.append(p1,p2);if(pv)pills.appendChild(pv);body.append(tit,pills,pb,btn);card.append(vis,body);list.appendChild(card);});pts+=state.challengeXP||0;setT('totalPoints',pts);setT('totalTrainings',trs);setT('openLevels',lvls);setT('avgProgress',Math.round(prg/Math.max(state.skills.length,1))+'%');let rank='Старт';if(pts>300)rank='Новичок';if(pts>800)rank='Райдер';if(pts>1500)rank='Про';if(pts>3000)rank='Street Beast 🐺';setT('rankName',rank);checkAch();const masterTab=document.getElementById('masterSubTab');if(masterTab&&state.masterUnlocked)masterTab.style.display='inline-flex';}
 function renderMasterTab(){
   const el=document.getElementById('masterContent');if(!el)return;
   if(!state.masterUnlocked){
@@ -2453,7 +2408,7 @@ function startWeeklyMaster(id){
 }
 
 /* ══ MODAL ══ */
-function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const dayDone=(user.trToday||0)>=MAX_APPROACHES_PER_DAY;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);setupVideo();const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';const mm=document.getElementById('modalMistakes');if(mm)mm.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});if(base.mistakes&&base.mistakes.length){const mb=document.createElement('div');mb.className='mistake-box';const mh=document.createElement('h4');mh.textContent='🚫 Частые ошибки';mb.appendChild(mh);const ul=document.createElement('ul');base.mistakes.forEach(m=>{const li=document.createElement('li');li.textContent=m;ul.appendChild(li);});mb.appendChild(ul);if(mm)mm.appendChild(mb);}const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,dayDone);btn.disabled=isMax||dayDone;updateModalDaily();renderModalVars();document.getElementById('modal').classList.add('show');}
+function openModal(id){sfx.tab();timerReset();activeSkillId=id;const base=DEF_SKILLS.find(s=>s.id===id);const user=state.skills.find(s=>s.id===id);if(!base||!user)return;const isMax=user.lv>=base.levels.length-1&&user.pr>=100;const dayDone=(user.trToday||0)>=MAX_APPROACHES_PER_DAY;const lvIdx=Math.min(user.lv,base.levels.length-1);setT('modalTitle',base.name);setupVideo();const goals=LVL_GOALS[base.id];setT('modalGoal',isMax?'Все этапы пройдены!':(goals?goals[lvIdx]:base.levels[lvIdx]));const st=document.getElementById('modalSteps');st.innerHTML='';const mm=document.getElementById('modalMistakes');if(mm)mm.innerHTML='';base.steps.forEach((s,i)=>{const item=document.createElement('div');item.className='step-item';const img=document.createElement('img');img.src=s.img;img.onerror=()=>{img.style.display='none';img.parentElement.style.background='linear-gradient(135deg,rgba(76,201,240,.15),rgba(124,92,255,.15))';img.parentElement.style.minHeight='120px';};const div=document.createElement('div');const h4=document.createElement('h4');h4.textContent='Шаг '+(i+1)+': '+s.title;const p=document.createElement('p');p.textContent=s.text;div.append(h4,p);item.append(img,div);st.appendChild(item);});if(base.mistakes&&base.mistakes.length){const mb=document.createElement('div');mb.className='mistake-box';const mh=document.createElement('h4');mh.textContent='🚫 Частые ошибки';mb.appendChild(mh);const ul=document.createElement('ul');base.mistakes.forEach(m=>{const li=document.createElement('li');li.textContent=m;ul.appendChild(li);});mb.appendChild(ul);if(mm)mm.appendChild(mb);}const btn=document.getElementById('modalTrainBtn');btn.textContent=trainBtnLabel(isMax,dayDone);btn.disabled=isMax||dayDone;updateModalDaily();renderModalVars();document.getElementById('modal').classList.add('show');}
 function closeModal(){stopLearnBar();mResume();timerReset();document.getElementById('modal').classList.remove('show');document.getElementById('modalVideo').src='';}
 let videoWatching=false,_learnTimer=null;
 function setupVideo(){
@@ -5421,7 +5376,7 @@ function musicInit(){
   // файл отдаётся как index.html)
   const exts=['mp3','m4a','ogg','wav','webm'];
   const probeUrls=[];
-  for(let i=1;i<=20;i++)for(const e of exts)probeUrls.push('music/track'+i+'.'+e);
+  for(let i=1;i<=5;i++)for(const e of exts)probeUrls.push('music/track'+i+'.'+e);
   Promise.all(probeUrls.map(u=>fetch(u,{headers:{Range:'bytes=0-1'}}).then(r=>{
     if(!r.ok)return null;
     const ct=(r.headers.get('content-type')||'').toLowerCase();
