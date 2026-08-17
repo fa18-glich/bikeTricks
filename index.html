@@ -1360,6 +1360,10 @@ function eventBannerHTML(){
   return '<div class="event-banner"><div class="eb-ic">'+ev.emoji+'</div><div>'+ev.title+'<small>'+esc(ev.desc)+'</small></div></div>';
 }
 
+// Даты загрузки видео (YYYY-MM). Если видео старше 1 года — скрывается.
+const VIDEO_AGES={xhYGbGGrNuU:'2024-06',DyQMbjCRS3w:'2024-06','EXlVl-UW6R0':'2012-01',QsZ39HI2GFg:'2024-06',Ea2K3TJGf6w:'2024-06',sEojVcWUTJ0:'2024-06',qUJpDmNFN08:'2024-06'};
+function isVideoExpired(videoUrl){if(!videoUrl)return false;const m=videoUrl.match(/embed\/([a-zA-Z0-9_-]+)/);if(!m||!VIDEO_AGES[m[1]])return false;const d=new Date(VIDEO_AGES[m[1]]+'-01');return(Date.now()-d.getTime())>365*24*60*60*1000;}
+
 const DEF_SKILLS=[
   {id:'wh',name:'Вилли',image:'image/wh-cover.png',levels:['Изи левл (подъем)','Уровень 2 (10 м)','Уровень 3 (30 м)','Босс Red Bull (100 м)'],video:'https://www.youtube.com/embed/xhYGbGGrNuU',steps:[
     {title:'Подготовка',text:'Сядь пониже и ближе к задней оси. Переключись на среднюю передачу. Разгонись до ~10–12 км/ч. Палец правой руки ВСЕГДА лежит на заднем тормозе — это твоя страховка от переворота на спину.',img:'image/wh-step1.jpg'},
@@ -2459,7 +2463,17 @@ function setupVideo(){
   const ov=document.getElementById('vidOverlay');if(ov)ov.classList.remove('hidden');
   const lb=document.getElementById('vidLearn');if(lb)lb.classList.remove('show');
   const fill=document.getElementById('vidLearnFill');if(fill)fill.style.width='0%';
-  if(!base||!base.video){f.removeAttribute('src');return;}
+  const vidBox=f.closest('.vid-box');
+  let expiredMsg=document.getElementById('vidExpiredMsg');
+  if(!expiredMsg){expiredMsg=document.createElement('div');expiredMsg.id='vidExpiredMsg';expiredMsg.style.cssText='display:none;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:13px;text-align:center;padding:20px;';expiredMsg.innerHTML='<div style="font-size:32px;margin-bottom:10px;">🎥</div><div>Видео устарело (больше 1 года)</div><div style="margin-top:6px;font-size:11px;opacity:.7;">Обнови видео в настройках трюка</div>';if(vidBox)vidBox.parentNode.insertBefore(expiredMsg,vidBox.nextSibling);}
+  if(!base||!base.video){f.removeAttribute('src');if(vidBox)vidBox.style.display='none';if(expiredMsg)expiredMsg.style.display='none';return;}
+  if(isVideoExpired(base.video)){
+    if(vidBox)vidBox.style.display='none';
+    if(expiredMsg)expiredMsg.style.display='flex';
+    return;
+  }
+  if(vidBox)vidBox.style.display='';
+  if(expiredMsg)expiredMsg.style.display='none';
   f.src=base.video+'?enablejsapi=1&rel=0';
 }
 function startVideo(){
