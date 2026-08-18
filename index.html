@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>MTB Skills Pro</title>
 <script>try{if(localStorage.getItem('mtb_theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 <meta name="theme-color" content="#090b0f"/>
@@ -70,8 +70,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hid
 .load-logo{width:80px;height:80px;margin-bottom:20px;animation:float 2s ease-in-out infinite alternate;object-fit:contain;}
 @keyframes float{from{transform:translateY(0)}to{transform:translateY(-10px)}}
 .load-bar{width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:999px;margin:0 auto 14px;overflow:hidden;}
-.load-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;animation:loadFill 2s ease forwards;}
-@keyframes loadFill{to{width:100%;}}
+.load-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .6s ease;}
 .load-text{color:var(--muted);font-size:13px;font-family:var(--fm);}
 
 /* AUTH */
@@ -1143,6 +1142,7 @@ let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function setT(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
 function setLoadText(t){setT('loadText',t);}
+function setLoadProgress(pct){const f=document.querySelector('.load-fill');if(f)f.style.width=Math.min(100,Math.max(0,pct))+'%';}
 function withTimeout(p,ms){return Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('firestore_timeout')),ms))]);}
 // Серверный запрос с таймаутом и фоллбэком на локальный кэш Firestore (офлайн-режим)
 // Кэш-сначала: мгновенно отдаём результат из локального кэша Firestore (вкладка открывается без
@@ -1167,12 +1167,26 @@ function clearMsg(){const e=document.getElementById('authMsg');e.className='auth
   const canvas=document.getElementById('particles');
   if(!canvas||!canvas.getContext||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const ctx=canvas.getContext('2d');
-  let w,h,dots=[];
+  const isMobile=matchMedia('(max-width:768px)').matches;
+  let w,h,dots=[],running=true,raf=null;
+  const PARTICLE_COUNT=isMobile?25:50;
+  const FPS_THROTTLE=isMobile?30:0;
   function resize(){w=canvas.width=innerWidth;h=canvas.height=innerHeight;}
   resize();window.addEventListener('resize',resize);
-  for(let i=0;i<50;i++)dots.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.3+.4,vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22,a:Math.random()*.45+.1,col:Math.random()>.5?'76,201,240':'124,92,255'});
-  function draw(){ctx.clearRect(0,0,w,h);dots.forEach(d=>{d.x+=d.vx;d.y+=d.vy;if(d.x<0)d.x=w;if(d.x>w)d.x=0;if(d.y<0)d.y=h;if(d.y>h)d.y=0;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=`rgba(${d.col},${d.a})`;ctx.fill();});for(let i=0;i<dots.length;i++)for(let j=i+1;j<dots.length;j++){const dx=dots[i].x-dots[j].x,dy=dots[i].y-dots[j].y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<90){ctx.beginPath();ctx.moveTo(dots[i].x,dots[i].y);ctx.lineTo(dots[j].x,dots[j].y);ctx.strokeStyle=`rgba(76,201,240,${.06*(1-dist/90)})`;ctx.lineWidth=.5;ctx.stroke();}}requestAnimationFrame(draw);}
-  draw();
+  for(let i=0;i<PARTICLE_COUNT;i++)dots.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.3+.4,vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22,a:Math.random()*.45+.1,col:Math.random()>.5?'76,201,240':'124,92,255'});
+  let lastFrame=0;
+  function draw(ts){
+    if(!running)return;
+    raf=requestAnimationFrame(draw);
+    if(FPS_THROTTLE&&ts-lastFrame<1000/FPS_THROTTLE)return;
+    lastFrame=ts;
+    ctx.clearRect(0,0,w,h);dots.forEach(d=>{d.x+=d.vx;d.y+=d.vy;if(d.x<0)d.x=w;if(d.x>w)d.x=0;if(d.y<0)d.y=h;if(d.y>h)d.y=0;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=`rgba(${d.col},${d.a})`;ctx.fill();});for(let i=0;i<dots.length;i++)for(let j=i+1;j<dots.length;j++){const dx=dots[i].x-dots[j].x,dy=dots[i].y-dots[j].y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<90){ctx.beginPath();ctx.moveTo(dots[i].x,dots[i].y);ctx.lineTo(dots[j].x,dots[j].y);ctx.strokeStyle=`rgba(76,201,240,${.06*(1-dist/90)})`;ctx.lineWidth=.5;ctx.stroke();}}
+  }
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden){running=false;if(raf)cancelAnimationFrame(raf);}
+    else{running=true;lastFrame=0;raf=requestAnimationFrame(draw);}
+  });
+  draw(0);
 })();
 
 /* ══ AUDIO ══ */
@@ -1360,9 +1374,7 @@ function eventBannerHTML(){
   return '<div class="event-banner"><div class="eb-ic">'+ev.emoji+'</div><div>'+ev.title+'<small>'+esc(ev.desc)+'</small></div></div>';
 }
 
-// Даты загрузки видео (YYYY-MM). Если видео старше 1 года — скрывается.
-const VIDEO_AGES={xhYGbGGrNuU:'2024-06',DyQMbjCRS3w:'2024-06','EXlVl-UW6R0':'2012-01',QsZ39HI2GFg:'2024-06',Ea2K3TJGf6w:'2024-06',sEojVcWUTJ0:'2024-06',qUJpDmNFN08:'2024-06'};
-function isVideoExpired(videoUrl){if(!videoUrl)return false;const m=videoUrl.match(/embed\/([a-zA-Z0-9_-]+)/);if(!m||!VIDEO_AGES[m[1]])return false;const d=new Date(VIDEO_AGES[m[1]]+'-01');return(Date.now()-d.getTime())>365*24*60*60*1000;}
+function isVideoExpired(){return false;}
 
 const DEF_SKILLS=[
   {id:'wh',name:'Вилли',image:'image/wh-cover.png',levels:['Изи левл (подъем)','Уровень 2 (10 м)','Уровень 3 (30 м)','Босс Red Bull (100 м)'],video:'https://www.youtube.com/embed/xhYGbGGrNuU',steps:[
@@ -1660,6 +1672,7 @@ async function initFB(){
     firebase.initializeApp(FB_CFG);
     db=firebase.firestore();
     auth=firebase.auth();
+    setLoadProgress(20);
     try{st=firebase.storage&&firebase.storage()?firebase.storage():null;}catch(e){st=null;}
     // App Check (reCAPTCHA Enterprise). В проде — НЕ enforce (true), чтобы не блокировать
     // запросы при блокировке reCAPTCHA адблоками/корп. фаерволами.
@@ -1671,6 +1684,7 @@ async function initFB(){
         firebase.appCheck().activate(FB_AC_SITE_KEY,false);
         firebase.appCheck().setTokenAutoRefreshEnabled(true);
         console.info('App Check активирован (non-enforcing)');
+        setLoadProgress(30);
       }
     }catch(ac){console.warn('App Check init:',ac);}
 
@@ -1711,9 +1725,11 @@ async function initFB(){
     // ограничиваем ожидание, чтобы юзер не застрял на спінері.
     try{
       setLoadText('Проверяю Google вход...');
+      setLoadProgress(40);
       await withTimeout(auth.getRedirectResult(),3000);
     }catch(re){console.warn('getRedirectResult:',re.code||re.message);}
     redirectHandled=true;
+    setLoadProgress(55);
 
     // Гарантированный фоллбек: если onAuthStateChanged не сработает за 4 сек — гостевой режим
     const authFallback=setTimeout(()=>{
@@ -1746,7 +1762,8 @@ async function initFB(){
               if(!sk)state.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}});
               else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;if(!sk.vars)sk.vars={};}
             });
-            saveLS();setSyncDot('synced');
+saveLS();setSyncDot('synced');
+            setLoadProgress(85);
           };
           if(doc&&doc.exists){
             buildFromDoc(doc);
@@ -1771,6 +1788,7 @@ async function initFB(){
           }
         }
         resetDailyCountersIfNeeded();
+        setLoadProgress(100);
         hideLoad();
         if(!state.nickname)showNickScr();else initApp();
         if(localStorage.getItem('mtbg_guest_progress')==='1'){
@@ -2419,16 +2437,8 @@ function setupVideo(){
   const lb=document.getElementById('vidLearn');if(lb)lb.classList.remove('show');
   const fill=document.getElementById('vidLearnFill');if(fill)fill.style.width='0%';
   const vidBox=f.closest('.vid-box');
-  let expiredMsg=document.getElementById('vidExpiredMsg');
-  if(!expiredMsg){expiredMsg=document.createElement('div');expiredMsg.id='vidExpiredMsg';expiredMsg.style.cssText='display:none;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:13px;text-align:center;padding:20px;';expiredMsg.innerHTML='<div style="font-size:32px;margin-bottom:10px;">🎥</div><div>Видео устарело (больше 1 года)</div><div style="margin-top:6px;font-size:11px;opacity:.7;">Обнови видео в настройках трюка</div>';if(vidBox)vidBox.parentNode.insertBefore(expiredMsg,vidBox.nextSibling);}
-  if(!base||!base.video){f.removeAttribute('src');if(vidBox)vidBox.style.display='none';if(expiredMsg)expiredMsg.style.display='none';return;}
-  if(isVideoExpired(base.video)){
-    if(vidBox)vidBox.style.display='none';
-    if(expiredMsg)expiredMsg.style.display='flex';
-    return;
-  }
+  if(!base||!base.video){f.removeAttribute('src');if(vidBox)vidBox.style.display='none';return;}
   if(vidBox)vidBox.style.display='';
-  if(expiredMsg)expiredMsg.style.display='none';
   f.src=base.video+'?enablejsapi=1&rel=0';
 }
 function startVideo(){
@@ -2595,7 +2605,7 @@ function trainCurrent(){
   recordTrainToday();
 
   if(user.pr>=100){
-    if(user.lv<base.levels.length-1){user.lv++;user.pr=0;sfx.levelUp();showLvlUp('НОВЫЙ УРОВЕНЬ!',base.levels[user.lv],'🔥');toast('🔥 Новый уровень!','toast-xp');}
+    if(user.lv<base.levels.length-1){const rem=user.pr-100;user.lv++;user.pr=rem;sfx.levelUp();showLvlUp('НОВЫЙ УРОВЕНЬ!',base.levels[user.lv],'🔥');toast('🔥 Новый уровень!','toast-xp');}
     else{user.pr=100;sfx.max();showLvlUp('ТРЮК ОСВОЕН!',base.name+' — ты мастер!','🏆',true);toast('🏆 Трюк освоен!','toast-xp');}
   }else{
     const msg='+'+gain+'% '+(isFreeTraining?'🎓 Free Training':(vb?'🎛 усложнения':'💪'))+(em>1?' · '+getActiveEvent().emoji+' ×'+em:'');
@@ -3766,7 +3776,7 @@ function setupPullToRefresh(){
   });
 }
 function setVidSeg(seg){
-  if(seg===vidSeg){renderProofs();return;}
+  if(seg===vidSeg){applyFeedFilters();return;}
   vidSeg=seg;
   vidSkill='all';vidType='all';
   const sf=document.getElementById('ttSkillF');if(sf)sf.value='all';
@@ -3774,11 +3784,11 @@ function setVidSeg(seg){
   document.querySelectorAll('#ttSeg button').forEach(b=>b.classList.toggle('active',b.dataset.vseg===seg));
   loadVideos();
 }
-function setVidSkill(v){vidSkill=v;renderProofs();}
+function setVidSkill(v){vidSkill=v;applyFeedFilters();}
 function setVidType(t){
   vidType=t;
   document.querySelectorAll('#ttType button').forEach(b=>b.classList.toggle('active',b.dataset.tttype===t));
-  renderProofs();
+  applyFeedFilters();
 }
 function renderProofs(){
   const el=document.getElementById('proofFeed');if(!el)return;
@@ -3973,6 +3983,25 @@ async function toggleLike(v,btn,ic,cnt){
     if(btn){btn.disabled=false;btn.className='tt-action'+(v.liked?' active':'');if(ic)ic.textContent=v.liked?'❤️':'👍';if(cnt)cnt.textContent=v.likes;}
   }catch(e){toast('Ошибка: '+e.message);if(btn)btn.disabled=false;}
 }
+function applyFeedFilters(){
+  const el=document.getElementById('proofFeed');if(!el)return;
+  el.querySelectorAll('.tt-item').forEach(item=>{
+    let show=true;
+    const vk=item.dataset.vkey||'';
+    const v=(videosCache||[]).find(x=>('local_'+x.id)===vk)||(proofsFeedCache||[]).find(x=>('local_'+x.id)===vk)||null;
+    if(vidSeg==='subs'&&v&&!v.isOwn&&!isFollowing(v.ownerId))show=false;
+    if(vidSeg==='mine'&&v&&!v.isOwn)show=false;
+    if(vidSkill!=='all'&&v&&(v.skill||'wh')!==vidSkill)show=false;
+    if(vidType==='video'&&v&&v.photos&&v.photos.length)show=false;
+    if(vidType==='photo'&&v&&!(v.photos&&v.photos.length))show=false;
+    item.style.display=show?'':'none';
+  });
+  const visible=el.querySelectorAll('.tt-item:not([style*="display: none"])').length;
+  let emptyMsg=el.querySelector('.tt-empty');
+  if(!visible){
+    if(!emptyMsg){emptyMsg=document.createElement('div');emptyMsg.className='tt-empty';emptyMsg.innerHTML='<h3>\ud83c\udfac \u041d\u0435\u0442 \u0432\u0438\u0434\u0435\u043e \u043f\u043e \u0444\u0438\u043b\u044c\u0442\u0440\u0443</h3><p>\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439 \u0434\u0440\u0443\u0433\u043e\u0439 \u0442\u0440\u044e\u043a \u0438\u043b\u0438 \u0442\u0438\u043f \u043a\u043e\u043d\u0442\u0435\u043d\u0442\u0430.</p>';el.appendChild(emptyMsg);}
+  }else if(emptyMsg){emptyMsg.remove();}
+}
 function reactProof(id,type){
   if(!state.proofReactions)state.proofReactions={};
   const key=id+'_'+state.nickname;
@@ -3984,7 +4013,9 @@ function reactProof(id,type){
     state.proofReactions[key].push(type);
     const p=state.proofs.find(x=>x.id===id);if(p)p[type]=(p[type]||0)+1;
   }
-  sfx.tick();saveCloud();renderProofs();
+  sfx.tick();saveCloud();
+  const item=document.querySelector('.tt-item[data-vkey="local_'+id+'"]');
+  if(item){const cnt=item.querySelector('.tt-cnt');if(cnt){const p=state.proofs.find(x=>x.id===id);cnt.textContent=p?(p[type]||0):0;}}
 }
 function rateProof(id,stars){
   if(!currentUser)return;
@@ -3994,7 +4025,15 @@ function rateProof(id,stars){
   const isNew=!p.ratings[currentUser.uid];
   p.ratings[currentUser.uid]=stars;
   if(isNew){state.challengeXP=(state.challengeXP||0)+2;sfx.tick();}
-  saveCloudDebounced();renderProofs();checkAch();
+  saveCloudDebounced();checkAch();
+  const item=document.querySelector('.tt-item[data-vkey="local_'+id+'"]');
+  if(item){
+    const vals=Object.values(p.ratings).filter(v=>typeof v==='number');
+    const rc=vals.length,avg=rc?Math.round(vals.reduce((a,b)=>a+b,0)/rc*10)/10:null;
+    const ov=item.querySelector('.tt-ov-rate');
+    if(ov){ov.style.display=rc?'block':'none';ov.textContent=rc?('\u2605'+avg+' \u00b7 '+rc):'';}
+    item.querySelector('.tt-rate-pop')?.remove();
+  }
 }
 async function rateVideo(v,stars){
   if(!currentUser){toast('Войди чтобы оценивать');return;}
@@ -4661,7 +4700,7 @@ function renderFriendsTab(){
     const friendData=friendsCache.map(f=>{
       const otherUid=f.uids.find(u=>u!==currentUser.uid);
       const otherNick=f.nicknames?f.nicknames[otherUid]:null;
-      return {uid:otherUid,nickname:otherNick||'???',docId:f.uids.sort().join('_')};
+      return {uid:otherUid,nickname:otherNick||'???',docId:[...f.uids].sort().join('_')};
     });
     friendData.sort((a,b)=>a.nickname.localeCompare(b.nickname));
     friendData.forEach(f=>{
