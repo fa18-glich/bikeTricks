@@ -113,6 +113,7 @@ select.field{cursor:pointer;}
 .btn-full{width:100%;padding:14px;font-size:15px;}
 .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));}
 .btn-danger{background:rgba(255,69,58,.15);color:#ff6b6b;border:1px solid rgba(255,69,58,.3);}
+.btn-secondary{background:rgba(255,255,255,.07);border:1px solid var(--line);}
 .btn-ghost{background:rgba(255,255,255,.07);border:1px solid var(--line);}
 .btn-success{background:linear-gradient(135deg,var(--good),#28a745);}
 .btn-warn{background:linear-gradient(135deg,var(--warn),#e6a817);color:#000;}
@@ -550,7 +551,7 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
 .modal-head h2{font-size:24px;font-family:var(--fd);letter-spacing:2px;}
 .vid-box{width:100%;aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden;margin-bottom:14px;}
 #playerImg{width:100%;height:100%;object-fit:contain;display:none;background:#000;}
-#playerImgNav{position:absolute;top:50%;transform:translateY(-50%);z-index:5;display:none;gap:0;}
+#playerImgNav{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5;display:none;gap:0;}
 #playerImgNav button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:rgba(10,12,18,.7);color:#fff;font-size:18px;cursor:pointer;display:grid;place-items:center;margin:0 4px;}
 #playerImgNav button:active{transform:scale(.92);}
 #playerImgCounter{position:absolute;top:56px;left:50%;transform:translateX(-50%);z-index:5;font-size:12px;font-weight:800;color:#fff;background:rgba(0,0,0,.5);padding:4px 12px;border-radius:99px;font-family:var(--fm);}
@@ -3988,7 +3989,7 @@ function applyFeedFilters(){
   el.querySelectorAll('.tt-item').forEach(item=>{
     let show=true;
     const vk=item.dataset.vkey||'';
-    const v=(videosCache||[]).find(x=>('local_'+x.id)===vk)||(proofsFeedCache||[]).find(x=>('local_'+x.id)===vk)||null;
+    const v=(videosCache||[]).find(x=>x.key===vk)||null;
     if(vidSeg==='subs'&&v&&!v.isOwn&&!isFollowing(v.ownerId))show=false;
     if(vidSeg==='mine'&&v&&!v.isOwn)show=false;
     if(vidSkill!=='all'&&v&&(v.skill||'wh')!==vidSkill)show=false;
