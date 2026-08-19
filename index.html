@@ -614,9 +614,9 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
 html[data-theme="light"] .bg-guide{--bikeC:#222833;--bikeA:#0e9adf;--bikeT:#39424f;--bikeTR:#4a5565;}
 .bg-grid{display:grid;gap:12px;}
 .bg-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:22px;padding:16px;animation:cardIn .3s ease both;}
-.bg-top{display:grid;grid-template-columns:180px 1fr;gap:14px;align-items:center;}
-.bg-svg{width:132px;height:92px;}
-.bg-photo{width:180px;height:120px;object-fit:cover;border-radius:14px;display:block;background:var(--bikeTR);}
+.bg-top{display:grid;grid-template-columns:200px 1fr;gap:14px;align-items:center;}
+.bg-svg{width:200px;height:140px;}
+.bg-photo{width:200px;height:140px;object-fit:cover;border-radius:14px;display:block;background:var(--bikeTR);}
 .bg-head{min-width:0;}
 .bg-name{font-size:17px;font-weight:900;margin-bottom:4px;}
 .bg-tag{font-size:11px;color:var(--accent);font-weight:800;font-family:var(--fm);}
@@ -627,7 +627,7 @@ html[data-theme="light"] .bg-guide{--bikeC:#222833;--bikeA:#0e9adf;--bikeT:#3942
 .bg-lcol h5.bg-cons{color:var(--danger);}
 .bg-lcol ul{margin:0;padding-left:16px;}
 .bg-lcol li{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:4px;}
-@media(max-width:520px){.bg-top{grid-template-columns:1fr;}.bg-svg{width:100%;height:112px;margin:0 auto;max-width:230px;}.bg-photo{width:100%;height:160px;max-width:320px;margin:0 auto;}}
+@media(max-width:520px){.bg-top{grid-template-columns:1fr;}.bg-svg{width:100%;height:140px;margin:0 auto;max-width:280px;}.bg-photo{width:100%;height:160px;max-width:320px;margin:0 auto;}}
 
 /* LEVEL UP */
 #lvlUp{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .3s;}
@@ -2983,7 +2983,7 @@ ${bSaddle(98,50)}
 ${bBarFlat(146,47,177,45)}
 ${bCrank(112,112,11)}
 </svg>`,
-    photoUrl: './image/bike-types/hardtail.jpg'},
+    photoUrl: ''},
   {id:'full',name:'Двухподвес (Full-suspension)',emoji:'🏔️',tag:'MTB · эндуро · даунхилл',
    desc:'Горный байк с амортизацией спереди и сзади. Держит скорость на разбитых трассах и уверенно гасит приземления.',
    pros:['Максимальный комфорт на кочках','Уверенность на скорости и прыжках','Заднее колесо не теряет сцепление'],
@@ -2999,7 +2999,7 @@ ${bL(99,64,88,93,4)}
 ${bBarFlat(146,47,177,45)}
 ${bCrank(112,112,11)}
 </svg>`,
-    photoUrl: './image/bike-types/full.jpg'},
+    photoUrl: ''},
   {id:'road',name:'Шоссейник',emoji:'🏁',tag:'Road · асфальт · скорость',
    desc:'Лёгкий быстрый велосипед с узкими колёсами и рулём-бараном. Создан для скорости и дальних дистанций по асфальту.',
    pros:['Очень быстрый и лёгкий','Низкое сопротивление качению','Идеален для дальних покатушек'],
@@ -3014,7 +3014,7 @@ ${bSaddle(102,42)}
 <line x1="168" y1="55" x2="172" y2="57" stroke="${BGT}" stroke-width="6" stroke-linecap="round"/></g>
 ${bCrank(118,110,13)}
 </svg>`,
-    photoUrl: './image/bike-types/road.jpg'},
+    photoUrl: ''},
   {id:'dh',name:'Downhill',emoji:'⛰️',tag:'DH · спуски · биг-эйр',
    desc:'Специализированный байк для экстремальных спусков и больших прыжков. Создан выдерживать самые жёсткие приземления.',
    pros:['Огромный ход подвески','Создан для прыжков и падений','Максимальная стабильность на скорости'],
@@ -3028,7 +3028,7 @@ ${bSaddle(100,50)}
 ${bBarFlat(140,44,184,43)}
 ${bCrank(114,114,12)}
 </svg>`,
-    photoUrl: './image/bike-types/dh.jpg'},
+    photoUrl: ''},
 {id:'enduro',name:'Enduro / Trail',emoji:'🌲',tag:'MTB · трассы · парки',
     desc:'Компромисс между подъёмом и спуском: двухподвес с большим ходом и геометрией для агрессивного катания по трассам и в парках.',
     pros:['Едет и вверх, и вниз','Хорошо прыгает','Подходит для парков и трасс'],
@@ -3044,7 +3044,7 @@ ${bL(101,63,90,93,4)}
 ${bBarFlat(146,46,178,47)}
 ${bCrank(113,113,11)}
 </svg>`,
-    photoUrl: './image/bike-types/enduro.jpg'},
+    photoUrl: ''},
   {id:'dirt',name:'Dirt / Street',emoji:'🛹',tag:'Dirt · стрит · памп-треки',
    desc:'Компактный байк для стрит-райдинга, дерт-джампов и памп-треков. Жёсткий, маневренный, создан для повторения трюков.',
    pros:['Живой и маневренный','Лёгкий — легко крутиться в воздухе','Не боится приземлений'],
@@ -3058,7 +3058,7 @@ ${bL(161,82,190,119,4)}
 ${bBarFlat(144,49,176,47)}
 ${bCrank(114,113,10)}
 </svg>`,
-    photoUrl: './image/bike-types/dirt.jpg'},
+    photoUrl: ''},
   {id:'bmx',name:'BMX',emoji:'🤘',tag:'Street · трюки · скейт-парки',
    desc:'Классика трюкового мира: маленькие колёса, крепкая рама и одна передача. Создан для скейт-парков и стрита.',
    pros:['Идеален для обучения трюкам','Крепкий и простой','Малый вес и размер'],
@@ -3073,7 +3073,7 @@ ${bL(153,90,190,120,4)}
 ${bBarFlat(138,58,170,58)}
 ${bCrank(118,116,12)}
 </svg>`,
-    photoUrl: './image/bike-types/bmx.jpg'},
+    photoUrl: ''},
   {id:'other',name:'Другой',emoji:'🏙️',tag:'Городской · комьютер · гибрид',
    desc:'Всё остальное: городские, гибриды, складные. Созданы для комфортного катания по городу, а не для трюков и гонок.',
    pros:['Комфортная прямая посадка','Багажник и крылья — удобно в городе','Спокойный и предсказуемый'],
@@ -3087,7 +3087,7 @@ ${bL(160,80,190,116,3.5)}
 <g>${bL(156,62,150,52,3.5)}<path d="M150 52 Q140 46 132 48" fill="none" stroke="${BGC}" stroke-width="4" stroke-linecap="round"/><line x1="132" y1="48" x2="129" y2="51" stroke="${BGT}" stroke-width="6" stroke-linecap="round"/></g>
 ${bCrank(116,110,10)}
 </svg>`,
-    photoUrl: './image/bike-types/other.jpg'},
+    photoUrl: ''},
   ];
 function renderBikeGuide(){
   const el=document.getElementById('bikeGuide');if(!el||el.dataset.done)return;
