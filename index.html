@@ -614,9 +614,9 @@ html[data-theme="light"] .music-bar button{background:rgba(10,20,40,.06);color:v
 html[data-theme="light"] .bg-guide{--bikeC:#222833;--bikeA:#0e9adf;--bikeT:#39424f;--bikeTR:#4a5565;}
 .bg-grid{display:grid;gap:12px;}
 .bg-card{background:linear-gradient(160deg,rgba(32,38,56,.95),rgba(18,22,34,.95));border:1px solid var(--line);border-radius:22px;padding:16px;animation:cardIn .3s ease both;}
-.bg-top{display:grid;grid-template-columns:132px 1fr;gap:14px;align-items:center;}
-.bg-svg{width:132px;height:92px;display:block;}
-.bg-photo{width:132px;height:92px;object-fit:cover;border-radius:12px;display:block;background:var(--bikeTR);}
+.bg-top{display:grid;grid-template-columns:180px 1fr;gap:14px;align-items:center;}
+.bg-svg{width:132px;height:92px;}
+.bg-photo{width:180px;height:120px;object-fit:cover;border-radius:14px;display:block;background:var(--bikeTR);}
 .bg-head{min-width:0;}
 .bg-name{font-size:17px;font-weight:900;margin-bottom:4px;}
 .bg-tag{font-size:11px;color:var(--accent);font-weight:800;font-family:var(--fm);}
@@ -627,7 +627,7 @@ html[data-theme="light"] .bg-guide{--bikeC:#222833;--bikeA:#0e9adf;--bikeT:#3942
 .bg-lcol h5.bg-cons{color:var(--danger);}
 .bg-lcol ul{margin:0;padding-left:16px;}
 .bg-lcol li{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:4px;}
-@media(max-width:520px){.bg-top{grid-template-columns:1fr;}.bg-svg{width:100%;height:112px;margin:0 auto;max-width:230px;}}
+@media(max-width:520px){.bg-top{grid-template-columns:1fr;}.bg-svg{width:100%;height:112px;margin:0 auto;max-width:230px;}.bg-photo{width:100%;height:160px;max-width:320px;margin:0 auto;}}
 
 /* LEVEL UP */
 #lvlUp{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .3s;}
@@ -3044,7 +3044,7 @@ ${bL(101,63,90,93,4)}
 ${bBarFlat(146,46,178,47)}
 ${bCrank(113,113,11)}
 </svg>`,
-    photoUrl: 'https://enduro-mtb.com/wp-content/uploads/2021/06/SantaCruz_Bronson_END_News00003.jpg'},
+    photoUrl: './image/bike-types/enduro.jpg'},
   {id:'dirt',name:'Dirt / Street',emoji:'🛹',tag:'Dirt · стрит · памп-треки',
    desc:'Компактный байк для стрит-райдинга, дерт-джампов и памп-треков. Жёсткий, маневренный, создан для повторения трюков.',
    pros:['Живой и маневренный','Лёгкий — легко крутиться в воздухе','Не боится приземлений'],
@@ -3097,6 +3097,7 @@ function renderBikeGuide(){
     const top=document.createElement('div');top.className='bg-top';
     if(bt.photoUrl){
       const img=document.createElement('img');img.src=bt.photoUrl;img.alt=bt.name;img.className='bg-photo';img.loading='lazy';
+      img.onerror=()=>{img.style.display='none';top.style.background='linear-gradient(135deg,rgba(76,201,240,.15),rgba(124,92,255,.15))';top.style.minHeight='120px';top.style.borderRadius='14px';};
       top.appendChild(img);
     }else{
       top.insertAdjacentHTML('beforeend',bt.svg);
@@ -3622,8 +3623,8 @@ async function fetchVideos(){
         (state.proofs||[]).filter(p=>!cloudPids[p.id]).forEach(p=>list.unshift(vidFromLocal(p)));
         return list;
       };
-      const snap=await loadOrCache(q.limit(vidLimit),15000,s=>{try{videosCache=build(s);renderProofs();}catch(e){}});
-      items=build(snap);
+      const snap=await loadOrCache(q.limit(vidLimit),15000,s=>{try{videosCache=build(s);videosCache.sort((a,b)=>(b.ts||0)-(a.ts||0));renderProofs();}catch(e){}});
+      items=build(snap);items.sort((a,b)=>(b.ts||0)-(a.ts||0));
     }catch(e){console.warn('loadVideos:',e);items=(state.proofs||[]).map(vidFromLocal);}
   }else{
     items=(state.proofs||[]).map(vidFromLocal);
@@ -3685,7 +3686,7 @@ async function loadMoreVideos(){
     const build=s=>{
       if(s.empty){vidHasMore=false;return;}
       const add=s.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
-      videosCache=videosCache.concat(add);
+      videosCache=videosCache.concat(add);videosCache.sort((a,b)=>(b.ts||0)-(a.ts||0));
       vidCursor=s.docs[s.docs.length-1];
       vidHasMore=s.docs.length===vidLimit;
     };
@@ -3805,6 +3806,7 @@ function renderProofs(){
   if(vidSkill!=='all')items=items.filter(v=>(v.skill||'wh')===vidSkill);
   if(vidType==='video')items=items.filter(v=>!(v.photos&&v.photos.length));
   else if(vidType==='photo')items=items.filter(v=>v.photos&&v.photos.length);
+  items.sort((a,b)=>(b.ts||0)-(a.ts||0));
   if(!items.length){
     const box=document.createElement('div');box.className='tt-empty';
     const h3=document.createElement('h3');
