@@ -1139,7 +1139,7 @@ const FB_CFG={
 // Site key для App Check (reCAPTCHA). Пустое значение = App Check выключен.
 // Вставь ключ из Firebase Console → App Check → Apps, и включи enforcement в консоли.
 const FB_AC_SITE_KEY='6LcwoYUtAAAAACrDlhQ7QBUZaaKVZBg8OfNPAiTN';
-let db=null,auth=null,currentUser=null,authMode='login',redirectHandled=false,st=null,appBooted=false,_pendingSync=false;
+let db=null,auth=null,currentUser=null,authMode='login',st=null,appBooted=false,_pendingSync=false,_chTimerInt=0,_dayRolloverInt=0;
 
 /* ══ UTILS ══ */
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -1731,7 +1731,6 @@ async function initFB(){
       setLoadProgress(40);
       await withTimeout(auth.getRedirectResult(),3000);
     }catch(re){console.warn('getRedirectResult:',re.code||re.message);}
-    redirectHandled=true;
     setLoadProgress(55);
 
     // Гарантированный фоллбек: если onAuthStateChanged не сработает за 4 сек — гостевой режим
@@ -1821,95 +1820,7 @@ if('serviceWorker' in navigator){
 }
  
 /* ══ REACTIVE STORE (simple) ══ */
-const Store=(function(){
-  const subs=new Map();
-  const stateObj={};
-  function set(path,value){
-    const keys=path.split('.');
-    let cur=stateObj;
-    for(let i=0;i<keys.length-1;i++){
-      if(!cur[keys[i]])cur[keys[i]]={};
-      cur=cur[keys[i]];
-    }
-    cur[keys[keys.length-1]]=value;
-    const cb=subs.get(path);
-    if(cb)cb(value);
-  }
-  function get(path){
-    if(!path)return stateObj;
-    return path.split('.').reduce((o,k)=>(o||{})[k],stateObj);
-  }
-  function on(path,cb){subs.set(path,cb);return()=>subs.delete(path);}
-  function batch(updates){Object.entries(updates).forEach(([p,v])=>set(p,v));}
-  return{set,get,on,batch,raw:()=>stateObj};
-})();
- 
-/* ══ CLEANUP UTILITIES ══ */
-const Cleanup={
-  _timers:new Set(),
-  _listeners:new Map(), // element -> [{event,handler,options}]
-  _abortControllers:new Set(),
- 
-  timer(fn,ms){
-    const id=setTimeout(fn,ms);
-    this._timers.add(id);
-    return id;
-  },
-  clearTimer(id){clearTimeout(id);this._timers.delete(id);},
- 
-  interval(fn,ms){
-    const id=setInterval(fn,ms);
-    this._timers.add(id);
-    return id;
-  },
-  clearInterval(id){clearInterval(id);this._timers.delete(id);},
- 
-  on(el,event,handler,options){
-    if(!el)return;
-    el.addEventListener(event,handler,options);
-    if(!this._listeners.has(el))this._listeners.set(el,[]);
-    this._listeners.get(el).push({event,handler,options});
-  },
-  off(el,event,handler){
-    if(!el||!this._listeners.has(el))return;
-    el.removeEventListener(event,handler);
-    const arr=this._listeners.get(el).filter(x=>!(x.event===event&&x.handler===handler));
-    if(arr.length)this._listeners.set(el,arr);
-    else this._listeners.delete(el);
-  },
-  offAll(el){
-    if(!el||!this._listeners.has(el))return;
-    for(const {event,handler,options} of this._listeners.get(el)){
-      el.removeEventListener(event,handler,options);
-    }
-    this._listeners.delete(el);
-  },
- 
-  abortController(){
-    const ac=new AbortController();
-    this._abortControllers.add(ac);
-    return ac;
-  },
-  abortAll(){
-    for(const ac of this._abortControllers)ac.abort();
-    this._abortControllers.clear();
-  },
- 
-  clearAll(){
-    for(const id of this._timers){clearTimeout(id);clearInterval(id);}
-    this._timers.clear();
-    for(const [el,arr] of this._listeners){
-      for(const {event,handler,options} of arr)el.removeEventListener(event,handler,options);
-    }
-    this._listeners.clear();
-    this.abortAll();
-  }
-};
- 
-// Автоочистка при unload / pagehide / beforeunload
-window.addEventListener('pagehide',()=>Cleanup.clearAll());
-window.addEventListener('beforeunload',()=>Cleanup.clearAll());
- 
+
 /* ══ OFFLINE QUEUE FLUSH on online ══ */
 window.addEventListener('online',async()=>{
   setSyncDot('pending');
@@ -2201,7 +2112,7 @@ function initApp(){
   renderSkills();renderRecords();renderBikeGuide();
   initNotifUI();updateStreak();genChallengesIfNeeded();
   if(currentUser){initDuelListener();startDuelRefresh();expireStaleDuels();syncLocalDuels();}
-  setInterval(updateChTimer,60000);updateChTimer();
+  if(!_chTimerInt){_chTimerInt=setInterval(updateChTimer,60000);updateChTimer();}
   genPWA();
   if(currentUser){syncProofs();startFriendListeners();setupPresence();startNewVideosListener();}
   setupPullToRefresh();
@@ -2241,7 +2152,7 @@ function startDayRollover(){
     if(chTab&&chTab.classList.contains('active'))renderChallenges();
   };
   tick();
-  setInterval(tick,30000);
+  if(!_dayRolloverInt)_dayRolloverInt=setInterval(tick,30000);
 }
 function setTheme(mode){
   const light=mode==='light';
@@ -3685,7 +3596,7 @@ async function loadMoreVideos(){
     if(vidSeg==='mine'&&currentUser)q=q.where('ownerId','==',currentUser.uid);
     const build=s=>{
       if(s.empty){vidHasMore=false;return;}
-      const add=s.docs.map(d=>vidFromCloud({id:d.id,...d.data()}));
+      const add=s.docs.map(d=>vidFromCloud({id:d.id,...d.data()})).filter(v=>!videosCache.some(x=>x.key===v.key));
       videosCache=videosCache.concat(add);videosCache.sort((a,b)=>(b.ts||0)-(a.ts||0));
       vidCursor=s.docs[s.docs.length-1];
       vidHasMore=s.docs.length===vidLimit;
@@ -3976,7 +3887,7 @@ async function toggleLike(v,btn,ic,cnt){
   if(v.isOwn){toast('Нельзя лайкать своё видео');return;}
   if(btn)btn.disabled=true;
   try{
-    if(v.local){reactProof(v.pid,'likes');return;}
+    if(v.local){reactProof(v.pid,'likes');if(btn)btn.disabled=false;return;}
     if(v.liked){
       await db.collection('videos').doc(v.vidDocId).update({likedBy:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});
       v.liked=false;v.likes=Math.max(0,v.likes-1);
@@ -4294,8 +4205,10 @@ async function renderFollowingList(){
 }
 function pfThumb(p){
   if(p.photos&&p.photos.length){
+    const first=p.photos[0];
     const img=document.createElement('img');img.alt='';img.loading='lazy';
-    idbGet(p.photos[0]).then(blob=>{if(blob)img.src=URL.createObjectURL(blob);});
+    if(typeof first==='string'&&first.startsWith('http')){img.src=first;}
+    else{idbGet(first).then(blob=>{if(blob)img.src=URL.createObjectURL(blob);});}
     return img;
   }
   if(p.ytId){
