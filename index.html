@@ -745,15 +745,15 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
   </header>
 
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="skills">🎯<span>Навыки</span></button>
-    <button class="tab-btn" data-tab="records">📊<span>Рекорды</span></button>
-    <button class="tab-btn" data-tab="challenges">⚔️<span>Челленджи</span></button>
-    <button class="tab-btn" data-tab="bikes">🚲<span>Байки</span></button>
-    <button class="tab-btn" data-tab="videos">🎬<span>Видео</span></button>
-    <button class="tab-btn" data-tab="friends">🏆<span>Топ</span></button>
-    <button class="tab-btn" data-tab="duel">⚡<span>Дуэли</span></button>
-    <button class="tab-btn" data-tab="profile">👤<span>Профиль</span></button>
-    <button class="tab-btn" data-tab="support">🛠<span>Ещё</span></button>
+    <button class="tab-btn active" data-tab="skills">🎯<span data-t="tabSkills">Навыки</span></button>
+    <button class="tab-btn" data-tab="records">📊<span data-t="tabRecords">Рекорды</span></button>
+    <button class="tab-btn" data-tab="challenges">⚔️<span data-t="tabChallenges">Челленджи</span></button>
+    <button class="tab-btn" data-tab="bikes">🚲<span data-t="tabBikes">Байки</span></button>
+    <button class="tab-btn" data-tab="videos">🎬<span data-t="tabVideos">Видео</span></button>
+    <button class="tab-btn" data-tab="friends">🏆<span data-t="tabTop">Топ</span></button>
+    <button class="tab-btn" data-tab="duel">⚡<span data-t="tabDuels">Дуэли</span></button>
+    <button class="tab-btn" data-tab="profile">👤<span data-t="tabProfile">Профиль</span></button>
+    <button class="tab-btn" data-tab="support">🛠<span data-t="tabMore">Ещё</span></button>
   </nav>
 
   <!-- SKILLS -->
@@ -928,12 +928,12 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
   <!-- MORE -->
   <section id="tab-support" class="tab">
     <div class="panel">
-      <div class="panel-head"><div><h3>🚲 Типы велосипедов</h3><p>Для чего каждый байк, плюсы и минусы — выбирай под свой стиль</p></div></div>
+      <div class="panel-head"><div><h3 data-t="sBikeTypes">🚲 Типы велосипедов</h3><p data-t="sBikeTypesDesc">Для чего каждый байк, плюсы и минусы — выбирай под свой стиль</p></div></div>
       <div id="bikeGuide" class="bg-grid bg-guide"></div>
     </div>
 
     <div class="panel">
-      <div class="panel-head"><div><h3>💡 Зачем трюки?</h3></div></div>
+      <div class="panel-head"><div><h3 data-t="sWhyTricks">💡 Зачем трюки?</h3></div></div>
       <div class="why-grid">
         <div class="why-card"><div class="wi">🧠</div><h4>Контроль байка</h4><p>Реакция становится инстинктивной.</p></div>
         <div class="why-card"><div class="wi">⚡</div><h4>Сила и баланс</h4><p>Взрывная сила и вестибулярный аппарат.</p></div>
@@ -944,7 +944,7 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
 
     <!-- УВЕДОМЛЕНИЯ -->
     <div class="panel">
-      <div class="panel-head"><div><h3>🔔 Напоминания о тренировке</h3></div></div>
+      <div class="panel-head"><div><h3 data-t="sNotif">🔔 Напоминания о тренировке</h3></div></div>
       <div class="notif-card">
         <div class="toggle-row">
           <span>Включить напоминания</span>
@@ -969,7 +969,7 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
     </div>
 
     <div class="panel">
-      <div class="panel-head"><div><h3>🎨 Тема</h3><p>Выбери оформление приложения</p></div></div>
+      <div class="panel-head"><div><h3 data-t="sTheme">🎨 Тема</h3><p data-t="sThemeDesc">Выбери оформление приложения</p></div></div>
       <div class="notif-card">
         <div class="toggle-row"><span>Тёмная тема</span><label class="toggle"><input type="checkbox" id="themeToggle" onchange="setTheme(this.checked?'dark':'light')"><span class="toggle-sl"></span></label></div>
         <p style="font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.5;">По умолчанию приложение тёмное. Светлая тема включится сразу после переключения.</p>
@@ -977,7 +977,28 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
     </div>
 
     <div class="panel">
-      <div class="panel-head"><div><h3>🎵 Музыка</h3><p>Фоновая музыка в приложении</p></div></div>
+      <div class="panel-head"><div><h3 data-t="sLang">🌐 Язык</h3></div></div>
+      <div class="notif-card">
+        <select id="langSelect" class="field" style="width:100%;padding:10px 14px;font-size:14px;border-radius:12px;background:var(--card);color:var(--text);border:1px solid var(--line);" onchange="setLang(this.value)">
+          <option value="ru">🇷🇺 Русский</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="uk">🇺🇦 Українська</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="pt">🇧🇷 Português</option>
+          <option value="de">🇩🇪 Deutsch</option>
+          <option value="fr">🇫🇷 Français</option>
+          <option value="tr">🇹🇷 Türkçe</option>
+          <option value="pl">🇵🇱 Polski</option>
+          <option value="zh">🇨🇳 中文</option>
+          <option value="ja">🇯🇵 日本語</option>
+          <option value="ko">🇰🇷 한국어</option>
+        </select>
+        <p style="font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.5;">Язык интерфейса приложения. Настройка сохраняется в облаке.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div><h3 data-t="sMusic">🎵 Музыка</h3><p>Фоновая музыка в приложении</p></div></div>
       <div class="notif-card">
         <div class="toggle-row"><span>Музыка выключена</span><label class="toggle"><input type="checkbox" id="mOff"><span class="toggle-sl"></span></label></div>
         <div class="toggle-row" style="margin-top:10px;"><span style="flex-shrink:0;">Громкость</span><input id="mVol2" type="range" min="0" max="1" step="0.05" value="0.5" style="flex:1;accent-color:var(--accent);"></div>
@@ -986,7 +1007,7 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
     </div>
 
     <div class="panel">
-      <div class="panel-head"><div><h3>💾 Данные</h3><p>Бэкап и восстановление прогресса</p></div></div>
+      <div class="panel-head"><div><h3 data-t="sData">💾 Данные</h3><p>Бэкап и восстановление прогресса</p></div></div>
       <div class="notif-card">
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
           <button class="btn btn-ghost" style="flex:1;" onclick="exportData()">📤 Экспорт (JSON)</button>
@@ -1006,7 +1027,7 @@ button:focus-visible,.tab-btn:focus-visible,a:focus-visible,input:focus-visible,
     </div>
 
     <div class="panel">
-      <div class="panel-head"><div><h3>🛠 Поддержка</h3></div></div>
+      <div class="panel-head"><div><h3 data-t="sSupport">🛠 Поддержка</h3></div></div>
       <div class="sup-grid">
         <div class="ct-card"><div class="ci">💬</div><h4>Telegram</h4><a href="https://t.me/Mtbskillspro_bot" target="_blank">@Mtbskillspro_bot</a><br><br><a href="https://t.me/Mtbskillspro_bot" target="_blank" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
         <div class="ct-card"><div class="ci">📧</div><h4>Email</h4><a href="mailto:mtbskillspro@gmail.com">mtbskillspro@gmail.com</a><br><br><a href="mailto:mtbskillspro@gmail.com" class="btn btn-primary" style="display:inline-block;padding:10px 24px;text-decoration:none;font-size:14px;">Написать</a></div>
@@ -1311,6 +1332,86 @@ const ACHIEVEMENTS=[
   {id:'duel1',name:'Дуэлянт',icon:'⚡',check:s=>(s.duelsWon||0)>=1,pr:s=>({cur:s.duelsWon||0,target:1})},
 ];
 
+/* ══ INTERNATIONALIZATION ══ */
+const LANGS=[
+  {code:'ru',name:'Русский',flag:'🇷🇺'},
+  {code:'en',name:'English',flag:'🇺🇸'},
+  {code:'uk',name:'Українська',flag:'🇺🇦'},
+  {code:'es',name:'Español',flag:'🇪🇸'},
+  {code:'pt',name:'Português',flag:'🇧🇷'},
+  {code:'de',name:'Deutsch',flag:'🇩🇪'},
+  {code:'fr',name:'Français',flag:'🇫🇷'},
+  {code:'tr',name:'Türkçe',flag:'🇹🇷'},
+  {code:'pl',name:'Polski',flag:'🇵🇱'},
+  {code:'zh',name:'中文',flag:'🇨🇳'},
+  {code:'ja',name:'日本語',flag:'🇯🇵'},
+  {code:'ko',name:'한국어',flag:'🇰🇷'},
+];
+const STRINGS={
+  // Tabs
+  tabSkills:{ru:'Навыки',en:'Skills',uk:'Навички',es:'Habilidades',pt:'Habilidades',de:'Fähigkeiten',fr:'Compétences',tr:'Beceri',pl:'Umiejętności',zh:'技能',ja:'スキル',ko:'스킬'},
+  tabRecords:{ru:'Рекорды',en:'Records',uk:'Рекорди',es:'Récords',pt:'Recordes',de:'Rekorde',fr:'Records',tr:'Rekorlar',pl:'Rekordy',zh:'记录',ja:'記録',ko:'기록'},
+  tabChallenges:{ru:'Челленджи',en:'Challenges',uk:'Виклики',es:'Desafíos',pt:'Desafios',de:'Challenges',fr:'Défis',tr:'Meydan Okuma',pl:'Wyzwania',zh:'挑战',ja:'チャレンジ',ko:'챌린지'},
+  tabBikes:{ru:'Байки',en:'Bikes',uk:'Байки',es:'Bicis',pt:'Bikes',de:'Bikes',fr:'Vélos',tr:'Bisikletler',pl:'Bike',zh:'自行车',ja:'バイク',ko:'자전거'},
+  tabVideos:{ru:'Видео',en:'Videos',uk:'Відео',es:'Videos',pt:'Vídeos',de:'Videos',fr:'Vidéos',tr:'Videolar',pl:'Filmiki',zh:'视频',ja:'動画',ko:'영상'},
+  tabTop:{ru:'Топ',en:'Top',uk:'Топ',es:'Top',pt:'Top',de:'Top',fr:'Top',tr:'Top',pl:'Top',zh:'排行',ja:'トップ',ko:'톱'},
+  tabDuels:{ru:'Дуэли',en:'Duels',uk:'Дуелі',es:'Duelos',pt:'Duelos',de:'Duelle',fr:'Duels',tr:'Düellolar',pl:'Duelle',zh:'对决',ja:'デュエル',ko:'결투'},
+  tabProfile:{ru:'Профиль',en:'Profile',uk:'Профіль',es:'Perfil',pt:'Perfil',de:'Profil',fr:'Profil',tr:'Profil',pl:'Profil',zh:'个人资料',ja:'プロフィール',ko:'프로필'},
+  tabMore:{ru:'Ещё',en:'More',uk:'Більше',es:'Más',pt:'Mais',de:'Mehr',fr:'Plus',tr:'Daha Fazla',pl:'Więcej',zh:'更多',ja:'その他',ko:'더보기'},
+  // Settings
+  sBikeTypes:{ru:'🚲 Типы велосипедов',en:'🚲 Bike Types',uk:'🚲 Типи велосипедів',es:'🚲 Tipos de bicicletas',pt:'🚲 Tipos de bicicletas',de:'🚲 Fahrradtypen',fr:'🚲 Types de vélos',tr:'🚲 Bisiklet türleri',pl:'🚲 Typy rowerów',zh:'🚲 自行车类型',ja:'🚲 バイクタイプ',ko:'🚲 자전거 종류'},
+  sBikeTypesDesc:{ru:'Для чего каждый байк, плюсы и минусы — выбирай под свой стиль',en:'What each bike is for, pros & cons — pick your style',uk:'Для чого кожен байк, плюси та мінуси — обирай свій стиль',es:'Para qué sirve cada bici, ventajas y desventajas',pt:'Para que serve cada bike, prós e contras',de:'Wofür jedes Rad, Vor- und Nachteile',fr:'À quoi sert chaque vélo, avantages et inconvénients',tr:'Her bisikletin amacı, artıları ve eksileri',pl:'Do czego każdy rower, zalety i wady',zh:'每种自行车的用途、优缺点',ja:'各バイクの用途、メリット・デメリット',ko:'각 자전거의 용도, 장단점'},
+  sWhyTricks:{ru:'💡 Зачем трюки?',en:'💡 Why tricks?',uk:'💡 Навіщо трюки?',es:'💡 ¿Para qué trucos?',pt:'💡 Por que truques?',de:'💡 Warum Tricks?',fr:'💡 À quoi servent les tricks?',tr:'💡 Neden numaralar?',pl:'💡 Po co triki?',zh:'💡 为什么要练技巧？',ja:'💡 なぜトリック？',ko:'💡 왜 트릭을 하나요?'},
+  sNotif:{ru:'🔔 Напоминания о тренировке',en:'🔔 Training Reminders',uk:'🔔 Нагадування про тренування',es:'🔔 Recordatorios de entrenamiento',pt:'🔔 Lembretes de treino',de:'🔔 Trainings-Erinnerungen',fr:'🔔 Rappels d\'entraînement',tr:'🔔 Antrenman hatırlatıcıları',pl:'🔔 Przypomnienia o treningu',zh:'🔔 训练提醒',ja:'🔔 トレーニングリマインダー',ko:'🔔 훈련 알림'},
+  sTheme:{ru:'🎨 Тема',en:'🎨 Theme',uk:'🎨 Тема',es:'🎨 Tema',pt:'🎨 Tema',de:'🎨 Thema',fr:'🎨 Thème',tr:'🎨 Tema',pl:'🎨 Motyw',zh:'🎨 主题',ja:'🎨 テーマ',ko:'🎨 테마'},
+  sThemeDesc:{ru:'Выбери оформление приложения',en:'Choose app appearance',uk:'Обери оформлення додатку',es:'Elige la apariencia',pt:'Escolha a aparência',de:'Erscheinungsbild wählen',fr:'Choisir l\'apparence',tr:'Görünümü seçin',pl:'Wygląd aplikacji',zh:'选择应用外观',ja:'アプリの外観を選択',ko:'앱 외형 선택'},
+  sMusic:{ru:'🎵 Музыка',en:'🎵 Music',uk:'🎵 Музика',es:'🎵 Música',pt:'🎵 Música',de:'🎵 Musik',fr:'🎵 Musique',tr:'🎵 Müzik',pl:'🎵 Muzyka',zh:'🎵 音乐',ja:'🎵 音楽',ko:'🎵 음악'},
+  sData:{ru:'💾 Данные',en:'💾 Data',uk:'💾 Дані',es:'💾 Datos',pt:'💾 Dados',de:'💾 Daten',fr:'💾 Données',tr:'💾 Veri',pl:'💾 Dane',zh:'💾 数据',ja:'💾 データ',ko:'💾 데이터'},
+  sSupport:{ru:'🛠 Поддержка',en:'🛠 Support',uk:'🛠 Підтримка',es:'🛠 Soporte',pt:'🛠 Suporte',de:'🛠 Support',fr:'🛠 Support',tr:'🛠 Destek',pl:'🛠 Pomoc',zh:'🛠 支持',ja:'🛠 サポート',ko:'🛠 지원'},
+  sLang:{ru:'🌐 Язык',en:'🌐 Language',uk:'🌐 Мова',es:'🌐 Idioma',pt:'🌐 Idioma',de:'🌐 Sprache',fr:'🌐 Langue',tr:'🌐 Dil',pl:'🌐 Język',zh:'🌐 语言',ja:'🌐 言語',ko:'🌐 언어'},
+  // Buttons
+  btnTrain:{ru:'Тренироваться',en:'Train',uk:'Тренуватися',es:'Entrenar',pt:'Treinar',de:'Trainieren',fr:'S\'entraîner',tr:'Antrenman',pl:'Trenuj',zh:'训练',ja:'トレーニング',ko:'훈련'},
+  btnExport:{ru:'📤 Экспорт (JSON)',en:'📤 Export (JSON)',uk:'📤 Експорт (JSON)',es:'📤 Exportar',pt:'📤 Exportar',de:'📤 Exportieren',fr:'📤 Exporter',tr:'📤 Dışa Aktar',pl:'📤 Eksportuj',zh:'📤 导出',ja:'📤 エクスポート',ko:'📤 내보내기'},
+  btnImport:{ru:'📥 Импорт',en:'📥 Import',uk:'📥 Імпорт',es:'📥 Importar',pt:'📥 Importar',de:'📥 Importieren',fr:'📥 Importer',tr:'📥 İçe Aktar',pl:'📥 Importuj',zh:'📥 导入',ja:'📥 インポート',ko:'📥 가져오기'},
+  btnReset:{ru:'🗑 Сбросить всё',en:'🗑 Reset All',uk:'🗑 Скинути все',es:'🗑 Borrar todo',pt:'🗑 Limpar tudo',de:'🗑 Alles zurücksetzen',fr:'🗑 Tout réinitialiser',tr:'🗑 Tümünü sıfırla',pl:'🗑 Zresetuj wszystko',zh:'🗑 重置全部',ja:'🗑 全てリセット',ko:'🗑 모두 초기화'},
+  btnDelete:{ru:'🗑 Удалить аккаунт',en:'🗑 Delete Account',uk:'🗑 Видалити акаунт',es:'🗑 Eliminar cuenta',pt:'🗑 Excluir conta',de:'🗑 Konto löschen',fr:'🗑 Supprimer le compte',tr:'🗑 Hesabı sil',pl:'🗑 Usuń konto',zh:'🗑 删除账号',ja:'🗑 アカウント削除',ko:'🗑 계정 삭제'},
+  btnWrite:{ru:'Написать',en:'Write',uk:'Написати',es:'Escribir',pt:'Escrever',de:'Schreiben',fr:'Écrire',tr:'Yaz',pl:'Napisz',zh:'写信',ja:'送信',ko:'메시지'},
+  // Common
+  btnChange:{ru:'Сменить',en:'Change',uk:'Змінити',es:'Cambiar',pt:'Alterar',de:'Ändern',fr:'Changer',tr:'Değiştir',pl:'Zmień',zh:'更改',ja:'変更',ko:'변경'},
+  offline:{ru:'Оффлайн',en:'Offline',uk:'Офлайн',es:'Sin conexión',pt:'Offline',de:'Offline',fr:'Hors ligne',tr:'Çevrimdışı',pl:'Offline',zh:'离线',ja:'オフライン',ko:'오프라인'},
+  synced:{ru:'Синхронизировано',en:'Synced',uk:'Синхронізовано',es:'Sincronizado',pt:'Sincronizado',de:'Synchronisiert',fr:'Synchronisé',tr:'Senkronize',pl:'Synchronizowano',zh:'已同步',ja:'同期済み',ko:'동기화됨'},
+  guest:{ru:'Гость',en:'Guest',uk:'Гість',es:'Invitado',pt:'Convidado',de:'Gast',fr:'Invité',tr:'Misafir',pl:'Gość',zh:'访客',ja:'ゲスト',ko:'게스트'},
+  comingSoon:{ru:'Скоро будет',en:'Coming soon',uk:'Незабаром',es:'Próximamente',pt:'Em breve',de:'Bald verfügbar',fr:'Bientôt disponible',tr:'Yakında',pl:'Wkrótce',zh:'即将推出',ja:'近日公開',ko:'곧 출시'},
+  noData:{ru:'Пока нет данных',en:'No data yet',uk:'Поки немає даних',es:'Sin datos aún',pt:'Sem dados ainda',de:'Noch keine Daten',fr:'Pas encore de données',tr:'Henüz veri yok',pl:'Brak danych',zh:'暂无数据',ja:'データなし',ko:'데이터 없음'},
+  save:{ru:'Сохранить',en:'Save',uk:'Зберегти',es:'Guardar',pt:'Salvar',de:'Speichern',fr:'Enregistrer',tr:'Kaydet',pl:'Zapisz',zh:'保存',ja:'保存',ko:'저장'},
+  cancel:{ru:'Отмена',en:'Cancel',uk:'Скасувати',es:'Cancelar',pt:'Cancelar',de:'Abbrechen',fr:'Annuler',tr:'İptal',pl:'Anuluj',zh:'取消',ja:'キャンセル',ko:'취소'},
+  confirm:{ru:'Подтвердить',en:'Confirm',uk:'Підтвердити',es:'Confirmar',pt:'Confirmar',de:'Bestätigen',fr:'Confirmer',tr:'Onayla',pl:'Potwierdź',zh:'确认',ja:'確認',ko:'확인'},
+  trainBtn:{ru:'🚀 Тренироваться',en:'🚀 Start Training',uk:'🚀 Тренуватися',es:'🚀 Entrenar',pt:'🚀 Treinar',de:'🚀 Trainieren',fr:'🚀 S\'entraîner',tr:'🚀 Antrenman',pl:'🚀 Trenuj',zh:'🚀 开始训练',ja:'🚀 トレーニング開始',ko:'🚀 훈련 시작'},
+  done:{ru:'Готово',en:'Done',uk:'Готово',es:'Listo',pt:'Pronto',de:'Fertig',fr:'Terminé',tr:'Bitti',pl:'Gotowe',zh:'完成',ja:'完了',ko:'완료'},
+  // Skill names
+  sWh:{ru:'Вилли',en:'Wheelie',uk:'Віллі',es:'Wheelie',pt:'Wheelie',de:'Wheelie',fr:'Wheelie',tr:'Wheelie',pl:'Wheelie',zh:'翘头',ja:'ウィリー',ko:'휠리'},
+  sMn:{ru:'Мэнуал',en:'Manual',uk:'Мануал',es:'Manual',pt:'Manual',de:'Manual',fr:'Manual',tr:'Manual',pl:'Manual',zh:'后轮滑',ja:'マニュアル',ko:'매뉴얼'},
+  sTs:{ru:'Трекстенд',en:'Trackstand',uk:'Трекстенд',es:'Trackstand',pt:'Trackstand',de:'Trackstand',fr:'Trackstand',tr:'Trackstand',pl:'Trackstand',zh:'定车',ja:'トラックスタンド',ko:'트랙스탠드'},
+  sBh:{ru:'Банни-хоп',en:'Bunny Hop',uk:'Банні-хоп',es:'Bunny Hop',pt:'Bunny Hop',de:'Bunny Hop',fr:'Bunny Hop',tr:'Bunny Hop',pl:'Bunny Hop',zh:'兔跳',ja:'バニーホップ',ko:'버니홉'},
+  sSt:{ru:'Стоппи',en:'Stoppie',uk:'Стоппі',es:'Stoppie',pt:'Stoppie',de:'Stoppie',fr:'Stoppie',tr:'Stoppie',pl:'Stoppie',zh:'前轮滑',ja:'ストッピー',ko:'스토피'},
+  sDp:{ru:'Дроп',en:'Drop',uk:'Дроп',es:'Drop',pt:'Drop',de:'Drop',fr:'Drop',tr:'Drop',pl:'Drop',zh:'落差',ja:'ドロップ',ko:'드롭'},
+  sAir:{ru:'Трамплин',en:'Air / Jump',uk:'Трамплін',es:'Salto',pt:'Pular',de:'Sprung',fr:'Tremplin',tr:'Zıplama',pl:'Skok',zh:'跳跃',ja:'ジャンプ',ko:'점프'},
+};
+function t(key){const lang=state.lang||'ru';return(STRINGS[key]&&STRINGS[key][lang])||(STRINGS[key]&&STRINGS[key]['ru'])||key;}
+function applyLang(){
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    const key=el.dataset.t;const txt=t(key);if(txt&&txt!==key)el.textContent=txt;
+  });
+  renderSkills();renderRecords();if(typeof renderChallenges==='function')renderChallenges();
+  renderBikeGuide();updateGuestUI();updateUserUI();
+  const sel=document.getElementById('langSelect');if(sel)sel.value=state.lang||'ru';
+}
+function setLang(code){
+  state.lang=code;
+  try{localStorage.setItem(lsKey(),JSON.stringify(state));}catch(e){}
+  applyLang();saveCloud();
+}
+
 /* ══ УМНЫЕ ЧЕЛЛЕНДЖИ ══
    type: 'auto' — система сама засчитывает когда выполнено
          'trust' — на доверии пользователя (комбо-трюки)
@@ -1508,7 +1609,7 @@ const SK='mtb_v16';
 function lsKey(){return SK+(currentUser?('_'+currentUser.uid):'_anon');}
 function lsDayKey(k){return k+(currentUser?('_'+currentUser.uid):'_anon');}
 function clearLSPrefix(){try{Object.keys(localStorage).filter(k=>k===SK||k.startsWith(SK+'_')||k==='mtb_dts'||k.startsWith('mtb_dts_')||k==='mtb_wts'||k.startsWith('mtb_wts_')).forEach(k=>localStorage.removeItem(k));}catch(e){}}
-function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],declinedDuels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[],masterXP:0,masterRank:0,masterUnlocked:false,masterChallenges:{},masterChallengeCount:{}};}
+function defState(){return{skills:DEF_SKILLS.map(s=>({id:s.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}})),nickname:'',nicknameChangedAt:0,streak:0,lastTrainDate:'',notif:{enabled:false,time:'17:00',days:[1,2,3,4,5,6,7]},records:{},challenges:[],completedChallenges:[],proofs:[],proofReactions:{},challengeXP:0,unlockedAchievements:[],duels:[],declinedDuels:[],duelsWon:0,weeklyXpStart:0,weeklyXpStartTs:0,friendRequestsSent:[],friendRequestsReceived:[],following:[],masterXP:0,masterRank:0,masterUnlocked:false,masterChallenges:{},masterChallengeCount:{},lang:'ru'};}
 let state=loadLS();
 let activeSkillId=null;
 let bikePhotoFile=null;
@@ -1528,6 +1629,7 @@ function loadLS(){
       if(!sk)s.skills.push({id:ds.id,lv:0,pr:0,tr:0,trToday:0,trSession:0,vars:{}});
               else{if(!sk.trToday)sk.trToday=0;if(!sk.trSession)sk.trSession=0;sk.lv=sk.lv||0;sk.pr=sk.pr||0;sk.tr=sk.tr||0;if(!sk.vars)sk.vars={};}
     });
+    if(!s.lang)s.lang='ru';
     return s;
   }}catch(e){}return defState();
 }
@@ -2109,7 +2211,7 @@ function initApp(){
   setT('myNickDisp',state.nickname||'Гость');
   if(currentUser){setT('userEmailDisp',currentUser.email||'');updateUserUI();}
   setSyncDot(currentUser?'synced':'local');
-  renderSkills();renderRecords();renderBikeGuide();
+  renderSkills();renderRecords();renderBikeGuide();applyLang();
   initNotifUI();updateStreak();genChallengesIfNeeded();
   if(currentUser){initDuelListener();startDuelRefresh();expireStaleDuels();syncLocalDuels();}
   if(!_chTimerInt){_chTimerInt=setInterval(updateChTimer,60000);updateChTimer();}
